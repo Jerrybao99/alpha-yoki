@@ -620,6 +620,7 @@ $$
 | NFR-08 | 安全 | `.env` 不入库；`.env.example` 同步；密钥不明文日志 |
 | NFR-09 | 可测试 | 纯逻辑单测全覆盖；I/O 集成测试；CI 阻断 lint/编译错误 |
 | NFR-10 | 文档 | 字段契约/评分规则/Prompt/架构决策与代码同步 |
+| NFR-11 | 覆盖率 | `src/` 单元测试行覆盖率 ≥ 80%，CI 门禁阻断（`--cov-fail-under=80`） |
 
 ### 10.2 配置项（`.env.example` 必须同步）
 
@@ -683,6 +684,7 @@ LLM_LOCAL_FALLBACK=false     # 是否启用本地模型兜底
 | Lint | `uv run ruff check .` | 是 |
 | 类型/编译 | `uv run python -m py_compile <changed_files>` | 是 |
 | 单元测试 | `uv run pytest -m "not network"` | 是 |
+| 覆盖率 | `uv run pytest -m "not network" --cov=src --cov-fail-under=80` | 是 |
 | 纯函数边界单测 | 评分/评级阈值边界全覆盖 | 是 |
 | 配置同步 | 新增配置项须同步 `.env.example` | 是 |
 

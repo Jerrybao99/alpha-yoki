@@ -61,6 +61,7 @@ alpha-jerry 是面向 A 股基本面分析的 AI Native 工具集，覆盖"数�
 - 代码文件抬头注释三句话简要写明该代码功能。
 - 业务规则（docs/dev-guide.md §8）不可漂移；与代码冲突时改代码不修规则，除非业务评审通过并记录于 CHANGELOG。
 - 评分/评级/权重为纯函数，单测覆盖全部阈值边界（8.5/7.0/5.5 等）（§6.3 原则 4）。
+- 单元测试行覆盖率 ≥ 80%（`--cov-fail-under=80`），CI 门禁阻断（NFR-11）。
 - 配置抽离：路径/超时/模型/API Key 全走 `Settings`，禁止硬编码。
 - 数据目录小写 `data/`，子目录英文简写（见管道逻辑）；`.env` 不入库，新增配置项须同步 `.env.example`。
 - 单 PR 单功能，≤ 20 文件；不含构建产物（`__pycache__/`/`node_modules/`/`build/`/`dist/`）。
@@ -72,7 +73,7 @@ alpha-jerry 是面向 A 股基本面分析的 AI Native 工具集，覆盖"数�
 修改代码后必须运行：
 
 1. `uv run ruff check .` — 无新警告
-2. `uv run pytest -m "not network"` — 测试通过
+2. `uv run pytest -m "not network" --cov=src --cov-fail-under=80` — 测试通过，覆盖率 ≥ 80%
 3. `uv run python -c "from src.config import Settings; print(Settings())"` — 配置可加载
 
 涉及业务规则（§8）的改动，须补纯函数单测对齐阈值边界。

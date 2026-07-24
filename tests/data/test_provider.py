@@ -5,6 +5,7 @@ vip 接口名优先、采集聚合（取最新/NaN→None）。不触网络。
 from __future__ import annotations
 
 import math
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -338,3 +339,589 @@ def test_fetch_financials_no_date_falls_back_to_first() -> None:
     _set_all_empty(pro, except_={"income_vip"})
     fetcher = TushareFetcher(settings=_settings(), pro=pro, sleep=_no_sleep)
     assert fetcher.fetch_financials("600000.SH").revenue == 1.0e10
+
+
+# ===== sw_l2_to_category =====
+def test_sw_l2_to_category_known() -> None:
+    from src.data.provider import sw_l2_to_category
+
+    assert sw_l2_to_category("白酒") == "大消费"
+    assert sw_l2_to_category("半导体") == "科技/制造"
+    assert sw_l2_to_category("证券") == "证券金融"
+    assert sw_l2_to_category("石油开采") == "周期资源"
+    assert sw_l2_to_category("电力") == "公用事业/基建"
+
+
+def test_sw_l2_to_category_empty() -> None:
+    from src.data.provider import sw_l2_to_category
+
+    assert sw_l2_to_category("") == "未分类"
+
+
+def test_sw_l2_to_category_roman_suffix() -> None:
+    from src.data.provider import sw_l2_to_category
+
+    assert sw_l2_to_category("中药Ⅱ") == "大消费"
+
+
+def test_sw_l2_to_category_unknown() -> None:
+    from src.data.provider import sw_l2_to_category
+
+    assert sw_l2_to_category("不存在的行业") == "未分类"
+
+
+# ===== _call_no_fields =====
+def test_call_no_fields() -> None:
+    pro = _FakePro()
+    pro.set_response("index_member_all", [{"ts_code": "600000.SH", "l2_name": "银行"}])
+    fetcher = TushareFetcher(settings=_settings(), pro=pro, sleep=_no_sleep)
+    rows = fetcher._call_no_fields("index_member_all", ts_code="600000.SH", is_new="Y")
+    assert rows[0]["l2_name"] == "银行"
+
+
+# ===== _clean_record exclude =====
+def test_clean_record_with_exclude() -> None:
+    rec = {"end_date": "20241231", "ts_code": "600000.SH", "revenue": 1.5e10}
+    out = TushareFetcher._clean_record(
+        rec, ("end_date", "ts_code", "revenue"), exclude={"end_date"}
+    )
+    assert "end_date" not in out
+    assert out["ts_code"] == "600000.SH"
+    assert out["revenue"] == 1.5e10
+
+
+def test_clean_record_none_rec() -> None:
+    assert TushareFetcher._clean_record(None, ("ts_code",)) == {}
+
+
+def test_clean_record_nan_in_field() -> None:
+    import math
+
+    out = TushareFetcher._clean_record(
+        {"revenue": math.nan, "ts_code": "600000.SH"}, ("ts_code", "revenue")
+    )
+    assert out["ts_code"] == "600000.SH"
+    assert out["revenue"] is None
+
+
+# ===== _str =====
+def test_str_none() -> None:
+    assert TushareFetcher._str(None) == ""
+
+
+def test_str_nan() -> None:
+    import math
+
+    assert TushareFetcher._str(math.nan) == ""
+
+
+def test_str_normal() -> None:
+    assert TushareFetcher._str("hello") == "hello"
+    assert TushareFetcher._str(42) == "42"
+
+
+# ===== _merge_non_none =====
+def test_merge_non_none() -> None:
+    target = {"a": 1, "b": 2}
+    TushareFetcher._merge_non_none(target, {"b": 3, "c": 4})
+    assert target == {"a": 1, "b": 3, "c": 4}
+
+
+def test_merge_non_none_skips_none() -> None:
+    target = {"a": 1}
+    TushareFetcher._merge_non_none(target, {"a": None, "b": None, "c": 3})
+    assert target == {"a": 1, "c": 3}
+
+
+# ===== _sw_cache_path =====
+def test_sw_cache_path() -> None:
+    settings = _settings()
+    fetcher = TushareFetcher(settings=settings, pro=_FakePro(), sleep=_no_sleep)
+    path = fetcher._sw_cache_path()
+    assert path.name == "sw_industry.csv"
+    assert "ref" in path.parts
+
+
+# ===== _sw_name_to_category =====
+def test_sw_name_to_category_l2() -> None:
+    assert TushareFetcher._sw_name_to_category({"l2_name": "白酒"}) == "大消费"
+
+
+def test_sw_name_to_category_fallback_l1() -> None:
+    rec = {"l2_name": "未知行业名", "l1_name": "证券", "l3_name": ""}
+    assert TushareFetcher._sw_name_to_category(rec) == "证券金融"
+
+
+def test_sw_name_to_category_default() -> None:
+    assert TushareFetcher._sw_name_to_category({}, default="默认") == "默认"
+
+
+# ===== save/load SW cache =====
+def test_save_and_load_sw_cache(tmp_path: Path) -> None:
+    settings = Settings(
+        tushare_token="t", tushare_rate_limit=500, data_dir=str(tmp_path)
+    )
+    fetcher = TushareFetcher(settings=settings, pro=_FakePro(), sleep=_no_sleep)
+    import src.data.provider as _mod
+
+    mapping = {"600000.SH": "证券金融", "000001.SZ": "大消费"}
+    l2_names = {"600000.SH": "银行", "000001.SZ": "白酒"}
+
+    save_orig = _mod.TushareFetcher._sw_cache_path
+    _mod.TushareFetcher._sw_cache_path = lambda self: tmp_path / "sw_industry.csv"  # type: ignore[method-assign]
+    try:
+        fetcher._save_sw_cache(mapping, l2_names=l2_names)
+        loaded = fetcher.load_sw_cache(tmp_path / "sw_industry.csv")
+        assert loaded == mapping
+    finally:
+        _mod.TushareFetcher._sw_cache_path = save_orig
+
+
+def test_load_sw_cache_no_file(tmp_path: Path) -> None:
+    from src.data.provider import TushareFetcher
+
+    assert TushareFetcher.load_sw_cache(tmp_path / "nonexist.csv") is None
+
+
+def test_load_sw_cache_empty_mapping(tmp_path: Path) -> None:
+    from src.data.provider import TushareFetcher
+
+    path = tmp_path / "sw.csv"
+    path.write_text("ts_code,l2_name,category\n", encoding="utf-8-sig")
+    assert TushareFetcher.load_sw_cache(path) is None  # mapping 为空 dict → 返回 None
+
+
+# ===== _load_or_build_sw_cache =====
+def test_load_or_build_sw_cache_no_file(tmp_path: Path) -> None:
+    import src.data.provider as _mod
+
+    settings = Settings(
+        tushare_token="t", tushare_rate_limit=500, data_dir=str(tmp_path)
+    )
+    fetcher = TushareFetcher(settings=settings, pro=_FakePro(), sleep=_no_sleep)
+
+    save_orig = _mod.TushareFetcher._sw_cache_path
+    _mod.TushareFetcher._sw_cache_path = lambda self: tmp_path / "sw_industry.csv"  # type: ignore[method-assign]
+    try:
+        result = fetcher._load_or_build_sw_cache()
+        assert result == {}  # 无文件，返回空 dict
+    finally:
+        _mod.TushareFetcher._sw_cache_path = save_orig
+
+
+# ===== _enrich_with_sw_category =====
+def test_enrich_with_sw_category_updates_industry(tmp_path: Path) -> None:
+    import src.data.provider as _mod
+    from src.data.contract import StockInfo
+
+    settings = Settings(
+        tushare_token="t", tushare_rate_limit=500, data_dir=str(tmp_path)
+    )
+    fetcher = TushareFetcher(settings=settings, pro=_FakePro(), sleep=_no_sleep)
+
+    # 准备缓存文件
+    sw_path = tmp_path / "ref"
+    sw_path.mkdir(parents=True)
+    cache = sw_path / "sw_industry.csv"
+    cache.write_text(
+        "ts_code,l2_name,category\n600000.SH,银行,证券金融\n", encoding="utf-8-sig"
+    )
+
+    save_orig = _mod.TushareFetcher._sw_cache_path
+    _mod.TushareFetcher._sw_cache_path = lambda self: cache  # type: ignore[method-assign]
+    try:
+        stocks = [
+            StockInfo(
+                ts_code="600000.SH", symbol="600000", name="A", industry="原始行业"
+            )
+        ]
+        result = fetcher._enrich_with_sw_category(stocks)
+        assert result[0].industry == "证券金融"
+    finally:
+        _mod.TushareFetcher._sw_cache_path = save_orig
+
+
+def test_enrich_with_sw_category_calls_api_for_missing(tmp_path: Path) -> None:
+    """缓存无该 ts_code 时，查 API 获取。"""
+    import src.data.provider as _mod
+    from src.data.contract import StockInfo
+
+    settings = Settings(
+        tushare_token="t", tushare_rate_limit=500, data_dir=str(tmp_path)
+    )
+    pro = _FakePro()
+    pro.set_response(
+        "index_member_all",
+        [
+            {
+                "ts_code": "600000.SH",
+                "l2_name": "证券",
+                "l3_name": "",
+                "l1_name": "",
+                "is_new": "Y",
+            }
+        ],
+    )
+    fetcher = TushareFetcher(settings=settings, pro=pro, sleep=_no_sleep)
+
+    sw_path = tmp_path / "ref"
+    sw_path.mkdir(parents=True)
+    cache = sw_path / "sw_industry.csv"
+
+    save_orig = _mod.TushareFetcher._sw_cache_path
+    _mod.TushareFetcher._sw_cache_path = lambda self: cache  # type: ignore[method-assign]
+    try:
+        stocks = [
+            StockInfo(
+                ts_code="600000.SH", symbol="600000", name="A", industry="原始行业"
+            )
+        ]
+        result = fetcher._enrich_with_sw_category(stocks)
+        assert result[0].industry == "证券金融"
+        # 缓存应已写出
+        assert cache.exists()
+        loaded = fetcher.load_sw_cache(cache)
+        assert loaded is not None
+        assert "600000.SH" in loaded
+    finally:
+        _mod.TushareFetcher._sw_cache_path = save_orig
+
+
+# ===== _call_paginated =====
+def test_call_paginated_single_page() -> None:
+    pro = _FakePro()
+    pro.set_response("income_vip", [{"ts_code": "600000.SH", "revenue": 1.5e10}])
+    fetcher = TushareFetcher(settings=_settings(), pro=pro, sleep=_no_sleep)
+    rows = fetcher._call_paginated(
+        "income", ("ts_code", "revenue"), page_size=100, period="20241231"
+    )
+    assert len(rows) == 1
+    assert rows[0]["ts_code"] == "600000.SH"
+
+
+def test_call_paginated_multiple_pages() -> None:
+    """分页：第一页满，第二页空 → 只调一次。"""
+
+    class _MultiPagePro:
+        def query(self, api_name, **params):
+            offset = params.get("offset", 0)
+            limit = params.get("limit", 10)
+            if offset == 0:
+                rows = [{"ts_code": f"6000{i:02d}.SH"} for i in range(min(limit, 5))]
+            else:
+                rows = []
+            return _FakeDf(rows)
+
+    fetcher = TushareFetcher(settings=_settings(), pro=_MultiPagePro(), sleep=_no_sleep)
+    rows = fetcher._call_paginated(
+        "income", ("ts_code",), page_size=5, period="20241231"
+    )
+    assert 0 < len(rows) <= 5
+
+
+def test_call_paginated_second_page_partial() -> None:
+    """第二页不足 page_size → 停止。"""
+
+    class _TwoPagePro:
+        def query(self, api_name, **params):
+            offset = params.get("offset", 0)
+            if offset == 0:
+                return _FakeDf([{"ts_code": f"A{i:02d}.SH"} for i in range(5)])
+            return _FakeDf([{"ts_code": "B00.SH"}])
+
+    fetcher = TushareFetcher(settings=_settings(), pro=_TwoPagePro(), sleep=_no_sleep)
+    rows = fetcher._call_paginated(
+        "income", ("ts_code",), page_size=5, period="20241231"
+    )
+    assert len(rows) == 6
+
+
+# ===== fetch_financials_batch =====
+def test_fetch_financials_batch_basic() -> None:
+    """批量采集：income 为主接口，其余 3 接口增量合并。"""
+    pro = _FakePro()
+    # income
+    pro.set_response(
+        "income_vip",
+        [
+            {
+                "ts_code": "600000.SH",
+                "end_date": "20241231",
+                "revenue": 1.5e10,
+                "n_income_attr_p": 2e9,
+            },
+            {
+                "ts_code": "000001.SZ",
+                "end_date": "20241231",
+                "revenue": 3e10,
+                "n_income_attr_p": 4e9,
+            },
+        ],
+    )
+    # balancesheet
+    pro.set_response(
+        "balancesheet_vip",
+        [
+            {"ts_code": "600000.SH", "end_date": "20241231", "total_assets": 1e12},
+        ],
+    )
+    # cashflow
+    pro.set_response("cashflow_vip", [])
+    # fina_indicator
+    pro.set_response("fina_indicator_vip", [])
+
+    fetcher = TushareFetcher(settings=_settings(), pro=pro, sleep=_no_sleep)
+    result = fetcher.fetch_financials_batch("20241231")
+    assert len(result) == 2
+    assert "600000.SH" in result
+    assert result["600000.SH"].revenue == 1.5e10
+    assert result["600000.SH"].total_assets == 1e12
+    assert result["000001.SZ"].revenue == 3e10
+    assert result["000001.SZ"].total_assets is None  # 未在 balancesheet 中出现
+
+
+def test_fetch_financials_batch_paginated() -> None:
+    """分页 income VIP 接口验证。"""
+
+    class _LargePro:
+        def query(self, api_name, **params):
+            offset = params.get("offset", 0)
+            if api_name == "income_vip":
+                return _FakeDf(
+                    [
+                        {
+                            "ts_code": f"T{i:03d}.SH",
+                            "end_date": "20241231",
+                            "revenue": 1e9,
+                        }
+                        for i in range(offset, offset + min(10, 25 - offset))
+                    ]
+                )
+            return _FakeDf([])
+
+    settings = Settings(tushare_token="t", tushare_rate_limit=500, vip_page_size=10)
+    fetcher = TushareFetcher(settings=settings, pro=_LargePro(), sleep=_no_sleep)
+    result = fetcher.fetch_financials_batch("20241231")
+    assert len(result) == 25
+
+
+# ===== fetch_financials explicit period multi-record =====
+def test_fetch_financials_explicit_period_merges() -> None:
+    """explicit period 下有两条记录时 merge_non_none 覆盖。"""
+    pro = _FakePro()
+    pro.set_response(
+        "income_vip",
+        [
+            {"ts_code": "600000.SH", "end_date": "20241231", "revenue": None},
+            {"ts_code": "600000.SH", "end_date": "20241231", "revenue": 1.5e10},
+        ],
+    )
+    pro.set_response(
+        "balancesheet_vip",
+        [
+            {"ts_code": "600000.SH", "end_date": "20241231", "total_assets": 1e12},
+            {"ts_code": "600000.SH", "end_date": "20241231", "total_assets": None},
+        ],
+    )
+    _set_all_empty(pro, except_={"income_vip", "balancesheet_vip"})
+
+    fetcher = TushareFetcher(settings=_settings(), pro=pro, sleep=_no_sleep)
+    feat = fetcher.fetch_financials("600000.SH", period="20241231")
+    assert feat.revenue == 1.5e10
+    assert feat.total_assets == 1e12
+
+
+# ===== RateLimiter eviction =====
+def test_rate_limiter_evicts_old() -> None:
+    """旧条目滑出窗口后不阻塞。"""
+    slept: list[float] = []
+    rl = RateLimiter(
+        limit=2, window=60.0, sleep=slept.append, clock=_clock_seq([10, 20, 80, 80])
+    )
+    rl.acquire()  # t=10, stamps=[10]
+    rl.acquire()  # t=20, stamps=[10, 20] → limit reached but not exceeded
+    rl.acquire()  # t=80: evict 10 (80-10>=60), stamps=[20] → under limit, no sleep
+    assert slept == []
+
+
+# ===== token init with real path (mocked) =====
+def test_token_init_real_path(monkeypatch: pytest.MonkeyPatch) -> None:
+    """覆盖 ts.set_token + ts.pro_api 调用路径。"""
+    import tushare as _ts
+
+    class _FakeApi:
+        pass
+
+    monkeypatch.setattr(_ts, "set_token", lambda token: None)
+    monkeypatch.setattr(_ts, "pro_api", lambda: _FakeApi())
+    fetcher = TushareFetcher(settings=_settings(token="real-token"))
+    assert isinstance(fetcher._pro, _FakeApi)
+
+    # 验证空 token 仍然报错
+    monkeypatch.undo()
+    monkeypatch.setattr(_ts, "set_token", lambda token: None)
+    monkeypatch.setattr(_ts, "pro_api", lambda: _FakeApi())
+
+
+# ===== _sw_name_to_category fallback L1 =====
+def test_sw_name_to_category_fallback_l1_direct() -> None:
+    """L1 名直接命中映射表。"""
+    # "证券" 在 _SW_L2_TO_CATEGORY 中 → 证券金融
+    rec = {"l2_name": "", "l1_name": "证券", "l3_name": ""}
+    assert TushareFetcher._sw_name_to_category(rec) == "证券金融"
+
+
+def test_sw_name_to_category_fallback_l3() -> None:
+    """L2 无，L1 也无，回退 L3。"""
+    rec = {"l2_name": "", "l1_name": "", "l3_name": "白酒"}
+    assert TushareFetcher._sw_name_to_category(rec) == "大消费"
+
+
+def test_sw_name_to_category_no_fields() -> None:
+    """所有字段都空/无→ 默认值。"""
+    assert TushareFetcher._sw_name_to_category({}) == "未分类"
+
+
+# ===== _fetch_one_sw_category =====
+def test_fetch_one_sw_category_success() -> None:
+    """单个 ts_code 查 SW 分类成功。"""
+    pro = _FakePro()
+    pro.set_response(
+        "index_member_all",
+        [
+            {
+                "ts_code": "600000.SH",
+                "l2_name": "证券",
+                "l1_name": "",
+                "l3_name": "",
+                "is_new": "Y",
+            },
+        ],
+    )
+    fetcher = TushareFetcher(settings=_settings(), pro=pro, sleep=_no_sleep)
+    cat, l2 = fetcher._fetch_one_sw_category("600000.SH")
+    assert cat == "证券金融"
+    assert l2 == "证券"
+
+
+def test_fetch_one_sw_category_api_error() -> None:
+    """API 调用失败返回未分类。"""
+    pro = _FakePro()
+    pro.error = RuntimeError("test error")
+    fetcher = TushareFetcher(
+        settings=_settings(), pro=pro, sleep=_no_sleep, max_retries=0
+    )
+    cat, l2 = fetcher._fetch_one_sw_category("600000.SH")
+    assert cat == "未分类"
+    assert l2 == ""
+
+
+def test_fetch_one_sw_category_no_match() -> None:
+    """有记录但都未命中映射。"""
+    pro = _FakePro()
+    pro.set_response(
+        "index_member_all",
+        [
+            {
+                "ts_code": "600000.SH",
+                "l2_name": "不存在的行业名",
+                "l1_name": "",
+                "l3_name": "",
+                "is_new": "Y",
+            },
+        ],
+    )
+    fetcher = TushareFetcher(settings=_settings(), pro=pro, sleep=_no_sleep)
+    cat, l2 = fetcher._fetch_one_sw_category("600000.SH")
+    assert cat == "未分类"
+    assert l2 == "不存在的行业名"
+
+
+# ===== load_sw_cache 边界 =====
+def test_load_sw_cache_oserror(tmp_path: Path) -> None:
+    from src.data.provider import TushareFetcher
+
+    path = tmp_path / "unreadable.csv"
+    # 用目录模拟不可读：read_text 在目录上会抛 OSError
+    path.mkdir()
+    result = TushareFetcher.load_sw_cache(path)
+    assert result is None
+
+
+def test_load_sw_cache_with_rows(tmp_path: Path) -> None:
+    from src.data.provider import TushareFetcher
+
+    path = tmp_path / "sw.csv"
+    path.write_text(
+        "ts_code,l2_name,category\n600000.SH,银行,证券金融\n000001.SZ,白酒,大消费\n\n,,\n",
+        encoding="utf-8-sig",
+    )
+    result = TushareFetcher.load_sw_cache(path)
+    assert result == {"600000.SH": "证券金融", "000001.SZ": "大消费"}
+
+
+def test_load_sw_cache_empty_file(tmp_path: Path) -> None:
+    from src.data.provider import TushareFetcher
+
+    path = tmp_path / "empty.csv"
+    path.write_text("", encoding="utf-8-sig")
+    result = TushareFetcher.load_sw_cache(path)
+    assert result is None
+
+
+# ===== _save_sw_cache without l2_names =====
+def test_save_sw_cache_no_l2_names(tmp_path: Path) -> None:
+    import src.data.provider as _mod
+
+    settings = Settings(
+        tushare_token="t", tushare_rate_limit=500, data_dir=str(tmp_path)
+    )
+    fetcher = TushareFetcher(settings=settings, pro=_FakePro(), sleep=_no_sleep)
+
+    save_orig = _mod.TushareFetcher._sw_cache_path
+    _mod.TushareFetcher._sw_cache_path = lambda self: tmp_path / "sw_industry.csv"
+    try:
+        mapping = {"600000.SH": "证券金融"}
+        fetcher._save_sw_cache(mapping)  # l2_names=None
+        loaded = fetcher.load_sw_cache(tmp_path / "sw_industry.csv")
+        assert loaded == mapping
+    finally:
+        _mod.TushareFetcher._sw_cache_path = save_orig
+
+
+# ===== build_sw_cache =====
+def test_build_sw_cache(tmp_path: Path) -> None:
+    import src.data.provider as _mod
+
+    settings = Settings(
+        tushare_token="t", tushare_rate_limit=500, data_dir=str(tmp_path)
+    )
+    pro = _FakePro()
+    pro.set_response(
+        "stock_basic",
+        [{"ts_code": "600000.SH"}, {"ts_code": "000001.SZ"}, {"ts_code": ""}],
+    )
+    pro.set_response(
+        "index_member_all",
+        [
+            {
+                "ts_code": "600000.SH",
+                "l2_name": "证券",
+                "l1_name": "",
+                "l3_name": "",
+                "is_new": "Y",
+            },
+        ],
+    )
+
+    save_orig = _mod.TushareFetcher._sw_cache_path
+    _mod.TushareFetcher._sw_cache_path = lambda self: tmp_path / "sw_industry.csv"
+    try:
+        fetcher = TushareFetcher(settings=settings, pro=pro, sleep=_no_sleep)
+        mapping = fetcher.build_sw_cache()
+        # 600000.SH → 证券金融, 000001.SZ → index_member_all response is same for all calls (only 1 route)
+        # Since _FakePro returns same response for all calls, both stocks get "证券金融"
+        assert len(mapping) == 2
+        assert mapping["600000.SH"] == "证券金融"
+    finally:
+        _mod.TushareFetcher._sw_cache_path = save_orig

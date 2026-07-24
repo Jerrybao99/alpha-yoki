@@ -350,3 +350,114 @@ def test_returns_string_yyyymmdd() -> None:
     assert isinstance(s, str)
     assert len(s) == 8
     assert s.isdigit()
+
+
+# ===== context manager =====
+def test_pipeline_context_manager(tmp_path: Path) -> None:
+    fetcher = _FakeFetcher()
+    fetcher.features = {"600000.SH": _feat("600000.SH")}
+    with CollectionPipeline(
+        fetcher,
+        settings=_settings(tmp_path),
+        cache=Cache(tmp_path / "c"),
+        executor=_SeqExecutor(),
+    ) as pipe:
+        result = pipe.run()
+    assert result.success_count == 1
+
+
+# ===== _enrich_with_stock_info info is None =====
+def test_pipeline_enrich_with_stock_info_none() -> None:
+    """info 为 None 时不改动 features。"""
+    from src.data.collect import CollectionPipeline as CP
+
+    feat = _feat("600000.SH", revenue=1.0e10)
+    CP._enrich_with_stock_info(feat, None)
+    assert feat.revenue == 1.0e10
+
+
+# ===== run_batch 中 missing stock =====
+def test_pipeline_batch_missing_stock_in_result(tmp_path: Path) -> None:
+    """stock_basic 有但 batch 结果中没有 → 记入失败。"""
+
+    class _PartialBatchFetcher:
+        def fetch_stock_list(self):
+            return [
+                StockInfo(ts_code="600000.SH", symbol="600000", name="A"),
+                StockInfo(ts_code="000001.SZ", symbol="000001", name="B"),
+            ]
+
+        def fetch_financials(self, ts_code, period=None):
+            return _feat(ts_code)
+
+        def fetch_financials_batch(self, period):
+            return {"600000.SH": _feat("600000.SH")}  # 不含 000001.SZ
+
+    pipe = CollectionPipeline(
+        _PartialBatchFetcher(), settings=_settings(tmp_path), executor=_SeqExecutor()
+    )
+    try:
+        result = pipe.run_batch(period="20241231")
+    finally:
+        pipe.close()
+    assert result.success_count == 1
+    assert result.failure_count == 1
+    assert result.failures[0].ts_code == "000001.SZ"
+    assert "批次结果中无此股" in result.failures[0].error
+
+
+# ===== run() with SW enrichment =====
+def test_pipeline_run_calls_sw_enrichment(tmp_path: Path) -> None:
+    """fetcher 有 _enrich_with_sw_category 时 run() 会调用它。"""
+    sw_calls: list[int] = []
+
+    class _SWFetcher:
+        def fetch_stock_list(self):
+            return [StockInfo(ts_code="600000.SH", symbol="600000", name="A")]
+
+        def fetch_financials(self, ts_code, period=None):
+            return _feat(ts_code)
+
+        def _enrich_with_sw_category(self, stocks):
+            sw_calls.append(len(stocks))
+            return stocks
+
+    pipe = CollectionPipeline(
+        _SWFetcher(),
+        settings=_settings(tmp_path),
+        cache=Cache(tmp_path / "c"),
+        executor=_SeqExecutor(),
+    )
+    pipe.run()
+    assert len(sw_calls) == 1
+    assert sw_calls[0] == 1
+
+
+# ===== run_batch() with SW enrichment =====
+def test_pipeline_batch_calls_sw_enrichment(tmp_path: Path) -> None:
+    """fetcher 有 _enrich_with_sw_category 时 run_batch() 会调用它。"""
+    sw_calls: list[int] = []
+
+    class _SWBatchFetcher:
+        def fetch_stock_list(self):
+            return [StockInfo(ts_code="600000.SH", symbol="600000", name="A")]
+
+        def fetch_financials(self, ts_code, period=None):
+            return _feat(ts_code)
+
+        def fetch_financials_batch(self, period):
+            return {"600000.SH": _feat("600000.SH")}
+
+        def _enrich_with_sw_category(self, stocks):
+            sw_calls.append(len(stocks))
+            return stocks
+
+    pipe = CollectionPipeline(
+        _SWBatchFetcher(), settings=_settings(tmp_path), executor=_SeqExecutor()
+    )
+    try:
+        pipe.run_batch(period="20241231")
+    finally:
+        pipe.close()
+    assert len(sw_calls) == 1
+    assert sw_calls[0] == 1
