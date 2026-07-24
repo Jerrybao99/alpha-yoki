@@ -10,10 +10,9 @@ import random
 from pathlib import Path
 
 from src.config import Settings, get_settings
-from src.core.pipeline import CollectionPipeline
-from src.data.base import BaseFetcher
-from src.data.tushare_fetcher import TushareFetcher, TushareTokenError
-from src.reports.csv_writer import write_data_source_csv, write_features_csv
+from src.data.collect import CollectionPipeline
+from src.data.provider import BaseFetcher, TushareFetcher, TushareTokenError
+from src.data.reports import write_data_source_csv, write_features_csv
 
 
 def run_smoke(

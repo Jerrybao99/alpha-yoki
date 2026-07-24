@@ -2,7 +2,7 @@
 
 > alpha-jerry 项目级 AI 行为规范，作为项目的上下文入口。记录业务意图、关键决策与管道逻辑。
 > 只放影响 AI 行为的指令（缺了就会做错或必须遵守的刚性规则）。冲突时项目级优先（就近原则）。
-> 单文件 300 行内。
+> 单文件尽可能 300 行内，越少越好。
 
 ## 业务意图
 
@@ -32,7 +32,7 @@ alpha-jerry 是面向 A 股基本面分析的 AI Native 工具集，覆盖"数�
 - 运行测试: `uv run pytest -m "not network"`
 - Lint: `uv run ruff check .`
 - 格式化: `uv run ruff format .`
-- 运行应用: `uv run python main.py`
+- 运行应用: `uv run python src/main.py`
 
 ## Stack
 

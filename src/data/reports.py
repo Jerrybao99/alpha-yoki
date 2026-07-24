@@ -1,14 +1,11 @@
-"""CSV 落地写入器。写两张 CSV：YYMMDD.csv（中文列头+百分比带%+大数亿/万+CJK 对齐）与
-YYMMDD-数据来源.csv（接口/字段/中文/URL）。字段中文名映射取自 REQUIREMENT_ALIGNMENT + SUPPLEMENTARY_FIELDS。
-"""
+"""CSV 报告生成与格式化。中文列头、亿/万数量级、百分比后缀、数据来源表。"""
 
 from __future__ import annotations
 
 from pathlib import Path
 from typing import Any
 
-from src.data.interfaces import TUSHARE_INTERFACES, get_vip_api_name
-from src.schemas.financial import (
+from src.data.contract import (
     ALL_OUTPUT_COLUMNS,
     BALANCESHEET_FIELDS,
     CASHFLOW_FIELDS,
@@ -20,6 +17,7 @@ from src.schemas.financial import (
     SUPPLEMENTARY_FIELDS,
     StockFeatures,
 )
+from src.data.provider import TUSHARE_INTERFACES, get_vip_api_name
 
 # 字段 → 中文显示名（先从需求对齐表/补充字段构造，再补缺口）
 FIELD_CN: dict[str, str] = {}
@@ -218,3 +216,23 @@ def write_data_source_csv(out_path: Path) -> Path:
         lines.append(f"{api_name},{field},{cn},{unit},{src},{iface.doc_url}")
     out_path.write_text("\n".join(lines) + "\n", encoding="utf-8-sig")
     return out_path
+
+
+def format_percent(value: float | None) -> str | None:
+    """百分比格式化：30.5 → ``30.50%``；None → None。"""
+    if value is None:
+        return None
+    return f"{value:.2f}%"
+
+
+def to_output_row(features: StockFeatures) -> dict[str, Any]:
+    """按 ALL_OUTPUT_COLUMNS 顺序提取字段；百分比字段格式化为字符串，其余原值。
+
+    保证写盘列与 §8.1 字段契约一致，不缺列、不多列。
+    """
+    dumped = features.model_dump()
+    row: dict[str, Any] = {}
+    for col in ALL_OUTPUT_COLUMNS:
+        value = dumped.get(col)
+        row[col] = format_percent(value) if col in PERCENT_FIELDS else value
+    return row

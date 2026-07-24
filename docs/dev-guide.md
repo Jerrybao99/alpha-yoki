@@ -209,20 +209,13 @@ alpha-jerry/
 │   ├── feedback/              # 用户反馈
 │   └── rag/                   # 向量库与知识库
 ├── src/                       # 源代码
+│   ├── main.py                # 运行入口
 │   ├── config.py              # Settings 入口
-│   ├── core/                  # 主流程编排（pipeline）
-│   ├── scoring/               # 评分纯逻辑（成长/稳健/回报/权重）
-│   ├── rating/                # 评级与公司类型/行业分类
-│   ├── reports/               # 报告生成（荐股/持仓/推送）
-│   ├── agents/                # 多 Agent 定义与编排
-│   ├── rag/                   # 知识库构建与检索
-│   ├── notifications/         # 推送（邮件/微信）
-│   ├── scheduler/             # 定时任务
-│   ├── schemas/               # Pydantic 模型
-│   ├── data/                  # 数据源适配（Tushare 主 + BaseFetcher 抽象）
-│   └── utils/
-├── api/                       # FastAPI 路由
-├── apps/desktop/              # Electron + React 桌面端
+│   ├── data/                  # 数据采集与输出层
+│   │   ├── contract.py        # StockFeatures 字段模型 + 字段对齐表 + 列序
+│   │   ├── provider.py        # Tushare 适配器 + 接口注册表 + 行业分类
+│   │   ├── collect.py         # 采集编排 + 缓存 + 报告期推算
+│   │   └── reports.py         # CSV 写盘 + 数值格式化
 ├── scripts/                   # 辅助脚本
 ├── tests/                     # 单元测试
 ├── integrated_tests/          # 集成测试
@@ -230,7 +223,8 @@ alpha-jerry/
 ```
 
 **目录边界硬规则**（AI 改动时须遵守）：
-- 后端逻辑 → `src/`（含数据源适配 `src/data/`）；API → `api/`；桌面端 → `apps/desktop/`；部署 → `scripts/` + `manifests/`。
+- 后端逻辑 → `src/`；部署 → `scripts/` + `manifests/`。
+- 模块膨胀到 3+ 文件再升格为包，否则保持单文件扁平结构。
 - 纯逻辑（评分/评级/权重）与 I/O（爬取/写盘）分层：纯逻辑单独单测，I/O 走集成测试。
 - 配置抽离：路径/超时/模型/API Key 全走 `Settings`，禁止硬编码。
 - 单 PR 单功能，≤ 20 文件，超出须在 PR 描述说明原因。
@@ -346,11 +340,11 @@ alpha-jerry/
 
 采集并落地到 `data/fin/YYMMDD.csv`，**列名采用 Tushare 接口真实返回字段名、数据为真实值**（owner 决策，对齐 https://tushare.pro/document/2；偏离原中文字段名约定已记 CHANGELOG）。
 
-单一事实来源为代码：`src/schemas/financial.py` 的 `OUTPUT_COLUMNS`（44 列）与 `REQUIREMENT_ALIGNMENT`（53 需求→Tushare 字段对齐表，含真实字段中文翻译 `chinese_name`）。接口注册表见 `src/data/interfaces.py` 的 `TUSHARE_INTERFACES`（20 个接口，记录 `api_name` / `vip_api_name` / `doc_url` / `min_points`）。字段对应表 CSV 见 `docs/field-mapping.csv`（可用 `uv run python scripts/gen_field_mapping.py` 重新生成）。
+单一事实来源为代码：`src/data/contract.py` 的 `OUTPUT_COLUMNS`（44 列）与 `REQUIREMENT_ALIGNMENT`。接口注册表见 `src/data/provider.py` 的 `TUSHARE_INTERFACES`（20 个接口）。
 
 **接口选型（5000 积分可调用，优先 vip 高级接口）**：财务三表 / 指标 / 预告 / 快报 / 主营构成使用 `_vip` 后缀接口（按 `period` 批量取全市场），其余接口使用常规接口（≤5000 积分）。`fetch_financials` 实际调用 4 个 vip 接口：`income_vip` / `balancesheet_vip` / `cashflow_vip` / `fina_indicator_vip`。
 
-完整接口注册表（20 个，详见 `src/data/interfaces.py`）：
+完整接口注册表（20 个，详见 `src/data/provider.py`）：
 
 | 业务别名 | 常规接口 | vip 接口 | 最低积分 | doc_id | 用途 |
 |---|---|---|---|---|---|
@@ -412,13 +406,13 @@ alpha-jerry/
 
 各接口请求字段见 `STOCK_BASIC_FIELDS` / `INCOME_FIELDS` / `BALANCESHEET_FIELDS` / `CASHFLOW_FIELDS` / `FINA_INDICATOR_FIELDS`。百分比类字段（`netprofit_yoy`/`or_yoy`/`grossprofit_margin`/`debt_to_assets`/`netprofit_margin`）以百分数数值返回，写盘加 `%` 后缀保留两位小数。
 
-**报告期与最新数据校验**：`end_date`（财报所属期间）以 `income` 的报告期为唯一来源；`fetch_financials` 调用 4 个 vip 接口（income / balancesheet / cashflow / fina_indicator），其余接口按各自 `end_date` 选最新但不覆盖该字段。`period=None`（"最新"）缓存按 `cache_ttl_hours`（默认 24h）失效，避免新报告期已披露而缓存陈旧。最新报告期校验：`src/utils/period.py::expected_latest_period(today)` 按法定披露截止日（Q1→4-30、半年报→8-31、Q3→10-31、年报→次年4-30）推算预期值；`scripts/verify_latest.py` 独立重查 `income_vip`(max end_date) 与 CSV 交叉比对（不读缓存），`integrated_tests/test_latest_period.py` 为对应 network 测试。
+**报告期与最新数据校验**：`end_date`（财报所属期间）以 `income` 的报告期为唯一来源；`fetch_financials` 调用 4 个 vip 接口（income / balancesheet / cashflow / fina_indicator），其余接口按各自 `end_date` 选最新但不覆盖该字段。`period=None`（"最新"）缓存按 `cache_ttl_hours`（默认 24h）失效，避免新报告期已披露而缓存陈旧。最新报告期校验：`src/data/collect.py::expected_latest_period(today)` 按法定披露截止日（Q1→4-30、半年报→8-31、Q3→10-31、年报→次年4-30）推算预期值；`integrated_tests/test_smoke_collect.py` 为对应 network 测试。
 
 **CSV 列序**：`OUTPUT_COLUMNS`（44 列）按财务阅读习惯分组排列（基本信息→利润表→利润率增速→资产负债→偿债指标→每股指标→现金流量→营运效率），不再按接口来源顺序。
 
-**申万行业分类（五大类）**：CSV 中"所属分类"列不再使用 stock_basic 的 `industry` 字段，改为通过申万行业指数分类映射到五个大类。数据链：`ts_code → index_member_all(ts_code, is_new='Y') → l2_name → sw_l2_to_category() → 五大类`。纯映射见 `src/rating/industry.py`（约 130 个 SW 二级行业名→五大类，自动剥离罗马数字后缀如 `中药Ⅱ`→`中药`）。分类仅在采集范围内按需查询 API，结果增量缓存到 `data/cache/sw_industry.csv`。
+**申万行业分类（五大类）**：CSV 中"所属分类"列不再使用 stock_basic 的 `industry` 字段，改为通过申万行业指数分类映射到五个大类。数据链：`ts_code → index_member_all(ts_code, is_new='Y') → l2_name → sw_l2_to_category() → 五大类`。纯映射见 `src/data/provider.py`（约 130 个 SW 二级行业名→五大类，自动剥离罗马数字后缀如 `中药Ⅱ`→`中药`）。分类仅在采集范围内按需查询 API，结果增量缓存到 `data/cache/sw_industry.csv`。
 
-**CSV 数值格式化**：所有数值字段按 `data/test/YYMMDD-数据来源.csv` 中记录的单位匹配后缀（代码见 `src/reports/csv_writer.py::format_value`），具体规则：
+**CSV 数值格式化**：所有数值字段按 `data/test/YYMMDD-数据来源.csv` 中记录的单位匹配后缀（代码见 `src/data/reports.py::format_value`），具体规则：
 - `元` → 亿/万数量级 + 元（如 `1.13亿元`、`-1526.07万元`）
 - `%` → `.2f%`（含 PERCENT_FIELDS 五项 + roe）
 - `倍` → `.2f倍`（current_ratio/quick_ratio/assets_to_eqt）
@@ -647,7 +641,7 @@ LLM_LOCAL_FALLBACK=false     # 是否启用本地模型兜底
 
 ### 10.3 部署形态
 
-- 本地运行：`python main.py` 或桌面端启动拉起 FastAPI。
+- 本地运行：`uv run python src/main.py` 或桌面端启动拉起 FastAPI。
 - 定时任务：APScheduler 内嵌；亦可系统 cron。
 - 打包：桌面端一键安装包（Win/Mac）。
 
@@ -700,7 +694,7 @@ LLM_LOCAL_FALLBACK=false     # 是否启用本地模型兜底
 ### 12.3 验收清单（DoD）
 
 - [ ] BRD step1~step4 全流程可一键跑通并产出对应 csv。
-- [ ] 采集数据为最新报告期（`scripts/verify_latest.py` 交叉校验通过）。
+- [ ] 采集数据为最新报告期（`integrated_tests/test_smoke_collect.py` 交叉校验通过）。
 - [ ] 评分/评级纯函数单测覆盖全部阈值边界（8.5/7.0/5.5 等）。
 - [ ] 一票否决剔除公司记录可审计（`-否决.csv`）。
 - [ ] 热点/持仓定时任务按 09:00/17:00 触发并推送。

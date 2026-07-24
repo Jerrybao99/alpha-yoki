@@ -9,7 +9,7 @@ from dataclasses import dataclass
 
 from pydantic import BaseModel, ConfigDict
 
-# ===== 接口别名（与 src.data.interfaces.TUSHARE_INTERFACES key 一致）=====
+# ===== 接口别名（与 src.data.provider.TUSHARE_INTERFACES key 一致）=====
 STOCK_BASIC = "stock_basic"
 INCOME = "income"  # vip: income_vip
 BALANCESHEET = "balancesheet"  # vip: balancesheet_vip

@@ -1,24 +1,75 @@
-"""采集主流程编排。读全量清单 → 低并发线程池采集 → 缓存原始响应 → 字段标准化为 StockFeatures；
-单股失败隔离并落 ``data/fin/YYMMDD-失败.csv``。只依赖 BaseFetcher 抽象，换数据源不改本编排。
+"""采集主流程编排 + 缓存。读全量清单 → 低并发线程池采集 → 缓存 → 字段标准化为 StockFeatures；
+单股失败隔离并落 ``data/fin/YYMMDD-失败.csv``。
 """
 
 from __future__ import annotations
 
 import csv
 import datetime as _dt
+import json
 import logging
+import time
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
 from src.config import Settings, get_settings
-from src.data.base import BaseFetcher
-from src.schemas.financial import StockFeatures, StockInfo
-from src.utils.cache import Cache
-from src.utils.format import to_output_row
+from src.data.contract import StockFeatures, StockInfo
+from src.data.provider import BaseFetcher
+from src.data.reports import to_output_row
 
 logger = logging.getLogger(__name__)
+
+
+class Cache:
+    """本地文件缓存。disabled 时 get 永远返回 None、set 不写盘。
+
+    ttl_seconds 仅对 ``period=None``（"最新"）缓存条目生效：超时即视为未命中，
+    重新采集以获取新报告期；显式 period 的历史数据不可变，不受 TTL 约束。
+    """
+
+    def __init__(
+        self, cache_dir: Path, enabled: bool = True, ttl_seconds: float | None = None
+    ) -> None:
+        self.cache_dir = cache_dir
+        self.enabled = enabled
+        self.ttl_seconds = ttl_seconds
+        if enabled:
+            cache_dir.mkdir(parents=True, exist_ok=True)
+
+    @staticmethod
+    def key_for(ts_code: str, period: str | None) -> str:
+        """缓存键：``features_{ts_code}_{period}``。period 为 None 记 ``latest``。"""
+        return f"features_{ts_code}_{period or 'latest'}".replace("/", "_")
+
+    def _path(self, ts_code: str, period: str | None) -> Path:
+        return self.cache_dir / f"{self.key_for(ts_code, period)}.json"
+
+    def get(self, ts_code: str, period: str | None) -> StockFeatures | None:
+        """命中返回 StockFeatures，未命中/损坏/过期返回 None。"""
+        if not self.enabled:
+            return None
+        path = self._path(ts_code, period)
+        if not path.exists():
+            return None
+        if period is None and self.ttl_seconds is not None:
+            age = time.time() - path.stat().st_mtime
+            if age > self.ttl_seconds:
+                return None
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError):
+            return None
+        return StockFeatures(**data)
+
+    def set(self, ts_code: str, period: str | None, features: StockFeatures) -> None:
+        """写入缓存（disabled 时跳过）。"""
+        if not self.enabled:
+            return
+        self._path(ts_code, period).write_text(
+            features.model_dump_json(), encoding="utf-8"
+        )
 
 
 @dataclass
@@ -78,16 +129,11 @@ class CollectionPipeline:
     def run(
         self, period: str | None = None, codes: list[str] | None = None
     ) -> CollectionResult:
-        """执行采集。codes 非空时只采指定股票（冒烟测试用）。
-
-        Returns:
-            CollectionResult（成功 + 失败 + 缓存命中数）。
-        """
+        """执行采集。codes 非空时只采指定股票（冒烟测试用）。"""
         stocks = self.fetcher.fetch_stock_list()
         if codes:
             wanted = set(codes)
             stocks = [s for s in stocks if s.ts_code in wanted]
-        # 申万行业五大类分类（仅对采集范围内的股票，避免全量 API 调用）
         if hasattr(self.fetcher, "_enrich_with_sw_category"):
             self.fetcher._enrich_with_sw_category(stocks)  # type: ignore[union-attr]
         result = CollectionResult(total=len(stocks))
@@ -102,7 +148,7 @@ class CollectionPipeline:
             ts_code = futures[fut]
             try:
                 features, hit = fut.result()
-            except Exception as exc:  # noqa: BLE001  单股失败隔离，原因记入审计
+            except Exception as exc:  # noqa: BLE001
                 logger.warning("采集失败 %s: %s", ts_code, exc)
                 result.failures.append(
                     Failure(ts_code, name_map.get(ts_code, ""), str(exc))
@@ -123,7 +169,7 @@ class CollectionPipeline:
     def _enrich_with_stock_info(
         features: StockFeatures, info: StockInfo | None
     ) -> None:
-        """回填 stock_basic 字段（symbol/name/industry）——fetch_financials 只采财务接口。"""
+        """回填 stock_basic 字段（symbol/name/industry）。"""
         if info is None:
             return
         if not features.symbol:
@@ -136,7 +182,7 @@ class CollectionPipeline:
     def _fetch_one(
         self, ts_code: str, period: str | None
     ) -> tuple[StockFeatures | None, bool]:
-        """采集单股：先查缓存，未命中再调接口并回写缓存。返回 (特征, 是否命中缓存)。"""
+        """采集单股：先查缓存，未命中再调接口并回写缓存。"""
         cached = self.cache.get(ts_code, period)
         if cached is not None:
             return cached, True
@@ -173,3 +219,32 @@ class CollectionPipeline:
 
     def __exit__(self, *args: object) -> None:
         self.close()
+
+
+# ===== 报告期推算 =====
+_DEADLINES: dict[str, _dt.date] = {
+    "0331": _dt.date(2026, 4, 30),
+    "0630": _dt.date(2026, 8, 31),
+    "0930": _dt.date(2026, 10, 31),
+    "1231": _dt.date(2027, 4, 30),
+}
+
+
+def _deadline(period: str) -> _dt.date:
+    y = int(period[:4])
+    md = period[4:]
+    base = _DEADLINES[md]
+    if md == "1231":
+        return base.replace(year=y + 1)
+    return base.replace(year=y)
+
+
+def expected_latest_period(today: _dt.date) -> str:
+    """返回今天理应已披露的最新报告期（YYYYMMDD）。"""
+    candidates: list[str] = []
+    for y in (today.year, today.year - 1):
+        for md in _DEADLINES:
+            p = f"{y}{md}"
+            if _deadline(p) <= today:
+                candidates.append(p)
+    return max(candidates) if candidates else f"{today.year - 1}0930"

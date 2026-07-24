@@ -10,7 +10,7 @@ from typing import Any
 import pytest
 
 from src.config import Settings
-from src.data.tushare_fetcher import (
+from src.data.provider import (
     BACKOFF_BASE_SECONDS,
     RateLimiter,
     TushareApiError,

@@ -2,41 +2,48 @@
 
 > A 股基本面分析的 AI Native 工具集——覆盖"数据采集 → 个股评分 → 个股评级 → 报告输出 → 持仓监控 → 热点追踪 → 推送通知"完整业务闭环，帮助个人投资者识别优质公司并持续监控持仓风险。
 
-**状态**：设计阶段（M0 工程骨架进行中，详见 [ROADMAP](docs/ROADMAP.md)）。
-
-## 定位
-
-把机构级的基本面筛选逻辑，做成个人投资者桌面上随时可对话的智能助手。
-
-- **本地优先**：数据本地存储，不上传云端，保护隐私。
-- **对话驱动**：Win/Mac 双端桌面应用，自然语言即可触发全流程。
-- **规则可审计**：评分/评级走纯函数 + 单测，一票否决可追溯。
-- **非套壳 Agent**：多 Agent 编排 + RAG 知识库 + 路由 + 工具 + 记忆 + 监控 + 反馈。
-
-## 技术栈
-
-Python 3.12+ · DeepSeek V4 Pro · Tushare Pro · LangGraph · ChromaDB · FastAPI · Electron + React
-
-## 文档
-
-- [开发指南](docs/dev-guide.md)（单一事实来源）
-- [路线图](docs/ROADMAP.md)（M0~M7 断点学习）
-- [业务需求](docs/brd-1.md) · [产品需求](docs/prd.md) · [开发日志](docs/dev-log.md)
+**当前阶段**：M1 数据采集已完成，M2 评分评级待开发。
 
 ## 快速开始
 
-> 代码尚未落地，当前仅有设计文档。按 [ROADMAP](docs/ROADMAP.md) M0 起逐步实现。
-
 ```bash
-# 安装依赖（M0 Step 0.2 后可用）
-uv sync
-
-# 配置密钥
-cp .env.example .env   # 填入 DEEPSEEK_API_KEY / TUSHARE_TOKEN
-
-# 运行测试
-uv run pytest
+uv sync                          # 安装依赖
+cp .env.example .env             # 填入 TUSHARE_TOKEN
+uv run python scripts/smoke_collect.py --sample 5   # 随机 5 股采集
+uv run pytest -m "not network"   # 运行测试
 ```
+
+## 技术栈
+
+Python 3.12+ · uv · pydantic-settings · Tushare Pro · DeepSeek V4 Pro · pytest · ruff
+
+## 项目结构
+
+```
+src/
+├── config.py              # Settings 全局配置
+├── main.py                # 运行入口
+└── data/                  # 数据采集与输出
+    ├── contract.py        # 字段契约（44 字段 + 55 需求对齐表）
+    ├── provider.py        # Tushare 适配器 + 接口注册表 + 行业分类
+    ├── collect.py         # 采集编排 + 缓存 + 报告期推算
+    └── reports.py         # CSV 写盘 + 亿/万/百分比格式化
+tests/                     # 单元测试（与 src/data/ 镜像）
+integrated_tests/          # 集成测试
+scripts/                   # 辅助脚本
+docs/                      # 文档
+```
+
+## 定位
+
+- **本地优先**：数据本地存储，不上传云端
+- **规则可审计**：评分/评级走纯函数 + 单测，一票否决可追溯
+- **非套壳 Agent**：多 Agent 编排 + RAG + 路由 + 工具 + 记忆 + 监控 + 反馈
+
+## 文档
+
+- [开发指南](docs/dev-guide.md) — 单一事实来源（业务规则 §8 RIGID）
+- [路线图](docs/ROADMAP.md) — M0~M7 里程碑
 
 ## 免责声明
 

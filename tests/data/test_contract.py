@@ -7,9 +7,7 @@ from __future__ import annotations
 import pytest
 from pydantic import ValidationError
 
-from src.data.base import BaseFetcher
-from src.data.interfaces import TUSHARE_INTERFACES, get_doc_url, get_vip_api_name
-from src.schemas.financial import (
+from src.data.contract import (
     ALL_OUTPUT_COLUMNS,
     BALANCESHEET_FIELDS,
     CASHFLOW_FIELDS,
@@ -24,6 +22,12 @@ from src.schemas.financial import (
     StockFeatures,
     StockInfo,
     requirement_coverage,
+)
+from src.data.provider import (
+    TUSHARE_INTERFACES,
+    BaseFetcher,
+    get_doc_url,
+    get_vip_api_name,
 )
 
 

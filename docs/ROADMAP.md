@@ -29,8 +29,8 @@ date: 2026-07-23
 
 ### Step 0-3 目录骨架与配置入口
 
-- 涉及文件：`AGENTS.md`、`src/config.py`、`src/__init__.py`、各子目录 `__init__.py`、`main.py`、`.env.example`
-- [x] 操作：按 dev-guide §5 创建源码目录结构；写 `AGENTS.md`（项目级 AI 行为规范）；写 `src/config.py` 的 `Settings` 类雏形与 `.env.example`；建 `main.py` 作为运行入口（dev-guide §10.3）。
+- 涉及文件：`AGENTS.md`、`src/config.py`、`src/__init__.py`、`src/main.py`、`.env.example`
+- [x] 操作：按 dev-guide §5 创建源码目录结构；写 `AGENTS.md`（项目级 AI 行为规范）；写 `src/config.py` 的 `Settings` 类雏形与 `.env.example`；建 `src/main.py` 作为运行入口（dev-guide §10.3）。
 - [x] 测试/验收：`uv run python -c "from src.config import Settings; print(Settings())"` 可加载。
 
 ### Step 0-4 CI 门禁与第一个骨架测试
@@ -49,44 +49,46 @@ date: 2026-07-23
 
 ### Step 1-1 数据源抽象与字段模型
 
-- 涉及文件：`src/data/base.py`、`src/data/__init__.py`、`src/data/interfaces.py`、`src/schemas/financial.py`、`tests/test_schemas.py`、`docs/field-mapping.csv`、`scripts/gen_field_mapping.py`
+- 涉及文件：`src/data/contract.py`、`src/data/provider.py`、`tests/data/test_contract.py`
 - 实现 BR-01
 - 实现 FR-DATA-01、FR-DATA-08
-- [x] 操作：在 `src/data/base.py` 定义 `BaseFetcher` 抽象接口（主键 `ts_code`）；在 `src/data/interfaces.py` 建立 `TUSHARE_INTERFACES` 接口注册表（20 个 5000 积分可调用接口，优先 vip 高级接口，含文档 URL）；在 `src/schemas/financial.py` 用 Pydantic 定义特征工程字段模型——字段名即 Tushare 真实字段名（`OUTPUT_COLUMNS` 44 列，按财务阅读习惯分组排列）+ `REQUIREMENT_ALIGNMENT`（§8.1 的 53 需求→Tushare 字段对齐表，含 `chinese_name` 中文翻译）+ `SUPPLEMENTARY_FIELDS`（3 个：money_cap / free_cashflow / inv_turn）。字段对应表 CSV 见 `docs/field-mapping.csv`，完整字段契约见 dev-guide §8.1。
-- [x] 测试/验收：`uv run pytest tests/test_schemas.py` 通过。
+- [x] 操作：在 `src/data/provider.py` 定义 `BaseFetcher` 抽象接口 + `TUSHARE_INTERFACES` 接口注册表；在 `src/contract.py` 定义 `StockFeatures`（44 列）+ `REQUIREMENT_ALIGNMENT`（53 需求对齐）+ `SUPPLEMENTARY_FIELDS`（3 个）。
+- [x] 测试/验收：`uv run pytest tests/data/test_contract.py` 通过。
 
 ### Step 1-2 Tushare 适配器与限流重试
 
-- 涉及文件：`src/data/tushare_fetcher.py`、`.env`（用户填入 `TUSHARE_TOKEN`）、`tests/test_tushare_fetcher.py`
+- 涉及文件：`src/data/provider.py`、`.env`、`tests/data/test_provider.py`
 - 实现 BR-01
 - 实现 FR-DATA-03、FR-DATA-04、FR-DATA-07
-- [x] 操作：实现 `src/data/tushare_fetcher.py`，含限流器（每分钟调用上限）与指数退避重试（FR-DATA-07）。财务三表/指标/预告/快报/主营构成优先调用 `TUSHARE_INTERFACES` 中的 `_vip` 后缀接口（按 `period` 批量取全市场），其余接口调用常规接口。通过 `get_vip_api_name()` 获取实际接口名，`get_doc_url()` 获取文档链接。初始化时从 `Settings.tushare_token` 读取 token，通过 `ts.set_token()` 或 `ts.pro_api(token)` 注入 SDK；token 为空时抛出明确错误提示用户配置 `.env`。`fetch_financials` 调用 4 个 vip 接口（income / balancesheet / cashflow / fina_indicator），锁定 `end_date` 为 income 报告期，其余接口按各自 `end_date` 选最新但不覆盖该字段。
-- [x] 测试/验收：`uv run pytest tests/test_tushare_fetcher.py`（mock 网络）通过；限流/重试/token 缺失报错均覆盖。
+- [x] 操作：实现 `src/data/provider.py`，含限流器（每分钟调用上限）与指数退避重试（FR-DATA-07）
+- [x] 测试/验收：`uv run pytest tests/data/test_provider.py`（mock 网络）通过；限流/重试/token 缺失报错均覆盖。
 
 ### Step 1-3 采集编排、缓存与失败隔离
 
-- 涉及文件：`src/core/pipeline.py`、`src/utils/cache.py`、`src/utils/format.py`、`tests/test_pipeline.py`
+- 涉及文件：`src/data/collect.py`、`src/data/collect.py`、`src/data/reports.py`、`tests/data/test_collect.py`
 - 实现 BR-02
 - 实现 FR-DATA-05、FR-DATA-06
 - 学习点：**低并发线程池**（A 股 5000+ 只，不能一次性全请求，用线程池控制并发数如 4）；**缓存键 = 股票代码 + 报告期**（同季重跑不重复调接口，省积分）；**失败隔离**（一只出错不能拖垮整体，记下来后续采）。
-- [x] 操作：在 `src/core/pipeline.py` 写采集主流程——读全量清单 → 低并发线程池采集 → 缓存原始响应 → 字段标准化；单股失败入 `data/fin/YYMMDD-失败.csv`。`Cache` 增 `ttl_seconds`，仅对 `period=None`（"最新"）条目按文件 mtime 判过期，防新报告期已披露而缓存陈旧；`Settings.cache_ttl_hours`（默认 24h）控制。
-- [x] 测试/验收：`uv run pytest tests/test_pipeline.py`（mock 数据源）通过。
+- [x] 操作：在 `src/data/collect.py` 写采集主流程——读全量清单 → 低并发线程池采集 → 缓存原始响应 → 字段标准化；单股失败入 `data/fin/YYMMDD-失败.csv`。
+- [x] 测试/验收：`uv run pytest tests/data/test_collect.py`（mock 数据源）通过。
 
 ### Step 1-4 随机 5 股冒烟测试与 csv 落地
 
-- 涉及文件：`scripts/smoke_collect.py`、`src/reports/csv_writer.py`、`integrated_tests/test_smoke_collect.py`、`src/utils/period.py`、`tests/test_period.py`、`scripts/verify_latest.py`、`integrated_tests/test_latest_period.py`、`src/rating/industry.py`
+- 涉及文件：`scripts/smoke_collect.py`、`src/data/reports.py`、`integrated_tests/test_smoke_collect.py`、`src/data/collect.py`、`tests/data/test_collect.py`、`src/data/provider.py`
 - 实现 BR-02
 - 实现 FR-DATA-09、FR-DATA-10
 - [x] 操作：
   - [x] 写脚本随机选 5 股真实采集
-  - [x] 所属行业列构建策略更新：通过 `index_member_all` 接口按 ts_code 查询申万二级行业，映射到五大类（周期资源/大消费/证券金融/科技制造/公用事业基建），缓存到 `data/cache/sw_industry.csv`。纯映射见 `src/rating/industry.py`（~130 个 SW L2 行业→5 大类，含罗马数字后缀剥离）。数据链：`ts_code → index_member_all(ts_code, is_new='Y') → l2_name → sw_l2_to_category() → 5大类`。仅在采集范围内按需查询 API，增量写缓存
+  - [x] 所属行业列构建策略更新：通过 `index_member_all` 接口按 ts_code 查询申万二级行业，映射到五大类（周期资源/大消费/证券金融/科技制造/公用事业基建），缓存到 `data/cache/sw_industry.csv`。纯映射见 `src/data/provider.py`（~130 个 SW L2 行业→5 大类，含罗马数字后缀剥离）。数据链：`ts_code → index_member_all(ts_code, is_new='Y') → l2_name → sw_l2_to_category() → 5大类`。仅在采集范围内按需查询 API，增量写缓存
   - [x] 采用最新报告期的数据（`end_date` 锁定 income 报告期 + 缓存 TTL + `scripts/verify_latest.py` 交叉校验）
   - [x] csv 字段为真实字段名，翻译为准确中文，增强可读性
   - [x] csv 中所有字段在数值中放弃科学计数法，匹配合适的汉字单位，按数据来源 CSV 中记录的单位逐字段追加后缀，并保留两位小数
   - [x] 单列一个 csv 列出采用的：接口、字段、字段对应中文、该接口/字段对应的文档 URL，形如 `YYMMDD-数据来源.csv`
   - [x] 生成的 csv 在 data 的 test 文件夹，形如 `YYMMDD.csv`
-  - [x] 集成测试代码对齐`scripts/smoke_collect.py`、`src/reports/csv_writer.py`、`ROADMAP.md`、`dev-guide.md`
+  - [x] 集成测试代码对齐`scripts/smoke_collect.py`、`src/data/reports.py`、`ROADMAP.md`、`dev-guide.md`
 - [x] 测试/验收：`uv run python scripts/smoke_collect.py --sample 5`；`uv run python scripts/verify_latest.py`（交叉校验 end_date/trade_date 为 Tushare 最新）；打开生成的 csv 人工确认。
+
+- [ ] 全量测试
 
 ---
 
@@ -126,21 +128,21 @@ date: 2026-07-23
 
 ### Step 2-3 评级纯函数与边界单测
 
-- 涉及文件：`src/rating/rate.py`、`tests/test_rating_rate.py`
+- 涉及文件：`src/rate.py`、`tests/test_rating_rate.py`
 - 实现 BR-05
 - 实现 FR-RATE-01
 - 学习点：`<5.5` 是垃圾、`5.5` 是鸡肋·观察——这种"等号归哪边"的细节最易写错，单测要明确断言。
-- [ ] 操作：在 `src/rating/` 实现评级映射（§8.6），单测覆盖 8.5 / 7.0 / 5.5 三个临界值归属。
+- [ ] 操作：在 `src/` 实现评级映射（§8.6），单测覆盖 8.5 / 7.0 / 5.5 三个临界值归属。
 - [ ] 测试/验收：`uv run pytest tests/test_rating_rate.py`。
 - 断点提交：
   ```bash
-  git add src/rating/rate.py tests/test_rating_rate.py
+  git add src/rate.py tests/test_rating_rate.py
   git commit -m "feat(rating): 评级映射与边界单测"
   ```
 
 ### Step 2-4 评分评级串联 csv 落地
 
-- 涉及文件：`src/core/pipeline.py`（扩展）、`src/reports/csv_writer.py`（扩展）、`integrated_tests/test_score_rate.py`
+- 涉及文件：`src/data/collect.py`（扩展）、`src/data/reports.py`（扩展）、`integrated_tests/test_score_rate.py`
 - 实现 BR-05
 - 实现 FR-RATE-02~04、FR-SCORE-08、FR-SCORE-09
 - 学习点：**追加字段不破坏原字段**是数据契约的稳定性要求（dev-guide §15 决策优先级），下游消费方才不会突然崩。
@@ -148,7 +150,7 @@ date: 2026-07-23
 - [ ] 测试/验收：用 M1 的 5 股样本跑全流程，检查两个 csv 生成且评级列正确。
 - 断点提交：
   ```bash
-  git add src/core/pipeline.py src/reports/csv_writer.py integrated_tests/test_score_rate.py
+  git add src/data/collect.py src/data/reports.py integrated_tests/test_score_rate.py
   git commit -m "feat(rating): 评分评级串联并落地csv"
   ```
 
@@ -164,14 +166,14 @@ date: 2026-07-23
 
 ### Step 3-1 公司类型、行业分类与操作建议
 
-- 涉及文件：`src/rating/company_type.py`、`src/rating/industry.py`、`src/rating/advice.py`、`tests/test_rating_company_type.py`、`tests/test_rating_industry.py`、`tests/test_rating_advice.py`
+- 涉及文件：`src/company_type.py`、`src/data/provider.py`、`src/advice.py`、`tests/test_rating_company_type.py`、`tests/test_rating_industry.py`、`tests/test_rating_advice.py`
 - 实现 BR-06
 - 实现 FR-REPORT-02、FR-REPORT-03、FR-REPORT-04
 - [ ] 操作：实现公司类型（千里马/现金牛/护城河，§8.7）、行业分类（§8.8）、评级→操作建议映射（§8.9）。
 - [ ] 测试/验收：`uv run pytest tests/test_rating_*.py`。
 - 断点提交：
   ```bash
-  git add src/rating/company_type.py src/rating/industry.py src/rating/advice.py tests/test_rating_*.py
+  git add src/company_type.py src/data/provider.py src/advice.py tests/test_rating_*.py
   git commit -m "feat(report): 公司类型、行业分类与操作建议"
   ```
 

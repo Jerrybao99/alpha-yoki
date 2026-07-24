@@ -64,6 +64,6 @@ def test_data_subdirs_mapping_complete() -> None:
 
 def test_main_entry_importable() -> None:
     """main.py 入口可导入且 main() 无副作用执行。"""
-    from main import main
+    from src.main import main
 
     main()  # 仅打印状态，不应抛异常

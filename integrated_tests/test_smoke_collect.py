@@ -11,9 +11,8 @@ import pytest
 
 from scripts.smoke_collect import run_smoke
 from src.config import Settings, get_settings
-from src.data.base import BaseFetcher
-from src.data.tushare_fetcher import TushareFetcher
-from src.schemas.financial import StockFeatures, StockInfo
+from src.data.contract import StockFeatures, StockInfo
+from src.data.provider import BaseFetcher, TushareFetcher
 
 
 class _FakeFetcher(BaseFetcher):
@@ -165,6 +164,7 @@ def test_smoke_regenerates_latest_csv() -> None:
     """真实采集 5 股，用最新数据覆盖落地到 ``data/test/YYMMDD.csv``。
 
     每次清空缓存以确保取最新报告期（不受 TTL 缓存影响）；同名文件直接覆盖。
+    校验 end_date 与 Tushare 独立重查一致，且不早于法定最新报告期。
     本地运行：``uv run pytest -m network \
     integrated_tests/test_smoke_collect.py::test_smoke_regenerates_latest_csv``
     无 TUSHARE_TOKEN 时 skip；CI 因 ``-m "not network"`` 跳过。
@@ -172,7 +172,6 @@ def test_smoke_regenerates_latest_csv() -> None:
     settings = get_settings()
     if not settings.tushare_token.strip():
         pytest.skip("未配置 TUSHARE_TOKEN")
-    # 清缓存，强制重新采集最新报告期
     cache_dir = settings.data_root / "cache"
     if cache_dir.exists():
         for p in cache_dir.glob("*.json"):
@@ -182,9 +181,39 @@ def test_smoke_regenerates_latest_csv() -> None:
     feat_path, src_path, ok, fail = run_smoke(fetcher, settings, 5, out_dir)
     assert ok == 5 and fail == 0, f"采集未全部成功：ok={ok} fail={fail}"
     assert feat_path.exists() and src_path.exists()
-    # 校验报告期为最新（≥ 法定最新应已披露报告期）
-    from src.utils.period import expected_latest_period
 
+    # 交叉校验：end_date 与 Tushare 独立重查一致，且不早于法定最新报告期
+    import csv
+
+    import tushare as ts
+
+    from src.data.collect import expected_latest_period
+    from src.data.contract import ALL_OUTPUT_COLUMNS
+
+    ts.set_token(settings.tushare_token)
+    pro = ts.pro_api()
     expected = expected_latest_period(_dt.date.today())
+
     text = feat_path.read_text(encoding="utf-8-sig")
-    assert expected in text, f"CSV 未包含最新报告期 {expected}"
+    rows = list(csv.reader(text.splitlines()))
+    idx = {c: i for i, c in enumerate(ALL_OUTPUT_COLUMNS)}
+    checked = 0
+    for r in rows[1:]:
+        if not r or not r[0].strip():
+            continue
+        cells = [c.strip() for c in r]
+        ts_code = cells[idx["ts_code"]]
+        csv_end = cells[idx["end_date"]]
+        tushare_end = max(
+            rr["end_date"]
+            for rr in pro.query(
+                "income_vip", ts_code=ts_code, fields="ts_code,end_date"
+            ).to_dict("records")
+            if rr.get("end_date")
+        )
+        assert csv_end == tushare_end, (
+            f"{ts_code} end_date CSV={csv_end} != Tushare={tushare_end}"
+        )
+        assert csv_end >= expected, f"{ts_code} end_date {csv_end} 早于预期 {expected}"
+        checked += 1
+    assert checked >= 1, "CSV 无有效数据行"

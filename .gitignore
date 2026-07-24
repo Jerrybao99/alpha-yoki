@@ -32,6 +32,7 @@ Thumbs.db
 # 密钥与本地配置
 .env
 .env.local
+.python-version
 
 # IDE（团队共享配置除外）
 .idea/
