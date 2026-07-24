@@ -41,7 +41,7 @@ class Cache:
     @staticmethod
     def key_for(ts_code: str, period: str | None) -> str:
         """缓存键：``features_{ts_code}_{period}``。period 为 None 记 ``latest``。"""
-        return f"features_{ts_code}_{period or 'latest'}".replace("/", "_")
+        return f"collect_fin_features_{ts_code}_{period or 'latest'}".replace("/", "_")
 
     def _path(self, ts_code: str, period: str | None) -> Path:
         return self.cache_dir / f"{self.key_for(ts_code, period)}.json"
@@ -115,7 +115,7 @@ class CollectionPipeline:
             cache
             if cache is not None
             else Cache(
-                self.settings.data_root / "cache",
+                self.settings.data_root / "cache" / "fin",
                 ttl_seconds=self.settings.cache_ttl_hours * 3600
                 if self.settings.cache_ttl_hours > 0
                 else None,

@@ -65,7 +65,7 @@ date: 2026-07-23
 
 ### Step 1-3 采集编排、缓存与失败隔离
 
-- 涉及文件：`src/data/collect.py`、`src/data/collect.py`、`src/data/output.py`、`tests/data/test_collect.py`
+- 涉及文件：`src/data/collect.py`、`src/data/output.py`、`tests/data/test_collect.py`
 - 实现 BR-02
 - 实现 FR-DATA-05、FR-DATA-06
 - 学习点：**低并发线程池**（A 股 5000+ 只，不能一次性全请求，用线程池控制并发数如 4）；**缓存键 = 股票代码 + 报告期**（同季重跑不重复调接口，省积分）；**失败隔离**（一只出错不能拖垮整体，记下来后续采）。
@@ -80,13 +80,13 @@ date: 2026-07-23
 - [x] 操作：
   - [x] 写脚本随机选 5 股真实采集
   - [x] 所属行业列构建策略更新：通过 `index_member_all` 接口按 ts_code 查询申万二级行业，映射到五大类（周期资源/大消费/证券金融/科技制造/公用事业基建），缓存到 `data/ref/sw_industry.csv`。纯映射见 `src/data/provider.py`（~130 个 SW L2 行业→5 大类，含罗马数字后缀剥离）。数据链：`ts_code → index_member_all(ts_code, is_new='Y') → l2_name → sw_l2_to_category() → 5大类`。仅在采集范围内按需查询 API，增量写缓存
-  - [x] 采用最新报告期的数据（`end_date` 锁定 income 报告期 + 缓存 TTL + `scripts/verify_latest.py` 交叉校验）
+  - [x] 采用最新报告期的数据（`end_date` 锁定 income 报告期 + 缓存 TTL，集成测试 `test_smoke_regenerates_latest_csv` 交叉校验 end_date）
   - [x] csv 字段为真实字段名，翻译为准确中文，增强可读性
   - [x] csv 中所有字段在数值中放弃科学计数法，匹配合适的汉字单位，按数据来源 CSV 中记录的单位逐字段追加后缀，并保留两位小数
   - [x] 单列一个 csv 列出采用的：接口、字段、字段对应中文、该接口/字段对应的文档 URL，形如 `YYMMDD-数据来源.csv`
   - [x] 生成的 csv 在 data 的 test 文件夹，形如 `YYMMDD.csv`
   - [x] 集成测试代码对齐`scripts/smoke_collect.py`、`src/data/output.py`、`ROADMAP.md`、`dev-guide.md`
-- [x] 测试/验收：`uv run python scripts/smoke_collect.py --sample 5`；`uv run python scripts/verify_latest.py`（交叉校验 end_date/trade_date 为 Tushare 最新）；打开生成的 csv 人工确认。
+- [x] 测试/验收：`uv run python scripts/smoke_collect.py --sample 5`；`uv run pytest -m network integrated_tests/`（交叉校验 end_date 为 Tushare 最新）；打开生成的 csv 人工确认。
 
 ### Step 1-5 全量批量采集与性能策略
 

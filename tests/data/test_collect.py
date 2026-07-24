@@ -71,8 +71,11 @@ def _settings(data_dir: Path) -> Settings:
 
 # ===== Cache =====
 def test_cache_key_for() -> None:
-    assert Cache.key_for("600000.SH", "20241231") == "features_600000.SH_20241231"
-    assert Cache.key_for("600000.SH", None) == "features_600000.SH_latest"
+    assert (
+        Cache.key_for("600000.SH", "20241231")
+        == "collect_fin_features_600000.SH_20241231"
+    )
+    assert Cache.key_for("600000.SH", None) == "collect_fin_features_600000.SH_latest"
 
 
 def test_cache_set_get_roundtrip(tmp_path: Path) -> None:
@@ -98,7 +101,7 @@ def test_cache_disabled(tmp_path: Path) -> None:
 
 def test_cache_corrupt_returns_none(tmp_path: Path) -> None:
     cache = Cache(tmp_path / "c")
-    (tmp_path / "c" / "features_600000.SH_latest.json").write_text(
+    (tmp_path / "c" / "collect_fin_features_600000.SH_latest.json").write_text(
         "not json", encoding="utf-8"
     )
     assert cache.get("600000.SH", None) is None
@@ -114,13 +117,15 @@ def test_cache_ttl_expires_for_latest(tmp_path: Path) -> None:
     cache.set("600000.SH", None, feat)
     assert cache.get("600000.SH", None) is not None  # 新鲜命中
     # 把缓存文件 mtime 改到 100 秒前
-    latest = tmp_path / "c" / "features_600000.SH_latest.json"
+    latest = tmp_path / "c" / "collect_fin_features_600000.SH_latest.json"
     old = time.time() - 100
     os.utime(latest, (old, old))
     assert cache.get("600000.SH", None) is None  # 过期视为未命中
     # 显式 period 历史数据不可变，不受 TTL 约束
     cache.set("600000.SH", "20241231", feat)
-    os.utime(tmp_path / "c" / "features_600000.SH_20241231.json", (old, old))
+    os.utime(
+        tmp_path / "c" / "collect_fin_features_600000.SH_20241231.json", (old, old)
+    )
     assert cache.get("600000.SH", "20241231") is not None
 
 
