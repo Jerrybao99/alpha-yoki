@@ -1,43 +1,20 @@
 name: CI
 
-# ROADMAP M0 Step 0.4：CI 门禁。
-# 每次 push / PR 自动跑 ruff lint + pytest，相当于永不疲倦的评审员。
-# 门禁对齐 dev-guide §12.1：lint 阻断、单测阻断、network 测试 CI 跳过。
-
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
 
-permissions:
-  contents: read
-
 jobs:
-  lint-test:
-    name: Lint & Test
+  lint-and-test:
     runs-on: ubuntu-latest
-
     steps:
-      - name: 检出代码
-        uses: actions/checkout@v4
-
-      - name: 安装 uv
-        uses: astral-sh/setup-uv@v6
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
         with:
-          enable-cache: true
-
-      - name: 设置 Python
-        run: uv python install 3.12
-
-      - name: 安装依赖
-        run: uv sync
-
-      - name: Ruff 检查
-        run: uv run ruff check .
-
-      - name: Ruff 格式化检查
-        run: uv run ruff format --check .
-
-      - name: Pytest（跳过 network）
-        run: uv run pytest -m "not network"
+          python-version: "3.12"
+      - run: uv sync
+      - run: uv run ruff format --check .
+      - run: uv run ruff check .
+      - run: uv run pytest -m "not network"

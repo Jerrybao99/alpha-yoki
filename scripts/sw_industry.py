@@ -31,7 +31,9 @@ def main() -> None:
         for r in fetcher._call("stock_basic", ("ts_code",), list_status="L")
     ]
     total = len(codes)
-    logger.info("%d 只股票，开始查询行业分类（并发=%d）...", total, settings.concurrency)
+    logger.info(
+        "%d 只股票，开始查询行业分类（并发=%d）...", total, settings.concurrency
+    )
 
     t0 = time.monotonic()
     cache: dict[str, str] = {}

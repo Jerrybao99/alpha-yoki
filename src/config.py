@@ -29,7 +29,7 @@ class Settings(BaseSettings):
 
     # ===== LLM（DeepSeek，BRD C-04）=====
     deepseek_api_key: str = ""
-    deepseek_model: str = "deepseek-chat"
+    deepseek_model: str = "deepseek-v4-pro"
     deepseek_base_url: str = "https://api.deepseek.com"
 
     # ===== 数据源（Tushare，BRD C-05）=====

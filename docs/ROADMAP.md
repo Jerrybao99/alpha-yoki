@@ -36,8 +36,8 @@ date: 2026-07-23
 ### Step 0-4 CI 门禁与第一个骨架测试
 
 - 涉及文件：`.github/workflows/ci.yml`、`tests/test_skeleton.py`
-- [x] 操作：加 GitHub Actions workflow（ruff + pytest），写一个最简单的骨架测试让 CI 有东西可跑。
-- [x] 测试/验收：CI 跑通 ruff + pytest。
+- [x] 操作：加 GitHub Actions workflow（`ruff format --check .` + `ruff check .` + `pytest -m "not network"`），写一个最简单的骨架测试让 CI 有东西可跑。
+- [x] 测试/验收：CI 跑通 format + lint + pytest。
 
 ---
 

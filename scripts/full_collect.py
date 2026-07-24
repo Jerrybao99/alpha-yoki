@@ -139,7 +139,15 @@ def main() -> None:
         _run_batch(settings, fetcher, period, date, stamp, out_dir, feat_path, src_path)
     else:
         _run_per_stock(
-            settings, fetcher, period, date, stamp, out_dir, feat_path, src_path, resume_codes
+            settings,
+            fetcher,
+            period,
+            date,
+            stamp,
+            out_dir,
+            feat_path,
+            src_path,
+            resume_codes,
         )
 
     elapsed = time.monotonic() - t_start
@@ -190,7 +198,9 @@ def _run_batch(
         fail_path = pipe.write_failures(result.failures, date=date)
         print(f"失败 {len(result.failures)} 股 → {fail_path}")
 
-    print(f"批量采集完成：成功 {result.success_count} 股，失败 {result.failure_count} 股")
+    print(
+        f"批量采集完成：成功 {result.success_count} 股，失败 {result.failure_count} 股"
+    )
 
 
 def _run_per_stock(
@@ -227,12 +237,12 @@ def _run_per_stock(
     # 写盘：如果断点续采，读取已有 CSV 内容
     if resume_codes and feat_path.exists():
         old_text = feat_path.read_text(encoding="utf-8-sig").rstrip("\n")
-        feat_path.write_text(
-            old_text + "\n", encoding="utf-8-sig"
-        )  # 保留旧数据
+        feat_path.write_text(old_text + "\n", encoding="utf-8-sig")  # 保留旧数据
         # 追加新行
         headers = [FIELD_CN.get(c, c) for c in ALL_OUTPUT_COLUMNS]
-        _append_csv_rows(feat_path, result.successes, headers, ALL_OUTPUT_COLUMNS, write_header=False)
+        _append_csv_rows(
+            feat_path, result.successes, headers, ALL_OUTPUT_COLUMNS, write_header=False
+        )
     else:
         write_features_csv(result.successes, feat_path)
 

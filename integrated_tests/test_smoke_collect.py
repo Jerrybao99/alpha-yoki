@@ -161,9 +161,9 @@ def test_smoke_sample_clamped(tmp_path: Path) -> None:
 
 @pytest.mark.network
 def test_smoke_regenerates_latest_csv() -> None:
-    """真实采集 5 股，用最新数据覆盖落地到 ``data/test/YYMMDD.csv``。
+    """真实采集 5 股，用最新数据覆盖落地到 ``data/test/smoke_collect_test.csv``（固定文件名）。
 
-    每次清空缓存以确保取最新报告期（不受 TTL 缓存影响）；同名文件直接覆盖。
+    每次清空缓存以确保取最新报告期；同名文件直接覆盖。
     校验 end_date 与 Tushare 独立重查一致，且不早于法定最新报告期。
     本地运行：``uv run pytest -m network \
     integrated_tests/test_smoke_collect.py::test_smoke_regenerates_latest_csv``
@@ -178,7 +178,9 @@ def test_smoke_regenerates_latest_csv() -> None:
             p.unlink()
     fetcher = TushareFetcher(settings)
     out_dir = settings.data_root / "test"
-    feat_path, src_path, ok, fail = run_smoke(fetcher, settings, 5, out_dir)
+    feat_path, src_path, ok, fail = run_smoke(
+        fetcher, settings, 5, out_dir, filename="smoke_collect_test"
+    )
     assert ok == 5 and fail == 0, f"采集未全部成功：ok={ok} fail={fail}"
     assert feat_path.exists() and src_path.exists()
 

@@ -189,9 +189,7 @@ class BaseFetcher(ABC):
             该股票的特征数据（字段名即 Tushare 真实字段名，数据为真实值）。
         """
 
-    def fetch_financials_batch(
-        self, period: str
-    ) -> dict[str, StockFeatures]:
+    def fetch_financials_batch(self, period: str) -> dict[str, StockFeatures]:
         """批量采集全市场财务数据（可选覆写，VIP O(1) 接口）。
         基类默认抛 NotImplementedError，子类如有批量能力可覆写。
         """
@@ -347,7 +345,9 @@ class TushareFetcher(BaseFetcher):
             for r in records:
                 self._merge_non_none(data, self._clean_record(r, INCOME_FIELDS))
         else:
-            rec = self._latest(self._call("income", INCOME_FIELDS, **fin_params), "end_date")
+            rec = self._latest(
+                self._call("income", INCOME_FIELDS, **fin_params), "end_date"
+            )
             data.update(self._clean_record(rec, INCOME_FIELDS))
 
         for key, fields in (
@@ -358,7 +358,9 @@ class TushareFetcher(BaseFetcher):
             if explicit_period:
                 records = self._call(key, fields, **fin_params)
                 for r in records:
-                    self._merge_non_none(data, self._clean_record(r, fields, exclude=_no_end_date))
+                    self._merge_non_none(
+                        data, self._clean_record(r, fields, exclude=_no_end_date)
+                    )
             else:
                 rec = self._latest(self._call(key, fields, **fin_params), "end_date")
                 data.update(self._clean_record(rec, fields, exclude=_no_end_date))
@@ -562,7 +564,9 @@ class TushareFetcher(BaseFetcher):
         logger.info("批量采集开始：period=%s page_size=%d", period, page_size)
 
         # income 作为主接口（确定股票列表与 end_date）
-        income_rows = self._call_paginated("income", INCOME_FIELDS, page_size, period=period)
+        income_rows = self._call_paginated(
+            "income", INCOME_FIELDS, page_size, period=period
+        )
         for r in income_rows:
             tc = self._str(r.get("ts_code"))
             if tc:
@@ -581,13 +585,17 @@ class TushareFetcher(BaseFetcher):
             for r in rows:
                 tc = self._str(r.get("ts_code"))
                 if tc and tc in merged:
-                    self._merge_non_none(merged[tc], self._clean_record(r, fields, exclude=_no_end))
+                    self._merge_non_none(
+                        merged[tc], self._clean_record(r, fields, exclude=_no_end)
+                    )
                     hits += 1
             logger.info("  %s: %d 条记录，命中 %d 只股票", key, len(rows), hits)
 
         result: dict[str, StockFeatures] = {}
         for tc, data in merged.items():
-            result[tc] = StockFeatures(**{k: v for k, v in data.items() if k in model_fields})
+            result[tc] = StockFeatures(
+                **{k: v for k, v in data.items() if k in model_fields}
+            )
         logger.info("批量采集完成：%d 只股票", len(result))
         return result
 

@@ -625,7 +625,7 @@ $$
 
 ```dotenv
 DEEPSEEK_API_KEY=            # LLM 密钥
-DEEPSEEK_MODEL=deepseek-chat
+DEEPSEEK_MODEL=deepseek-v4-pro
 DEEPSEEK_BASE_URL=https://api.deepseek.com
 TUSHARE_TOKEN=               # Tushare Pro token（注册 tushare.pro 获取；vip 接口需 5000 积分）
 DATA_DIR=data                # 数据根目录
@@ -679,6 +679,7 @@ LLM_LOCAL_FALLBACK=false     # 是否启用本地模型兜底
 
 | 检查项 | 命令 | 阻断 |
 |---|---|---|
+| 格式 | `uv run ruff format --check .` | 是 |
 | Lint | `uv run ruff check .` | 是 |
 | 类型/编译 | `uv run python -m py_compile <changed_files>` | 是 |
 | 单元测试 | `uv run pytest -m "not network"` | 是 |

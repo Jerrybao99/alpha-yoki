@@ -184,7 +184,9 @@ def test_full_collect_csv_structure(tmp_path: Path) -> None:
 
     feat_path = out / "260724.csv"
     headers = [FIELD_CN.get(c, c) for c in ALL_OUTPUT_COLUMNS]
-    _append_csv_rows(feat_path, result.successes, headers, ALL_OUTPUT_COLUMNS, write_header=True)
+    _append_csv_rows(
+        feat_path, result.successes, headers, ALL_OUTPUT_COLUMNS, write_header=True
+    )
 
     text = feat_path.read_text(encoding="utf-8-sig")
     header = text.strip().split("\n")[0]
@@ -203,9 +205,7 @@ def test_csv_resume_reads_existing(tmp_path: Path) -> None:
 
     csv_path = tmp_path / "260724.csv"
     csv_path.write_text(
-        "股票名称,ts_code,营业收入\n"
-        "测试A,600000.SH,1.5e10\n"
-        "测试B,000001.SZ,2.0e10\n",
+        "股票名称,ts_code,营业收入\n测试A,600000.SH,1.5e10\n测试B,000001.SZ,2.0e10\n",
         encoding="utf-8-sig",
     )
     codes = _read_existing_ts_codes(csv_path)
@@ -232,7 +232,7 @@ def test_csv_resume_no_file(tmp_path: Path) -> None:
 @pytest.mark.network
 def test_real_batch_collects_all_stocks() -> None:
     """真实批量采集全 A 股（最新报告期），断言 CSV 行数 ≥ 5000，
-    产出落 ``data/test/full_collect_test.csv``（自动覆盖同名老版本）。
+    产出落 ``data/test/full_collect_test.csv``（固定文件名，每次运行覆盖）。
 
     ``uv run pytest -m network integrated_tests/test_full_collect.py::test_real_batch_collects_all_stocks``
     """
@@ -256,7 +256,7 @@ def test_real_batch_collects_all_stocks() -> None:
     assert feat.end_date is not None
     assert feat.revenue is not None
 
-    # 输出 CSV 到 data/test/（固定文件名，每次运行覆盖）
+    # 输出 CSV 到 data/test/（固定文件名，每次运行覆盖同名）
     out_dir = settings.data_root / "test"
     out_dir.mkdir(parents=True, exist_ok=True)
     feat_path = out_dir / "full_collect_test.csv"
@@ -268,14 +268,18 @@ def test_real_batch_collects_all_stocks() -> None:
     successes = result.successes
     for i in range(0, len(successes), batch_size):
         chunk = successes[i : i + batch_size]
-        _append_csv_rows(feat_path, chunk, headers, ALL_OUTPUT_COLUMNS, write_header=(i == 0))
+        _append_csv_rows(
+            feat_path, chunk, headers, ALL_OUTPUT_COLUMNS, write_header=(i == 0)
+        )
 
     write_data_source_csv(src_path)
 
     if result.failures:
-        fail_path.write_text("ts_code,name,error\n" + "\n".join(
-            f"{f.ts_code},{f.name},{f.error}" for f in result.failures
-        ), encoding="utf-8-sig")
+        fail_path.write_text(
+            "ts_code,name,error\n"
+            + "\n".join(f"{f.ts_code},{f.name},{f.error}" for f in result.failures),
+            encoding="utf-8-sig",
+        )
 
     print(f"测试产出: {feat_path} ({len(successes)} 股)")
     print(f"数据来源: {src_path}")

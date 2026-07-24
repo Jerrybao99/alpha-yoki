@@ -192,9 +192,7 @@ class CollectionPipeline:
         self.cache.set(ts_code, period, features)
         return features, False
 
-    def run_batch(
-        self, period: str | None = None
-    ) -> CollectionResult:
+    def run_batch(self, period: str | None = None) -> CollectionResult:
         """批量采集全市场财务数据（ROADMAP Step 1-5）。
 
         用 ``fetch_financials_batch`` 一次调完 4 个 VIP 接口（O(1) 而非 O(n)），
@@ -214,9 +212,7 @@ class CollectionPipeline:
             fetcher._enrich_with_sw_category(stocks)
         info_map = {s.ts_code: s for s in stocks}
 
-        logger.info(
-            "全量批量采集开始：%d 只股票 period=%s", len(stocks), stable_period
-        )
+        logger.info("全量批量采集开始：%d 只股票 period=%s", len(stocks), stable_period)
         try:
             features_map = fetcher.fetch_financials_batch(stable_period)
         except NotImplementedError as exc:
@@ -228,9 +224,7 @@ class CollectionPipeline:
         for s in stocks:
             feat = features_map.get(s.ts_code)
             if feat is None:
-                result.failures.append(
-                    Failure(s.ts_code, s.name, "批次结果中无此股")
-                )
+                result.failures.append(Failure(s.ts_code, s.name, "批次结果中无此股"))
                 continue
             self._enrich_with_stock_info(feat, info_map.get(s.ts_code))
             result.successes.append(feat)

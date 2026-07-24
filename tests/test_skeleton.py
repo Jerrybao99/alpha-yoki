@@ -28,7 +28,7 @@ def test_get_settings_singleton() -> None:
 def test_settings_defaults() -> None:
     """默认值对齐 dev-guide §10.2 / .env.example。"""
     s = Settings()
-    assert s.deepseek_model == "deepseek-chat"
+    assert s.deepseek_model == "deepseek-v4-pro"
     assert s.deepseek_base_url == "https://api.deepseek.com"
     assert s.data_dir == "data"
     assert s.concurrency == 4

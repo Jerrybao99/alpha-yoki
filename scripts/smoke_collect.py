@@ -23,13 +23,15 @@ def run_smoke(
     date: _dt.date | None = None,
     *,
     seed: int = 42,
+    filename: str | None = None,
 ) -> tuple[Path, Path, int, int]:
     """执行冒烟采集。返回 (特征csv路径, 数据来源csv路径, 成功数, 失败数)。
 
-    供脚本 main() 与集成测试复用；测试可注入 mock fetcher 与 tmp 目录。
+    filename 非空时使用固定文件名（如 "smoke_collect_test"），否则按日期戳 YYMMDD 命名。
     """
     date = date or _dt.date.today()
     stamp = date.strftime("%y%m%d")
+    prefix = filename if filename else stamp
     out_dir.mkdir(parents=True, exist_ok=True)
 
     stocks = fetcher.fetch_stock_list()
@@ -47,8 +49,8 @@ def run_smoke(
     finally:
         pipe.close()
 
-    feat_path = write_features_csv(result.successes, out_dir / f"{stamp}.csv")
-    src_path = write_data_source_csv(out_dir / f"{stamp}-数据来源.csv")
+    feat_path = write_features_csv(result.successes, out_dir / f"{prefix}.csv")
+    src_path = write_data_source_csv(out_dir / f"{prefix}-数据来源.csv")
     if result.failures:
         print(f"失败 {len(result.failures)} 股：{[f.ts_code for f in result.failures]}")
     return feat_path, src_path, result.success_count, result.failure_count
