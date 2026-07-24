@@ -40,6 +40,9 @@ class Settings(BaseSettings):
     concurrency: int = 4
     tushare_rate_limit: int = 500  # 每分钟调用上限（5000积分 500次/分，见 doc_id=290）
     cache_ttl_hours: int = 24  # "最新"缓存有效期（小时），过期重采以获取新报告期
+    batch_size: int = 500  # 批量采集流式写盘行数（每 N 行 flush 一次）
+    vip_page_size: int = 5000  # VIP 接口分页每页行数
+    perf_mode: str = "mid"  # 性能模式：low（低配）/ mid（中配）/ high（高配），影响 concurrency/batch_size
 
     # ===== 定时任务（dev-guide §10.2）=====
     hotspot_cron_09: str = "0 9 * * *"

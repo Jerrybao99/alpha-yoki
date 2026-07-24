@@ -43,9 +43,9 @@ date: 2026-07-23
 
 ## M1 数据采集
 
-- 实现需求：BR-01/02 · FR-DATA-01~10 · FR-UPDATE-02/03（季度基本面/月度资金面更新）
-- 目标：能从 Tushare 采集 A 股财务数据并落地为 `data/fin/YYMMDD.csv`。
-- 验收：5 股冒烟通过，csv 字段对齐 dev-guide §8.1。
+- 实现需求：BR-01/02 · FR-DATA-01~10 · FR-UPDATE-02/03（季度基本面/月度资金面更新）· NFR-03（全量 A 股采集可一晚完成）
+- 目标：能从 Tushare 采集 A 股财务数据并落地为 `data/fin/YYMMDD.csv`。支持两种模式：逐股（增量/持仓）与批量（首次全量/季度财报季全量刷新）。
+- 验收：5 股冒烟通过 + 全量批量采集产出 `data/fin/YYMMDD.csv`（≥5000 行），csv 字段对齐 dev-guide §8.1。
 
 ### Step 1-1 数据源抽象与字段模型
 
@@ -65,7 +65,7 @@ date: 2026-07-23
 
 ### Step 1-3 采集编排、缓存与失败隔离
 
-- 涉及文件：`src/data/collect.py`、`src/data/collect.py`、`src/data/reports.py`、`tests/data/test_collect.py`
+- 涉及文件：`src/data/collect.py`、`src/data/collect.py`、`src/data/output.py`、`tests/data/test_collect.py`
 - 实现 BR-02
 - 实现 FR-DATA-05、FR-DATA-06
 - 学习点：**低并发线程池**（A 股 5000+ 只，不能一次性全请求，用线程池控制并发数如 4）；**缓存键 = 股票代码 + 报告期**（同季重跑不重复调接口，省积分）；**失败隔离**（一只出错不能拖垮整体，记下来后续采）。
@@ -74,21 +74,38 @@ date: 2026-07-23
 
 ### Step 1-4 随机 5 股冒烟测试与 csv 落地
 
-- 涉及文件：`scripts/smoke_collect.py`、`src/data/reports.py`、`integrated_tests/test_smoke_collect.py`、`src/data/collect.py`、`tests/data/test_collect.py`、`src/data/provider.py`
+- 涉及文件：`scripts/smoke_collect.py`、`src/data/output.py`、`integrated_tests/test_smoke_collect.py`、`src/data/collect.py`、`tests/data/test_collect.py`、`src/data/provider.py`
 - 实现 BR-02
 - 实现 FR-DATA-09、FR-DATA-10
 - [x] 操作：
   - [x] 写脚本随机选 5 股真实采集
-  - [x] 所属行业列构建策略更新：通过 `index_member_all` 接口按 ts_code 查询申万二级行业，映射到五大类（周期资源/大消费/证券金融/科技制造/公用事业基建），缓存到 `data/cache/sw_industry.csv`。纯映射见 `src/data/provider.py`（~130 个 SW L2 行业→5 大类，含罗马数字后缀剥离）。数据链：`ts_code → index_member_all(ts_code, is_new='Y') → l2_name → sw_l2_to_category() → 5大类`。仅在采集范围内按需查询 API，增量写缓存
+  - [x] 所属行业列构建策略更新：通过 `index_member_all` 接口按 ts_code 查询申万二级行业，映射到五大类（周期资源/大消费/证券金融/科技制造/公用事业基建），缓存到 `data/ref/sw_industry.csv`。纯映射见 `src/data/provider.py`（~130 个 SW L2 行业→5 大类，含罗马数字后缀剥离）。数据链：`ts_code → index_member_all(ts_code, is_new='Y') → l2_name → sw_l2_to_category() → 5大类`。仅在采集范围内按需查询 API，增量写缓存
   - [x] 采用最新报告期的数据（`end_date` 锁定 income 报告期 + 缓存 TTL + `scripts/verify_latest.py` 交叉校验）
   - [x] csv 字段为真实字段名，翻译为准确中文，增强可读性
   - [x] csv 中所有字段在数值中放弃科学计数法，匹配合适的汉字单位，按数据来源 CSV 中记录的单位逐字段追加后缀，并保留两位小数
   - [x] 单列一个 csv 列出采用的：接口、字段、字段对应中文、该接口/字段对应的文档 URL，形如 `YYMMDD-数据来源.csv`
   - [x] 生成的 csv 在 data 的 test 文件夹，形如 `YYMMDD.csv`
-  - [x] 集成测试代码对齐`scripts/smoke_collect.py`、`src/data/reports.py`、`ROADMAP.md`、`dev-guide.md`
+  - [x] 集成测试代码对齐`scripts/smoke_collect.py`、`src/data/output.py`、`ROADMAP.md`、`dev-guide.md`
 - [x] 测试/验收：`uv run python scripts/smoke_collect.py --sample 5`；`uv run python scripts/verify_latest.py`（交叉校验 end_date/trade_date 为 Tushare 最新）；打开生成的 csv 人工确认。
 
-- [ ] 全量测试
+### Step 1-5 全量批量采集与性能策略
+
+- 涉及文件：`src/data/provider.py`（新增 `fetch_financials_batch`）、`src/data/collect.py`（新增 `run_batch`）、`scripts/full_collect.py`、`scripts/sw_industry.py`、`integrated_tests/test_full_collect.py`、`.env.example`
+- 实现 BR-02
+- 实现 FR-DATA-09、FR-DATA-10、NFR-03
+- [x] 操作：
+  - [x] **Provider 层**：`TushareFetcher` 加 `fetch_financials_batch(period)` + `_call_paginated`——调用 4 个 VIP 接口时只传 `period` 不传 `ts_code`，拿全市场数据，返回 `dict[str, StockFeatures]`。分页由 `_call_paginated` 按 `offset/limit` 循环拉取直到返回数 < 上限。数值 NaN → None 归一化同上。
+  - [x] **Pipeline 层**：`CollectionPipeline` 加 `run_batch(period)`——调用 `fetch_financials_batch` 获取全量特征，回填 stock_basic 与 SW 行业分类，返回 `CollectionResult`（含 failures）。**流式分批写 CSV、进度条（`已处理 2500/5200 …`）、断点续采（`--resume`）等 I/O 操作不在 Pipeline 内部，由 `scripts/full_collect.py` 负责**，保持采集编排与落盘分离。
+  - [x] **模式选择**：增量更新走逐股模式（`run(codes=[...])`），全量批量走 `run_batch()`。`scripts/full_collect.py` 通过 `--mode batch|per-stock` 切换（默认 batch）。两种模式对同一股票产出的 StockFeatures 已通过 mock 单测 cross-validate 断言一致（`test_full_collect.py:155-164`）。
+  - [x] **配置**：`.env.example` 和 `Settings` 已加 `BATCH_SIZE=500`（流式写盘批次行数）和 `VIP_PAGE_SIZE=5000`（VIP 分页每页行数）。`PERF_MODE` 已声明（low/mid/high）但暂未接入代码控制并发/批次。
+  - [x] **脚本**：`scripts/full_collect.py`——支持 `--period` / `--mode batch|per-stock` / `--resume`，默认批量模式。**全量采集启动前自动检查 `data/ref/sw_industry.csv`，不存在则自动调用 `build_sw_cache()` 生成**（~11 分钟），之后再执行采集。`_run_batch()` 内流式分批写盘，`_run_per_stock()` 逐股线程池写盘，均支持断点。
+  - [x] **SW 缓存预构建**：`scripts/sw_industry.py`——多线程并行查询全 A 股申万二级行业 → 五大类映射，落盘 `data/ref/sw_industry.csv`。首次 ~11 分钟，后续批量采集秒级命中。
+  - [x] **性能参考**（mid 模式 / 5000 积分 / 中配 4 核 16G）：批量模式 ~2-5 分钟（4 次 VIP 调用 + 1 次 stock_basic + 流式写盘）。逐股模式 ~40-50 分钟（20000 次调用 / 500 次每分钟）。low 模式批量 ~5-10 分钟。2000 积分模式下批量仍 ~2-5 分钟（VIP 接口不占用常规额度），逐股模式延至 ~100 分钟。
+- [x] 测试/验收（`integrated_tests/test_full_collect.py`）：
+  - [x] **mock 测试（CI 可跑）**：`test_run_batch_collects_all_stocks`（全量批量） / `test_run_batch_fills_stock_info`（回填名称行业） / `test_run_batch_missing_stock_is_failure`（缺失记失败） / `test_run_batch_auto_period`（自动推算报告期） / `test_run_batch_no_batch_method_raises`（无批量方法报错） / `test_batch_matches_per_stock`（批量和逐股产出一致 cross-validate）
+  - [x] **CSV 落地测试（CI 可跑）**：`test_full_collect_csv_structure`（44 列中文列头 + 百分比/亿万格式化） / `test_csv_resume_reads_existing`（断点续采读已有 ts_code） / `test_csv_resume_empty_csv` / `test_csv_resume_no_file`
+  - [x] **network 测试（`-m network`）**：`test_real_batch_collects_all_stocks`（真实全量采集 ≥5000 股 + 产出落 `data/test/full_collect_test.csv` 自动覆盖） / `test_batch_vs_per_stock_cross_validate`（3 股逐字段比对）
+  - [x] `uv run python scripts/full_collect.py`——命令行跑通，产出 `data/fin/YYMMDD.csv`
 
 ---
 
@@ -142,7 +159,7 @@ date: 2026-07-23
 
 ### Step 2-4 评分评级串联 csv 落地
 
-- 涉及文件：`src/data/collect.py`（扩展）、`src/data/reports.py`（扩展）、`integrated_tests/test_score_rate.py`
+- 涉及文件：`src/data/collect.py`（扩展）、`src/data/output.py`（扩展）、`integrated_tests/test_score_rate.py`
 - 实现 BR-05
 - 实现 FR-RATE-02~04、FR-SCORE-08、FR-SCORE-09
 - 学习点：**追加字段不破坏原字段**是数据契约的稳定性要求（dev-guide §15 决策优先级），下游消费方才不会突然崩。
@@ -150,7 +167,7 @@ date: 2026-07-23
 - [ ] 测试/验收：用 M1 的 5 股样本跑全流程，检查两个 csv 生成且评级列正确。
 - 断点提交：
   ```bash
-  git add src/data/collect.py src/data/reports.py integrated_tests/test_score_rate.py
+  git add src/data/collect.py src/data/output.py integrated_tests/test_score_rate.py
   git commit -m "feat(rating): 评分评级串联并落地csv"
   ```
 
@@ -455,7 +472,7 @@ date: 2026-07-23
 | 里程碑 | Step 数 | 提交数 | 需求覆盖（dev-guide §9） | 验收命令 | 推送方式 |
 |---|---|---|---|---|---|
 | M0 工程骨架 | 4 | 4 | 工程基线（支撑全部 FR/NFR） | `uv run pytest` | 直接推 main |
-| M1 数据采集 | 4 | 4 | BR-01/02 · FR-DATA-01~10 · FR-UPDATE-02/03 | 5 股冒烟，csv 字段齐全 | 直接推 main |
+| M1 数据采集 | 5 | 5 | BR-01/02 · FR-DATA-01~10 · FR-UPDATE-02/03 · NFR-03 | 全量批量采集 + 5 股冒烟，csv 字段齐全 | 直接推 main |
 | M2 评分评级 | 4 | 4 | BR-03/04/05 · FR-SCORE-01~09 · FR-RATE-01~04 | 阈值单测全覆盖；`-评分`/`-评级` csv | 直接推 main |
 | M3 报告输出 | 3 | 3 | BR-06/07 · FR-REPORT-01~07 | step1~4 一键跑通 | 直接推 main |
 | M4 Agent 编排 | 4 | 4 | BR-12/14/17 · AR-* · FR-CHAT-01~05 | 对话触发各 Agent | 直接推 main |
@@ -463,7 +480,7 @@ date: 2026-07-23
 | M6 桌面端 | 4 | 4 | BR-13/15/16 · FR-UI-01~07 · NFR-01/02 | Win/Mac 可安装 | 直接推 main |
 | M7 监控反馈 | 3 | 3 | BR-12（监控/反馈）· NFR-05 | DoD 全勾 | 直接推 main |
 
-**合计**：30 个断点提交、8 个里程碑，全部直接推 main（不开分支、不开 PR），覆盖 dev-guide §9 全部 BR/FR。
+**合计**：31 个断点提交、8 个里程碑，全部直接推 main（不开分支、不开 PR），覆盖 dev-guide §9 全部 BR/FR。
 
 ---
 
@@ -483,6 +500,6 @@ date: 2026-07-23
 ## 关联文档
 
 - 总纲：[dev-guide.md](./dev-guide.md)（§9 功能需求清单 / §13 里程碑 / §12 验证门禁）
-- 业务：[brd-1.md](./brd-1.md)
-- 产品：[prd.md](./prd.md)
+- 业务：[brd.md](./brd.md)
+- 产品：prd.md（待补充）
 - 日志：[dev-log.md](./dev-log.md)

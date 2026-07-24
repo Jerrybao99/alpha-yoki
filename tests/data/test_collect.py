@@ -16,7 +16,7 @@ from src.data.contract import (
     StockFeatures,
     StockInfo,
 )
-from src.data.reports import format_percent, to_output_row
+from src.data.output import format_percent, to_output_row
 
 
 # ===== 测试桩 =====

@@ -1,6 +1,6 @@
-"""特征工程字段模型。以 Tushare 真实字段名为输出列，定义 StockFeatures/StockInfo 与 OUTPUT_COLUMNS。
-REQUIREMENT_ALIGNMENT 对齐 §8.1 的 55 需求→Tushare 字段，SUPPLEMENTARY_FIELDS 补充一票否决/评分辅助字段。
-字段来源对齐 https://tushare.pro/document/2。
+"""字段模型与契约：55 需求→Tushare 字段对齐表（RequirementAlign × 53）、各接口字段集、
+OUTPUT_COLUMNS（44 列输出）、StockInfo / StockFeatures 数据模型、百分比字段集合、覆盖统计。
+所有列名使用 Tushare 真实字段名，数据为真实值，不做别名转换。
 """
 
 from __future__ import annotations
@@ -27,7 +27,7 @@ class RequirementAlign:
     """§8.1 需求字段 → Tushare 真实字段的对齐记录。
 
     Attributes:
-        requirement: brd-1.md §7.8 需求字段中文名。
+        requirement: brd.md §7.8 需求字段中文名。
         endpoint: 来源接口别名（与 TUSHARE_INTERFACES key 一致），或 COMPUTED / UNAVAILABLE。
         tushare_field: 对应 Tushare 真实字段名（元组表示拆为多列）。
         chinese_name: 真实字段的中文翻译（供 CSV 字段对应表使用）。
@@ -43,7 +43,7 @@ class RequirementAlign:
     note: str = ""
 
 
-# ===== brd-1.md §7.8 需求字段（55）→ Tushare 真实字段对齐表 =====
+# ===== brd.md §7.8 需求字段（55）→ Tushare 真实字段对齐表 =====
 REQUIREMENT_ALIGNMENT: list[RequirementAlign] = [
     RequirementAlign("股票代码", STOCK_BASIC, "symbol", "股票代码", "exact"),
     RequirementAlign("股票名称", STOCK_BASIC, "name", "股票名称", "exact"),

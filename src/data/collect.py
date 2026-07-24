@@ -1,6 +1,6 @@
-"""采集主流程编排 + 缓存。读全量清单 → 低并发线程池采集 → 缓存 → 字段标准化为 StockFeatures；
-单股失败隔离并落 ``data/fin/YYMMDD-失败.csv``。
-"""
+"""采集编排：Cache（文件缓存 + TTL 过期）、Failure / CollectionResult 结果模型、
+CollectionPipeline（逐股 run + 批量 run_batch，含线程池、SW 行业分类回填、失败落盘）、
+expected_latest_period 报告期推算（按法定披露截止日）。"""
 
 from __future__ import annotations
 
@@ -16,8 +16,8 @@ from typing import Any
 
 from src.config import Settings, get_settings
 from src.data.contract import StockFeatures, StockInfo
+from src.data.output import to_output_row
 from src.data.provider import BaseFetcher
-from src.data.reports import to_output_row
 
 logger = logging.getLogger(__name__)
 
@@ -192,6 +192,57 @@ class CollectionPipeline:
         self.cache.set(ts_code, period, features)
         return features, False
 
+    def run_batch(
+        self, period: str | None = None
+    ) -> CollectionResult:
+        """批量采集全市场财务数据（ROADMAP Step 1-5）。
+
+        用 ``fetch_financials_batch`` 一次调完 4 个 VIP 接口（O(1) 而非 O(n)），
+        end_date 锁定 income 报告期，其余接口不覆盖。回填 stock_basic 字段与
+        SW 行业分类后返回 CollectionResult。
+        """
+        fetcher: Any = self.fetcher
+
+        if period is None:
+            period = expected_latest_period(_dt.date.today())
+            logger.info("未指定报告期，自动推算：%s", period)
+
+        stable_period: str = period
+
+        stocks = fetcher.fetch_stock_list()
+        if hasattr(fetcher, "_enrich_with_sw_category"):
+            fetcher._enrich_with_sw_category(stocks)
+        info_map = {s.ts_code: s for s in stocks}
+
+        logger.info(
+            "全量批量采集开始：%d 只股票 period=%s", len(stocks), stable_period
+        )
+        try:
+            features_map = fetcher.fetch_financials_batch(stable_period)
+        except NotImplementedError as exc:
+            raise RuntimeError(
+                "当前 Fetcher 不支持批量采集，请用 CollectionPipeline.run() 逐股模式"
+            ) from exc
+
+        result = CollectionResult(total=len(stocks))
+        for s in stocks:
+            feat = features_map.get(s.ts_code)
+            if feat is None:
+                result.failures.append(
+                    Failure(s.ts_code, s.name, "批次结果中无此股")
+                )
+                continue
+            self._enrich_with_stock_info(feat, info_map.get(s.ts_code))
+            result.successes.append(feat)
+
+        logger.info(
+            "全量批量采集完成：成功 %d 失败 %d（%d 只来自股票清单）",
+            result.success_count,
+            result.failure_count,
+            len(stocks),
+        )
+        return result
+
     def to_rows(self, result: CollectionResult) -> list[dict[str, Any]]:
         """把成功特征标准化为输出行（§8.1 字段顺序 + 百分比格式化）。"""
         return [to_output_row(f) for f in result.successes]
@@ -223,10 +274,10 @@ class CollectionPipeline:
 
 # ===== 报告期推算 =====
 _DEADLINES: dict[str, _dt.date] = {
-    "0331": _dt.date(2026, 4, 30),
-    "0630": _dt.date(2026, 8, 31),
-    "0930": _dt.date(2026, 10, 31),
-    "1231": _dt.date(2027, 4, 30),
+    "0331": _dt.date(2000, 4, 30),
+    "0630": _dt.date(2000, 8, 31),
+    "0930": _dt.date(2000, 10, 31),
+    "1231": _dt.date(2001, 4, 30),
 }
 
 

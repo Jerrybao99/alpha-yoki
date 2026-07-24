@@ -3,13 +3,13 @@ tags: [dev-guide, 开发指南, single-source-of-truth]
 status: active
 version: 1.0.0
 date: 2026-07-21
-合并自: [brd-1.md](./brd-1.md) + [prd.md](./prd.md)
+合并自: [brd.md](./brd.md)（prd.md 待补充）
 适用对象: AI Coding Agent / 开发者
 ---
 
 # alpha-jerry 开发指南（dev-guide）
 
-> **本文件是项目的单一事实来源（Single Source of Truth）的工程视图**，由 [brd-1.md](./brd-1.md)（业务需求基线）与 [prd.md](./prd.md)（产品需求规格）合并而成。原文档保留不删除；当本文件与原文档冲突时，业务规则以 `brd-1.md` 为准，产品实现以 `prd.md` 为准，本文件以二者合并后的最新表述为准。
+> **本文件是项目的单一事实来源（Single Source of Truth）的工程视图**，由 [brd.md](./brd.md)（业务需求基线）合并而成。prd.md 待补充；
 >
 > **AI Agent 阅读约定**：
 > 1. 先读 §0 术语与约定，再读 §2 业务目标，再按需跳转章节。
@@ -45,7 +45,7 @@ date: 2026-07-21
 
 | 术语 | 含义 |
 |---|---|
-| BRD | 业务需求文档，见 [brd-1.md](./brd-1.md) |
+| BRD | 业务需求文档，见 [brd.md](./brd.md) |
 | PRD | 产品需求文档，见 [prd.md](./prd.md) |
 | `[RIGID]` | 不可漂移契约，须纯函数单测对齐 |
 | `[TRACE]` | 跨文档可追溯编号 |
@@ -58,7 +58,7 @@ date: 2026-07-21
 
 **全局约定**：
 - 项目为中文项目；文档/注释/日志/Prompt 以中文为主，金融字段同时给中文与英文缩写。
-- 数据目录统一为小写 `data/`（符合 `coding.md` 规范，BRD 原文 `DATA/` 已统一）。
+- 数据目录统一为小写 `data/`（BRD 原文 `DATA/` 已统一）。
 - `data/` 下属子目录采用英文简写，映射如下（文件名后缀如 `-评分`/`-评级`/`-荐股` 保留中文以匹配 BRD 文案）：
 
   | 中文 | 英文简写 | 用途 |
@@ -92,7 +92,7 @@ date: 2026-07-21
 
 ## 2. 业务目标与成功指标
 
-### 2.1 业务目标（SMART） `[TRACE: brd-1.md §3.1]`
+### 2.1 业务目标（SMART） `[TRACE: brd.md §3.1]`
 
 | 编号 | 业务目标 | 衡量方式 | 达成时限 |
 |---|---|---|---|
@@ -115,7 +115,7 @@ date: 2026-07-21
 | 隐私 | 云端数据上传量 | 0（仅 LLM 推理外联） | 网络审计 |
 | 成本 | 单次全量分析 LLM 成本 | ≤ 可配预算上限 | token 统计 |
 
-> KPI 阈值在 M0 后实测校准，写入 `docs/architecture.md` 的 ADR。
+> KPI 阈值在 M0 后实测校准，待写入 ADR。
 
 ---
 
@@ -135,7 +135,7 @@ date: 2026-07-21
 | 依赖 | D3 | 百度/微博/东财等热搜来源可访问 |
 | 依赖 | D4 | Win/Mac 打包工具链（Electron 等） |
 
-### 3.2 约束条件 `[TRACE: brd-1.md §9]`
+### 3.2 约束条件 `[TRACE: brd.md §9]`
 
 | 编号 | 约束 | 类型 |
 |---|---|---|
@@ -178,13 +178,13 @@ date: 2026-07-21
 | 测试 | pytest | >= 8 | 单元 + 集成 |
 | Lint/Format | ruff | latest | 统一格式 |
 
-> 任何替换须在 ADR（`docs/architecture.md`）中说明。
+> 任何替换须在 ADR 中说明。
 
 ---
 
 ## 5. 仓库结构与目录边界
 
-`[TRACE: prd.md §2.3, coding.md]`
+`[TRACE: prd.md 待补充 §2.3]`
 
 ```
 alpha-jerry/
@@ -196,10 +196,10 @@ alpha-jerry/
 ├── .env.example               # 配置样板（新增配置项必须同步）
 ├── .gitignore
 ├── docs/                      # 文档
-│   ├── brd.md / brd-1.md / prd.md / dev-guide.md（本文件）/ dev-log.md
-│   ├── architecture.md        # 架构详解（ADR）
-│   ├── data-contract.md       # 字段契约与计算口径（已合并入 §8.1）
-│   └── prompt-library.md      # Prompt 模板库
+│   ├── brd.md / dev-guide.md（本文件）/ dev-log.md
+│   ├── architecture.md        # 架构详解 ADR（待建）
+│   ├── data-contract.md       # 字段契约（已合并入 §8.1，不再单独维护）
+│   └── prompt-library.md      # Prompt 模板库（待建，M3 Step 3-3）
 ├── data/                      # 运行期数据（gitignore）
 │   ├── fin/                   # YYMMDD.csv / -评分 / -评级 / -否决 / -失败
 │   ├── analysis/              # YYMMDD-荐股.csv
@@ -207,6 +207,8 @@ alpha-jerry/
 │   ├── hot/                   # YYMMDD-HH.csv
 │   ├── monitor/               # Agent 执行链
 │   ├── feedback/              # 用户反馈
+│   ├── ref/                   # 参考数据（SW 行业分类等）
+│   ├── test/                  # 集成测试产物（自动覆盖）
 │   └── rag/                   # 向量库与知识库
 ├── src/                       # 源代码
 │   ├── main.py                # 运行入口
@@ -215,7 +217,7 @@ alpha-jerry/
 │   │   ├── contract.py        # StockFeatures 字段模型 + 字段对齐表 + 列序
 │   │   ├── provider.py        # Tushare 适配器 + 接口注册表 + 行业分类
 │   │   ├── collect.py         # 采集编排 + 缓存 + 报告期推算
-│   │   └── reports.py         # CSV 写盘 + 数值格式化
+│   │   └── output.py         # CSV 写盘 + 数值格式化
 ├── scripts/                   # 辅助脚本
 ├── tests/                     # 单元测试
 ├── integrated_tests/          # 集成测试
@@ -334,7 +336,7 @@ alpha-jerry/
 
 ## 8. 业务规则（RIGID 契约）
 
-> **本章是项目核心业务资产，不可漂移。实现必须以纯函数对齐，并以单测覆盖全部区间边界。** `[TRACE: brd-1.md §7, prd.md §6]`
+> **本章是项目核心业务资产，不可漂移。实现必须以纯函数对齐，并以单测覆盖全部区间边界。** `[TRACE: brd.md §7]`
 
 ### 8.1 特征工程字段表 `[RIGID]`
 
@@ -378,7 +380,7 @@ alpha-jerry/
 | computed_in_scoring | 6 | 不落盘，由 M2 评分纯函数基于真实字段计算（见下方计算口径表） |
 | unavailable | 6 | Tushare 无且无近似，首版不采集（见下方不可用字段表） |
 
-> owner 决策（见 CHANGELOG）：上市日期/公告日期不再采集输出，需求字段由 55 收敛为 53；float_share（流通股本）已删除不采集，由 approximate 移入 unavailable；brd-1.md §7.8 业务基线 55 字段清单保持不变。
+> owner 决策（见 CHANGELOG）：上市日期/公告日期不再采集输出，需求字段由 55 收敛为 53；float_share（流通股本）已删除不采集，由 approximate 移入 unavailable；brd.md §7.8 业务基线 55 字段清单保持不变。
 
 **计算型字段口径**（不落盘，M2 纯函数计算）：
 
@@ -410,9 +412,9 @@ alpha-jerry/
 
 **CSV 列序**：`OUTPUT_COLUMNS`（44 列）按财务阅读习惯分组排列（基本信息→利润表→利润率增速→资产负债→偿债指标→每股指标→现金流量→营运效率），不再按接口来源顺序。
 
-**申万行业分类（五大类）**：CSV 中"所属分类"列不再使用 stock_basic 的 `industry` 字段，改为通过申万行业指数分类映射到五个大类。数据链：`ts_code → index_member_all(ts_code, is_new='Y') → l2_name → sw_l2_to_category() → 五大类`。纯映射见 `src/data/provider.py`（约 130 个 SW 二级行业名→五大类，自动剥离罗马数字后缀如 `中药Ⅱ`→`中药`）。分类仅在采集范围内按需查询 API，结果增量缓存到 `data/cache/sw_industry.csv`。
+**申万行业分类（五大类）**：CSV 中"所属分类"列不再使用 stock_basic 的 `industry` 字段，改为通过申万行业指数分类映射到五个大类。数据链：`ts_code → index_member_all(ts_code, is_new='Y') → l2_name → sw_l2_to_category() → 五大类`。纯映射见 `src/data/provider.py`（约 130 个 SW 二级行业名→五大类，自动剥离罗马数字后缀如 `中药Ⅱ`→`中药`）。分类仅在采集范围内按需查询 API，结果增量缓存到 `data/ref/sw_industry.csv`。预构建缓存：`uv run python scripts/sw_industry.py`（首次 ~11 分钟，后续秒级命中）。
 
-**CSV 数值格式化**：所有数值字段按 `data/test/YYMMDD-数据来源.csv` 中记录的单位匹配后缀（代码见 `src/data/reports.py::format_value`），具体规则：
+**CSV 数值格式化**：所有数值字段按 `data/test/YYMMDD-数据来源.csv` 中记录的单位匹配后缀（代码见 `src/data/output.py::format_value`），具体规则：
 - `元` → 亿/万数量级 + 元（如 `1.13亿元`、`-1526.07万元`）
 - `%` → `.2f%`（含 PERCENT_FIELDS 五项 + roe）
 - `倍` → `.2f倍`（current_ratio/quick_ratio/assets_to_eqt）
@@ -579,7 +581,7 @@ $$
 
 ## 9. 功能需求清单（可追溯）
 
-> 业务需求 `BR-*` 来自 brd-1.md §8，功能需求 `FR-*` 来自 prd.md §4。下表为二者映射，AI 实现时以 `FR-*` 为单元交付。
+> 业务需求 `BR-*` 来自 brd.md §8，功能需求 `FR-*` 待 prd.md 补充。下表为映射，AI 实现时以 `FR-*` 为单元交付。
 
 | BR | FR 域 | 需求要点 | 优先级 |
 |---|---|---|---|
@@ -683,7 +685,7 @@ LLM_LOCAL_FALLBACK=false     # 是否启用本地模型兜底
 | 纯函数边界单测 | 评分/评级阈值边界全覆盖 | 是 |
 | 配置同步 | 新增配置项须同步 `.env.example` | 是 |
 
-### 12.2 交付标准（来自 coding.md）
+### 12.2 交付标准
 
 - 单 PR 单功能，≤ 20 文件，超出须说明原因。
 - PR 描述含：改动目的与背景 / 内容摘要 / 验证方式（命令/截图）/ 未验证项 / 风险点 / 回滚方式。
@@ -709,7 +711,7 @@ LLM_LOCAL_FALLBACK=false     # 是否启用本地模型兜底
 
 ## 13. 里程碑
 
-`[TRACE: prd.md §10, brd-1.md §11]`
+`[TRACE: brd.md §11]`
 
 | 里程碑 | 范围 | 验收 |
 |---|---|---|
@@ -753,17 +755,17 @@ AI Agent 在不确定时按以下优先级决策：
 7. **纯逻辑优先单测**：纯函数加单测，I/O 走集成测试。
 8. **本地优先**：除 LLM 推理外不外联，数据不外传。
 
-**冲突溯源**：业务规则以 [brd-1.md](./brd-1.md) §7 为准；产品实现以 [prd.md](./prd.md) 为准；本文件为合并工程视图。
+**冲突溯源**：业务规则以 [brd.md](./brd.md) §7 为准。
 
 ---
 
 ## 16. 参考资料
 
-- 业务需求：[brd-1.md](./brd-1.md)
-- 产品需求：[prd.md](./prd.md)
+- 业务需求：[brd.md](./brd.md)
+- 产品需求：prd.md（待补充）
 - 原始草案：[brd.md](./brd.md)
 - 开发日志：[dev-log.md](./dev-log.md)
-- 工程规范：`coding.md`、`AGENTS.md.md`
+- 工程规范：`AGENTS.md`
 - 规范仓库：`qtcloud-devops-main`、`qtcloud-course-main`
 - 架构灵感：`openclaw-main`
 - 功能灵感：`OpenBB-develop`、`daily_stock_analysis-main`、`Vibe-Trading-main`、`TradingAgents-CN-main`

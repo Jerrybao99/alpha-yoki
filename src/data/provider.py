@@ -1,9 +1,11 @@
-"""数据获取模块。BaseFetcher + Tushare 接口注册表 + TushareFetcher 实现。
-含限流器与指数退避重试，vip 接口优先。"""
+"""数据获取：BaseFetcher 抽象、TushareInterface 接口注册表（20 个，vip 优先）、
+RateLimiter 滑动窗口限流、TushareFetcher（逐股 fetch_financials + 批量 fetch_financials_batch）、
+申万二级行业→五大类映射（~130 个行业，自动剥离罗马数字后缀）。"""
 
 from __future__ import annotations
 
 import csv
+import logging
 import math
 import time
 from abc import ABC, abstractmethod
@@ -87,9 +89,6 @@ TUSHARE_INTERFACES: dict[str, TushareInterface] = {
     ),
     "fina_audit": TushareInterface(
         "fina_audit", "fina_audit", _DOC + "80", 2000, "财务审计意见"
-    ),
-    "dividend": TushareInterface(
-        "dividend", "dividend", _DOC + "103", 2000, "分红送股数据"
     ),
     "pledge_stat": TushareInterface(
         "pledge_stat", "pledge_stat", _DOC + "110", 2000, "股权质押统计数据"
@@ -189,6 +188,14 @@ class BaseFetcher(ABC):
         Returns:
             该股票的特征数据（字段名即 Tushare 真实字段名，数据为真实值）。
         """
+
+    def fetch_financials_batch(
+        self, period: str
+    ) -> dict[str, StockFeatures]:
+        """批量采集全市场财务数据（可选覆写，VIP O(1) 接口）。
+        基类默认抛 NotImplementedError，子类如有批量能力可覆写。
+        """
+        raise NotImplementedError
 
 
 # 指数退避基数（秒）：1, 2, 4
@@ -324,31 +331,37 @@ class TushareFetcher(BaseFetcher):
     ) -> StockFeatures:
         """按 §8.1 聚合单股财务数据（FR-DATA-03/04）。
 
-        财务三表/指标走 vip 接口；daily_basic 按贸易日取最新；补充字段（审计/质押/分红）
-        各取最新一期。period=None 取最新报告期。
+        period=None 走 _latest 取各接口最新报告期；period 指定时合并该期所有记录
+        （逐股 VIP 可能返回多条，后条非空值覆写前条），确保与 fetch_financials_batch 一致。
         """
         data: dict[str, Any] = {"ts_code": ts_code}
         fin_params: dict[str, Any] = {"ts_code": ts_code}
-        if period:
+        explicit_period = period is not None
+        if explicit_period:
             fin_params["period"] = period
 
-        # income 设定报告期（end_date 来自利润表，是「财报所属期间」的唯一权威来源）。
-        rec = self._latest(
-            self._call("income", INCOME_FIELDS, **fin_params), "end_date"
-        )
-        data.update(self._clean_record(rec, INCOME_FIELDS))
-        # report_period 锁定后，其余接口仍按各自 end_date 选最新记录，但不覆盖该字段
-        # （pledge_stat/fina_audit 的 end_date 是统计截止日/审计对应年报，语义不同）。
         _no_end_date = {"end_date"}
 
-        # 资产负债表 / 现金流量表 / 财务指标（vip 接口）
+        if explicit_period:
+            records = self._call("income", INCOME_FIELDS, **fin_params)
+            for r in records:
+                self._merge_non_none(data, self._clean_record(r, INCOME_FIELDS))
+        else:
+            rec = self._latest(self._call("income", INCOME_FIELDS, **fin_params), "end_date")
+            data.update(self._clean_record(rec, INCOME_FIELDS))
+
         for key, fields in (
             ("balancesheet", BALANCESHEET_FIELDS),
             ("cashflow", CASHFLOW_FIELDS),
             ("fina_indicator", FINA_INDICATOR_FIELDS),
         ):
-            rec = self._latest(self._call(key, fields, **fin_params), "end_date")
-            data.update(self._clean_record(rec, fields, exclude=_no_end_date))
+            if explicit_period:
+                records = self._call(key, fields, **fin_params)
+                for r in records:
+                    self._merge_non_none(data, self._clean_record(r, fields, exclude=_no_end_date))
+            else:
+                rec = self._latest(self._call(key, fields, **fin_params), "end_date")
+                data.update(self._clean_record(rec, fields, exclude=_no_end_date))
 
         model_fields = set(StockFeatures.model_fields)
         return StockFeatures(**{k: v for k, v in data.items() if k in model_fields})
@@ -395,6 +408,13 @@ class TushareFetcher(BaseFetcher):
             return ""
         return str(v)
 
+    @staticmethod
+    def _merge_non_none(target: dict[str, Any], source: dict[str, Any]) -> None:
+        """将 source 中非 None 的键值合并到 target（None 值不覆写已有有效数据）。"""
+        for k, v in source.items():
+            if v is not None:
+                target[k] = v
+
     # ===== 申万行业分类 =====
     _SW_MEMBER_FIELDS: tuple[str, ...] = (
         "ts_code",
@@ -405,7 +425,7 @@ class TushareFetcher(BaseFetcher):
     )
 
     def _sw_cache_path(self) -> Path:
-        return self.settings.data_root / "cache" / "sw_industry.csv"
+        return self.settings.data_root / "ref" / "sw_industry.csv"
 
     @staticmethod
     def _sw_name_to_category(rec: dict, default: str = "未分类") -> str:
@@ -419,43 +439,49 @@ class TushareFetcher(BaseFetcher):
                 # 对于一级/三级行业名也试映射（部分 SW L1/L3 名和 L2 名重叠）
         return default
 
-    def _fetch_one_sw_category(self, ts_code: str) -> str:
-        """查单股申万行业 → 五大类。不传 fields，获取全部默认字段（含 l1/l2/l3_name）。"""
+    def _fetch_one_sw_category(self, ts_code: str) -> tuple[str, str]:
+        """查单股申万行业 → (五大类, 原始l2_name)。不传 fields，获取全部默认字段。"""
         try:
             records = self._call_no_fields(
                 "index_member_all", ts_code=ts_code, is_new="Y"
             )
         except TushareApiError:
-            return "未分类"
+            return "未分类", ""
         for r in records:
             cat = self._sw_name_to_category(r)
             if cat != "未分类":
-                return cat
-        return "未分类"
+                return cat, str(r.get("l2_name", "")).strip()
+        # 有记录但都未命中映射：取首条 l2_name 便于诊断
+        l2 = str(records[0].get("l2_name", "")).strip() if records else ""
+        return "未分类", l2
 
     def build_sw_cache(self) -> dict[str, str]:
-        """构建全量 SW 缓存（首次慢，约 5000+ API 调用），之后读缓存秒过。
-        一般不需要主动调用；``_enrich_with_sw_category`` 会按需查 API 并增量写缓存。
-        """
+        """构建全量 SW 缓存（首次 ~11 分钟），之后读缓存秒过。"""
         all_codes = self._call("stock_basic", ("ts_code",), list_status="L")
         mapping: dict[str, str] = {}
+        l2_names: dict[str, str] = {}
         for r in all_codes:
             ts_code = self._str(r.get("ts_code"))
             if not ts_code:
                 continue
-            mapping[ts_code] = self._fetch_one_sw_category(ts_code)
-        self._save_sw_cache(mapping)
+            cat, l2 = self._fetch_one_sw_category(ts_code)
+            mapping[ts_code] = cat
+            l2_names[ts_code] = l2
+        self._save_sw_cache(mapping, l2_names=l2_names)
         return mapping
 
-    def _save_sw_cache(self, mapping: dict[str, str]) -> None:
-        """落盘 sw_industry.csv。"""
+    def _save_sw_cache(
+        self, mapping: dict[str, str], *, l2_names: dict[str, str] | None = None
+    ) -> None:
+        """落盘 sw_industry.csv。l2_names 传入时填写 l2_name 列（便于诊断未分类）。"""
         cache_path = self._sw_cache_path()
         cache_path.parent.mkdir(parents=True, exist_ok=True)
         with cache_path.open("w", newline="", encoding="utf-8-sig") as fh:
             writer = csv.writer(fh, lineterminator="\n")
             writer.writerow(["ts_code", "l2_name", "category"])
             for ts_code in sorted(mapping):
-                writer.writerow([ts_code, "", mapping[ts_code]])
+                l2 = (l2_names or {}).get(ts_code, "")
+                writer.writerow([ts_code, l2, mapping[ts_code]])
 
     @staticmethod
     def load_sw_cache(cache_path: Path) -> dict[str, str] | None:
@@ -486,7 +512,8 @@ class TushareFetcher(BaseFetcher):
         modified = False
         for s in stocks:
             if s.ts_code not in sw_map:
-                sw_map[s.ts_code] = self._fetch_one_sw_category(s.ts_code)
+                cat, _l2 = self._fetch_one_sw_category(s.ts_code)
+                sw_map[s.ts_code] = cat
                 modified = True
             cat = sw_map.get(s.ts_code)
             if cat and cat != "未分类":
@@ -494,6 +521,75 @@ class TushareFetcher(BaseFetcher):
         if modified:
             self._save_sw_cache(sw_map)
         return stocks
+
+    # ===== 批量采集（O(1) 全市场，ROADMAP Step 1-5）=====
+
+    def _call_paginated(
+        self, interface_key: str, fields: tuple[str, ...], page_size: int, **params: Any
+    ) -> list[dict]:
+        """分页 API 调用：按 offset/limit 循环拉取直到无更多数据。每页走限流+退避。"""
+        api_name = get_vip_api_name(interface_key)
+        all_records: list[dict] = []
+        offset = 0
+        while True:
+            page = self._call_raw(
+                api_name,
+                fields=",".join(fields),
+                offset=offset,
+                limit=page_size,
+                **params,
+            )
+            if not page:
+                break
+            all_records.extend(page)
+            if len(page) < page_size:
+                break
+            offset += page_size
+        return all_records
+
+    def fetch_financials_batch(self, period: str) -> dict[str, StockFeatures]:
+        """批量采集全市场财务数据（ROADMAP Step 1-5）。
+
+        调用 4 个 VIP 接口只传 period 不传 ts_code，O(1) 拿全市场，按 ts_code 增量合并。
+        end_date 锁定 income 报告期；其余接口 end_date 不覆盖。
+        分页自动处理，单接口超限自动 offset 循环。
+        """
+        page_size = self.settings.vip_page_size
+        model_fields = set(StockFeatures.model_fields)
+        merged: dict[str, dict[str, Any]] = {}
+
+        logger = logging.getLogger(__name__)
+        logger.info("批量采集开始：period=%s page_size=%d", period, page_size)
+
+        # income 作为主接口（确定股票列表与 end_date）
+        income_rows = self._call_paginated("income", INCOME_FIELDS, page_size, period=period)
+        for r in income_rows:
+            tc = self._str(r.get("ts_code"))
+            if tc:
+                merged[tc] = self._clean_record(r, INCOME_FIELDS)
+        logger.info("  income: %d 条记录，%d 只股票", len(income_rows), len(merged))
+
+        # 其余三个接口：排除 end_date，仅更新已存在的 ts_code
+        _no_end = {"end_date"}
+        for key, fields in (
+            ("balancesheet", BALANCESHEET_FIELDS),
+            ("cashflow", CASHFLOW_FIELDS),
+            ("fina_indicator", FINA_INDICATOR_FIELDS),
+        ):
+            rows = self._call_paginated(key, fields, page_size, period=period)
+            hits = 0
+            for r in rows:
+                tc = self._str(r.get("ts_code"))
+                if tc and tc in merged:
+                    self._merge_non_none(merged[tc], self._clean_record(r, fields, exclude=_no_end))
+                    hits += 1
+            logger.info("  %s: %d 条记录，命中 %d 只股票", key, len(rows), hits)
+
+        result: dict[str, StockFeatures] = {}
+        for tc, data in merged.items():
+            result[tc] = StockFeatures(**{k: v for k, v in data.items() if k in model_fields})
+        logger.info("批量采集完成：%d 只股票", len(result))
+        return result
 
 
 # 五大类标签
@@ -516,6 +612,7 @@ FIVE_CATEGORIES: tuple[str, ...] = (
 _SW_L2_TO_CATEGORY: dict[str, str] = {
     # ===== 周期资源 =====
     "石油开采": CAT_CYCLICAL,
+    "油气开采": CAT_CYCLICAL,
     "石油化工": CAT_CYCLICAL,
     "油服工程": CAT_CYCLICAL,
     "煤炭开采": CAT_CYCLICAL,
@@ -542,10 +639,12 @@ _SW_L2_TO_CATEGORY: dict[str, str] = {
     "渔业": CAT_CYCLICAL,
     "饲料": CAT_CYCLICAL,
     "农产品加工": CAT_CYCLICAL,
+    "农业综合": CAT_CYCLICAL,
     "养殖业": CAT_CYCLICAL,
     "动物保健": CAT_CYCLICAL,
     "林业": CAT_CYCLICAL,
     "造纸": CAT_CYCLICAL,
+    "炼化及贸易": CAT_CYCLICAL,
     # ===== 大消费 =====
     "白酒": CAT_CONSUMER,
     "非白酒": CAT_CONSUMER,
@@ -553,6 +652,7 @@ _SW_L2_TO_CATEGORY: dict[str, str] = {
     "其他酒类": CAT_CONSUMER,
     "食品加工": CAT_CONSUMER,
     "调味品": CAT_CONSUMER,
+    "调味发酵品": CAT_CONSUMER,
     "饮料乳品": CAT_CONSUMER,
     "休闲食品": CAT_CONSUMER,
     "服装家纺": CAT_CONSUMER,
@@ -573,10 +673,12 @@ _SW_L2_TO_CATEGORY: dict[str, str] = {
     "化妆品": CAT_CONSUMER,
     "个护用品": CAT_CONSUMER,
     "医美": CAT_CONSUMER,
+    "医疗美容": CAT_CONSUMER,
     "白色家电": CAT_CONSUMER,
     "黑色家电": CAT_CONSUMER,
     "小家电": CAT_CONSUMER,
     "家电零部件": CAT_CONSUMER,
+    "其他家电": CAT_CONSUMER,
     "照明设备": CAT_CONSUMER,
     "厨卫电器": CAT_CONSUMER,
     "化学制药": CAT_CONSUMER,
@@ -639,6 +741,8 @@ _SW_L2_TO_CATEGORY: dict[str, str] = {
     "电网设备": CAT_TECH,
     "其他电源设备": CAT_TECH,
     "电机": CAT_TECH,
+    "集成电路": CAT_TECH,
+    "其他电子": CAT_TECH,
     "环境治理": CAT_TECH,
     "环保设备": CAT_TECH,
     # ===== 公用事业/基建 =====
@@ -654,6 +758,7 @@ _SW_L2_TO_CATEGORY: dict[str, str] = {
     "基础建设": CAT_UTILITY,
     "专业工程": CAT_UTILITY,
     "工程咨询": CAT_UTILITY,
+    "工程咨询服务": CAT_UTILITY,
     "公交": CAT_UTILITY,
 }
 

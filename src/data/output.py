@@ -1,4 +1,6 @@
-"""CSV 报告生成与格式化。中文列头、亿/万数量级、百分比后缀、数据来源表。"""
+"""CSV 输出与格式化：FIELD_CN 中英文列头映射、format_value 数值格式化（亿/万/%/倍/次/元/股/比率）、
+to_output_row 行标准化、write_features_csv 写数据 CSV、write_data_source_csv 写数据来源表、
+FIELD_TO_INTERFACE 字段→接口溯源。"""
 
 from __future__ import annotations
 
