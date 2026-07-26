@@ -35,6 +35,7 @@
 - [ ] README、AGENTS 的更新建议
 - [ ] test 的编写通用约束
 
+- [ ] 已完成的步骤中未实现的功能
 - [ ] Tushare skill
 
 - [ ] 知识产权保护

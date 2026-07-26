@@ -133,17 +133,11 @@ date: 2026-07-23
 
 ### Step 2-3 评级纯函数与边界单测
 
-- 涉及文件：`src/rate.py`、`tests/test_rating_rate.py`
+- 涉及文件：`src/scoring/scores.py`、`tests/scoring/test_scores.py`
 - 实现 BR-05
 - 实现 FR-RATE-01
-- 学习点：`<5.5` 是垃圾、`5.5` 是鸡肋·观察——这种"等号归哪边"的细节最易写错，单测要明确断言。
-- [ ] 操作：在 `src/` 实现评级映射（§8.6），单测覆盖 8.5 / 7.0 / 5.5 三个临界值归属。
-- [ ] 测试/验收：`uv run pytest tests/test_rating_rate.py`。
-- 断点提交：
-  ```bash
-  git add src/rate.py tests/test_rating_rate.py
-  git commit -m "feat(rating): 评级映射与边界单测"
-  ```
+- [x] 操作：`score_rating(composite: float) -> str` 按 §8.6 四级映射（8.5→皇冠明珠 / 7.0→优秀白马 / 5.5→鸡肋·观察 / 以下→垃圾），单测覆盖三个临界值归属。
+- [x] 测试/验收：`uv run pytest tests/scoring/test_scores.py`。
 
 ### Step 2-4 评分评级串联 csv 落地
 

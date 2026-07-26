@@ -235,3 +235,22 @@ def score_composite(
     """
     gw, sw, rw = _INDUSTRY_WEIGHTS.get(industry, _DEFAULT_WEIGHTS)
     return round(growth * gw + stability * sw + return_ * rw, 1)
+
+
+_RATING_LABELS: list[tuple[float, str]] = [
+    (8.5, "\U0001f451 皇冠明珠"),
+    (7.0, "\u2b50 优秀白马"),
+    (5.5, "\U0001f504 鸡肋\u00b7观察"),
+    (0.0, "\u26a0\ufe0f 垃圾"),
+]
+
+
+def score_rating(composite: float) -> str:
+    """综合分 → 四级评级（§8.6）。
+
+    边界值归属：8.5→皇冠明珠 / 7.0→优秀白马 / 5.5→鸡肋·观察 / 以下→垃圾。
+    """
+    for threshold, label in _RATING_LABELS:
+        if composite >= threshold:
+            return label
+    return _RATING_LABELS[-1][1]

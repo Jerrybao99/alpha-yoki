@@ -8,6 +8,7 @@ from src.scoring.scores import (
     check_veto,
     score_composite,
     score_growth,
+    score_rating,
     score_return,
     score_stability,
 )
@@ -499,3 +500,34 @@ class TestVetoFraud:
         vt = triggers[0]
         assert isinstance(vt, VetoTrigger)
         assert vt.rule == "造假嫌疑"
+
+
+# ============================================================================
+#  评级映射 §8.6
+# ============================================================================
+
+
+def test_rating_crown():
+    assert score_rating(8.5) == "\U0001f451 \u7687\u51a0\u660e\u73e0"
+    assert score_rating(10.0) == "\U0001f451 \u7687\u51a0\u660e\u73e0"
+
+
+def test_rating_excellent():
+    assert score_rating(7.0) == "\u2b50 \u4f18\u79c0\u767d\u9a6c"
+    assert score_rating(8.4) == "\u2b50 \u4f18\u79c0\u767d\u9a6c"
+
+
+def test_rating_mediocre():
+    assert score_rating(5.5) == "\U0001f504 \u9e21\u808b\u00b7\u89c2\u5bdf"
+    assert score_rating(6.9) == "\U0001f504 \u9e21\u808b\u00b7\u89c2\u5bdf"
+
+
+def test_rating_junk():
+    assert score_rating(5.4) == "\u26a0\ufe0f \u5783\u573e"
+    assert score_rating(0.0) == "\u26a0\ufe0f \u5783\u573e"
+    assert score_rating(-1.0) == "\u26a0\ufe0f \u5783\u573e"
+
+
+def test_rating_boundary_precision():
+    assert score_rating(8.49) == "\u2b50 \u4f18\u79c0\u767d\u9a6c"
+    assert score_rating(6.99) == "\U0001f504 \u9e21\u808b\u00b7\u89c2\u5bdf"
