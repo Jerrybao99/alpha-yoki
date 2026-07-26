@@ -120,14 +120,8 @@ date: 2026-07-23
 - 涉及文件：`src/scoring/scores.py`、`tests/scoring/test_scores.py`
 - 实现 BR-04
 - 实现 FR-SCORE-02~05
-- 学习点：**纯函数** = 给相同输入永远得相同输出，不碰网络/文件/时间。这种函数最好测、最不易出 bug。dev-guide §6.3 原则 4 要求评分必须纯函数。**边界值测试**：如 8.5、7.0、5.5 这些临界点最容易出错，必须专门测。
-- [ ] 操作：在 `src/scoring/scores.py` 实现成长性/稳健性/资金回报三个评分纯函数（dev-guide §8.3），每个阈值表配单测覆盖区间边界。
-- [ ] 测试/验收：`uv run pytest tests/scoring/test_scores.py`。
-- 断点提交：
-  ```bash
-  git add src/scoring/scores.py tests/scoring/test_scores.py
-  git commit -m "feat(scoring): 三维评分纯函数"
-  ```
+- [x] 操作：在 `src/scoring/scores.py` 实现成长性/稳健性/资金回报三个评分纯函数（dev-guide §8.3），每个阈值表配单测覆盖区间边界。
+- [x] 测试/验收：`uv run pytest tests/scoring/test_scores.py`。
 
 ### Step 2-2 行业权重、综合分与一票否决
 

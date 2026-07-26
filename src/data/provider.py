@@ -153,9 +153,7 @@ TUSHARE_INTERFACES: dict[str, TushareInterface] = {
     "fund_portfolio": TushareInterface(
         "fund_portfolio", "fund_portfolio", _DOC + "121", 2000, "基金持仓"
     ),
-    "fund_div": TushareInterface(
-        "fund_div", "fund_div", _DOC + "120", 400, "基金分红"
-    ),
+    "fund_div": TushareInterface("fund_div", "fund_div", _DOC + "120", 400, "基金分红"),
     "fund_adj": TushareInterface(
         "fund_adj", "fund_adj", _DOC + "384", 2000, "ETF 复权因子"
     ),

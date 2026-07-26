@@ -101,8 +101,12 @@ def test_run_batch_missing_stock_is_failure(tmp_path: Path) -> None:
     class _SplitFetcher(BaseFetcher):
         def fetch_stock_list(self):
             return [
-                StockInfo(ts_code="600000.SH", symbol="600000", name="A", industry="银行"),
-                StockInfo(ts_code="000001.SZ", symbol="000001", name="B", industry="银行"),
+                StockInfo(
+                    ts_code="600000.SH", symbol="600000", name="A", industry="银行"
+                ),
+                StockInfo(
+                    ts_code="000001.SZ", symbol="000001", name="B", industry="银行"
+                ),
             ]
 
         def fetch_financials(self, ts_code, period=None):
