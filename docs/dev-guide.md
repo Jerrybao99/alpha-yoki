@@ -201,14 +201,14 @@ alpha-jerry/
 │   ├── data-contract.md       # 字段契约（已合并入 §8.1，不再单独维护）
 │   └── prompt-library.md      # Prompt 模板库（待建，M3 Step 3-3）
 ├── data/                      # 运行期数据（gitignore）
-│   ├── fin/                   # full_collect/ 批量采集产物 / smoke_collect/ 冒烟采集产物
+│   ├── fin/                   # full_collect/ 批量采集产物 / smoke_collect/ 冒烟采集产物 / scoring/评分评级产物
 │   ├── analysis/              # YYMMDD-荐股.csv
 │   ├── hold/                  # YYMMDD.csv / -09 / -17
 │   ├── hot/                   # YYMMDD-HH.csv
 │   ├── monitor/               # Agent 执行链
 │   ├── feedback/              # 用户反馈
 │   ├── ref/                   # 参考数据（SW 行业分类等）
-│   ├── test/                  # 集成测试产物（自动覆盖）
+│   ├── test/                  # 集成测试产物（full_collect / smoke_collect / scoring）
 │   └── rag/                   # 向量库与知识库
 ├── src/                       # 源代码
 │   ├── main.py                # 运行入口
@@ -217,9 +217,13 @@ alpha-jerry/
 │   │   ├── contract.py        # StockFeatures 字段模型 + 字段对齐表 + 列序
 │   │   ├── provider.py        # Tushare 适配器 + 接口注册表 + 行业分类
 │   │   ├── collect.py         # 采集编排 + 缓存 + 报告期推算
-│   │   └── output.py         # CSV 写盘 + 数值格式化
+│   │   └── output.py          # CSV 写盘 + 数值格式化
+│   └── scoring/               # 评分/评级/否决纯函数层
+│       └── scores.py          # 三维评分 + 综合分 + 一票否决 + 评级映射
 ├── scripts/                   # 辅助脚本
 ├── tests/                     # 单元测试
+│   ├── data/                  # 采集层单测
+│   └── scoring/               # 评分/评级/否决单测
 ├── integrated_tests/          # 集成测试
 └── manifests/                 # 部署清单（Win/Mac 打包）
 ```
@@ -270,11 +274,10 @@ alpha-jerry/
 全 A 股清单
   │ ① 采集（Tushare，特征工程字段）
   ▼ data/fin/full_collect/YYMMDD.csv
-  │ ② 评分（否决 → 三维评分 → 行业权重 → 综合分）
-  ▼ data/fin/YYMMDD-评分.csv
-  │ ③ 评级（综合分 → 四级评级 + AI 点评）
-  ▼ data/fin/YYMMDD-评级.csv
-  │ ④ 报告（综合分降序 Top20 + 持仓表）
+  │ ② 评分评级（否决 → 三维评分 → 行业权重 → 综合分 → 评级）
+  ▼ data/fin/scoring/YYMMDD.csv（原始字段 + 成长性/稳健性/资金回报/综合分/评级）
+  ▼ data/fin/scoring/YYMMDD-否决.csv（一票否决清单）
+  │ ③ 报告（综合分降序 Top20 + 持仓表）
   ▼ data/analysis/YYMMDD-荐股.csv   ← 用户据此决策
      data/hold/YYMMDD.csv        ← 持仓基线
 ```
@@ -315,8 +318,8 @@ alpha-jerry/
 |---|---|---|---|---|
 | RouterAgent | 意图路由，无法识别回退 ChatAgent | `classify_intent`（LLM+规则正则） | 短期会话 | 路由决策 |
 | DataAgent | 采集全 A 股并落地特征字段 | `fetch_stock_list`/`fetch_financials`/`save_csv` | 采集进度 | `data/fin/YYMMDD.csv` |
-| ScoringAgent | 否决 + 三维评分 + 权重 + 综合分 | `scoring` 纯函数族 | 评分快照 | `-评分.csv` |
-| RatingAgent | 评级 + 公司类型 + 行业分类 + AI 点评 | `rating` 纯函数 + `llm_comment` | 评级历史 | `-评级.csv` |
+| ScoringAgent | 否决 + 三维评分 + 权重 + 综合分 | `scoring` 纯函数族（`scores.py`） | 评分快照 | `-评分.csv` |
+| RatingAgent | 评级 + 公司类型 + 行业分类 + AI 点评 | `score_rating` 纯函数 + `llm_comment` | 评级历史 | `-评级.csv` |
 | ReportAgent | 荐股 Top20 + 持仓表 | `build_top20`/`render_portfolio`/`llm_highlight` | 报告索引 | `data/analysis/荐股.csv`、`data/hold/*.csv` |
 | HotspotAgent | 采热搜 → LLM 识别 → 受益行业/个股 | `fetch_hot_search`/`llm_identify_opportunity`/`rag_map_industry_to_stocks` | 热点时序 | `data/hot/` |
 | PortfolioAgent | 持仓重算、风险高亮、趋势、操作建议 | `reload_holdings`/`rescore`/`diff_last_score`/`suggest_action` | 持仓变化 | `data/hold/YYMMDD-09.csv` 等 |

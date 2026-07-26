@@ -66,6 +66,14 @@ def test_format_value_yuan_below_ten_thousand() -> None:
     assert format_value("revenue", 500) == "500.00元"
 
 
+def test_format_value_yuan_boundary_ten_thousand_to_hundred_million() -> None:
+    """接近 1e8 边界的值应正确归入亿级，避免 '10000.00万元' 这种异常显示。"""
+    assert format_value("revenue", 99_999_995) == "1.00亿元"
+    assert format_value("c_paid_invest", 99_999_950) == "1.00亿元"
+    assert format_value("revenue", 99_950_000) == "9995.00万元"
+    assert format_value("revenue", 9_999_995) == "1000.00万元"
+
+
 def test_format_value_gu_hundred_million() -> None:
     """total_share 股份数用亿。"""
     assert format_value("total_share", 3.56e8) == "3.56亿股"

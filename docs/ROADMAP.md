@@ -1,8 +1,8 @@
 ---
 tags: [roadmap, 路线图]
 status: active
-version: 1.2.0
-date: 2026-07-23
+version: 1.3.0
+date: 2026-07-26
 依据: [dev-guide.md](./dev-guide.md) §9 功能需求清单 + §13 里程碑 + §12 验证门禁
 ---
 
@@ -44,8 +44,8 @@ date: 2026-07-23
 ## M1 数据采集
 
 - 实现需求：BR-01/02 · FR-DATA-01~10 · FR-UPDATE-02/03（季度基本面/月度资金面更新）· NFR-03（全量 A 股采集可一晚完成）
-- 目标：能从 Tushare 采集 A 股财务数据并落地为 `data/fin/YYMMDD.csv`。支持两种模式：逐股（增量/持仓）与批量（首次全量/季度财报季全量刷新）。
-- 验收：5 股冒烟通过 + 全量批量采集产出 `data/fin/YYMMDD.csv`（≥5000 行），csv 字段对齐 dev-guide §8.1。
+- 目标：能从 Tushare 采集 A 股财务数据并落地为 `data/fin/full_collect/YYMMDD.csv`。支持两种模式：逐股（增量/持仓）与批量（首次全量/季度财报季全量刷新）。
+- 验收：5 股冒烟通过 + 全量批量采集产出 `data/fin/full_collect/YYMMDD.csv`（≥5000 行），csv 字段对齐 dev-guide §8.1。
 
 ### Step 1-1 数据源抽象与字段模型
 
@@ -105,7 +105,7 @@ date: 2026-07-23
   - [x] **mock 测试（CI 可跑）**：`test_run_batch_collects_all_stocks`（全量批量） / `test_run_batch_fills_stock_info`（回填名称行业） / `test_run_batch_missing_stock_is_failure`（缺失记失败） / `test_run_batch_auto_period`（自动推算报告期） / `test_run_batch_no_batch_method_raises`（无批量方法报错） / `test_batch_matches_per_stock`（批量和逐股产出一致 cross-validate）
   - [x] **CSV 落地测试（CI 可跑）**：`test_full_collect_csv_structure`（全量字段中文列头 + 百分比/亿万格式化） / `test_csv_resume_reads_existing`（断点续采读已有 ts_code） / `test_csv_resume_empty_csv` / `test_csv_resume_no_file`
   - [x] **network 测试（`-m network`）**：`test_real_batch_collects_all_stocks`（真实全量采集 ≥5000 股 + 产出落 `data/test/full_collect_test.csv` 自动覆盖） / `test_batch_vs_per_stock_cross_validate`（3 股逐字段比对）
-  - [x] `uv run python scripts/full_collect.py`——命令行跑通，产出 `data/fin/full_collect/YYMMDD.csv`
+  - [x] `uv run python scripts/full_collect.py`——命令行跑通，产出 `data/fin/full_collect/YYMMDD.csv`（5516 股成功，≤15 股失败）
 
 ---
 
@@ -113,7 +113,7 @@ date: 2026-07-23
 
 - 实现需求：BR-03/04/05 · FR-SCORE-01~09 · FR-RATE-01~04
 - 目标：把 dev-guide §8 的业务规则（一票否决、三维评分、行业权重、综合分、评级）落地为纯函数 + 单测。
-- 验收：阈值表单测全覆盖；`-评分`/`-评级` csv 产出。
+- 验收：阈值表单测全覆盖（263 项，覆盖率 99.3%）；`data/fin/scoring/YYMMDD.csv` + `-否决.csv` 产出。
 
 ### Step 2-1 三维评分纯函数 + 单测
 
@@ -141,19 +141,11 @@ date: 2026-07-23
 
 ### Step 2-4 评分评级串联 csv 落地
 
-- 涉及文件：`src/data/collect.py`（扩展）、`src/data/output.py`（扩展）、`integrated_tests/test_score_rate.py`
+- 涉及文件：`scripts/full_scores.py`、`integrated_tests/test_full_scores.py`
 - 实现 BR-05
 - 实现 FR-RATE-02~04、FR-SCORE-08、FR-SCORE-09
-- 学习点：**追加字段不破坏原字段**是数据契约的稳定性要求（dev-guide §15 决策优先级），下游消费方才不会突然崩。
-- [ ] 操作：把评分与评级串进 pipeline，输出 `data/fin/YYMMDD-评分.csv` 与 `data/fin/YYMMDD-评级.csv`，保留全部原始字段（追加新列）。
-- [ ] 测试/验收：用 M1 的 5 股样本跑全流程，检查两个 csv 生成且评级列正确。
-- 断点提交：
-  ```bash
-  git add src/data/collect.py src/data/output.py integrated_tests/test_score_rate.py
-  git commit -m "feat(rating): 评分评级串联并落地csv"
-  ```
-
-> 🎯 **M2 验收**：`uv run pytest` 全绿；5 股样本产出 `-评分`/`-评级`/`-否决` csv。
+- [x] 操作：`scripts/full_scores.py` 读取 `data/fin/full_collect/` 最新日期 csv 反序列化为 StockFeatures，调用 `scores.py` 全部纯函数逐行计算，追加五列（成长性/稳健性/资金回报/综合分/评级）并剔除否决股，产出 `data/fin/scoring/YYMMDD.csv`。`integrated_tests/test_full_scores.py` 覆盖评分列追加、否决剔除、行业权重、评级边界、CSV 产物结构、空边界、缺失容错；network 测试走真实 CSV 全量评分。
+- [x] 测试/验收：`uv run pytest integrated_tests/test_full_scores.py -m "not network"`（8 项 mock 测试全部通过）；`uv run python scripts/full_scores.py` 命令行跑通，产出 `data/fin/scoring/YYMMDD.csv`（4880 股通过）与 `-否决.csv`（636 股否决）。
 
 ---
 
@@ -163,17 +155,17 @@ date: 2026-07-23
 - 目标：生成荐股 Top20 报告与持仓表，含 AI 亮点与点评。
 - 验收：`data/analysis/YYMMDD-荐股.csv` 生成。
 
-### Step 3-1 公司类型、行业分类与操作建议
+### Step 3-1 公司类型与操作建议
 
-- 涉及文件：`src/company_type.py`、`src/data/provider.py`、`src/advice.py`、`tests/test_rating_company_type.py`、`tests/test_rating_industry.py`、`tests/test_rating_advice.py`
+- 涉及文件：`src/company_type.py`、`src/advice.py`、`tests/test_rating_company_type.py`、`tests/test_rating_advice.py`
 - 实现 BR-06
-- 实现 FR-REPORT-02、FR-REPORT-03、FR-REPORT-04
-- [ ] 操作：实现公司类型（千里马/现金牛/护城河，§8.7）、行业分类（§8.8）、评级→操作建议映射（§8.9）。
+- 实现 FR-REPORT-02、FR-REPORT-04
+- [ ] 操作：实现公司类型（千里马/现金牛/护城河，§8.7）与评级→操作建议映射（§8.9）。注意：申万二级行业→五大分类映射已在 M1 Step 1-4 实现于 `src/data/provider.py`（`sw_l2_to_category()`），M3 可复用。
 - [ ] 测试/验收：`uv run pytest tests/test_rating_*.py`。
 - 断点提交：
   ```bash
-  git add src/company_type.py src/data/provider.py src/advice.py tests/test_rating_*.py
-  git commit -m "feat(report): 公司类型、行业分类与操作建议"
+  git add src/company_type.py src/advice.py tests/test_rating_company_type.py tests/test_rating_advice.py
+  git commit -m "feat(report): 公司类型与操作建议"
   ```
 
 ### Step 3-2 荐股 Top20 与持仓表生成
@@ -454,8 +446,8 @@ date: 2026-07-23
 | 里程碑 | Step 数 | 提交数 | 需求覆盖（dev-guide §9） | 验收命令 | 推送方式 |
 |---|---|---|---|---|---|
 | M0 工程骨架 | 4 | 4 | 工程基线（支撑全部 FR/NFR） | `uv run pytest` | 直接推 main |
-| M1 数据采集 | 5 | 5 | BR-01/02 · FR-DATA-01~10 · FR-UPDATE-02/03 · NFR-03 | 全量批量采集 + 5 股冒烟，csv 字段齐全 | 直接推 main |
-| M2 评分评级 | 4 | 4 | BR-03/04/05 · FR-SCORE-01~09 · FR-RATE-01~04 | 阈值单测全覆盖；`-评分`/`-评级` csv | 直接推 main |
+| M1 数据采集 | 5 | 5 | BR-01/02 · FR-DATA-01~10 · FR-UPDATE-02/03 · NFR-03 | 全量批量采集 + 5 股冒烟，`data/fin/full_collect/YYMMDD.csv` 字段齐全 | 直接推 main |
+| M2 评分评级 | 4 | 4 | BR-03/04/05 · FR-SCORE-01~09 · FR-RATE-01~04 | 阈值单测全覆盖（263 项，cov 99.3%）；`data/fin/scoring/YYMMDD.csv` + `-否决.csv` | 直接推 main |
 | M3 报告输出 | 3 | 3 | BR-06/07 · FR-REPORT-01~07 | step1~4 一键跑通 | 直接推 main |
 | M4 Agent 编排 | 4 | 4 | BR-12/14/17 · AR-* · FR-CHAT-01~05 | 对话触发各 Agent | 直接推 main |
 | M5 监控推送 | 4 | 4 | BR-08/09/10/11 · FR-HOTSPOT/PORT/PUSH · FR-UPDATE-01 | 09/17 定时 + 推送 | 直接推 main |
@@ -469,7 +461,7 @@ date: 2026-07-23
 ## 附：断点学习小贴士
 
 1. **每步只做一件事**：不要顺手改别的，保持 commit 干净，出问题好回滚（`git revert`）。
-2. **提交前必验证**：`uv run ruff check . && uv run pytest -m "not network"` 是你的安全带。
+2. **提交前必验证**：`uv run ruff check . && uv run pytest -m "not network" --cov=src --cov-fail-under=80` 是你的安全带（当前覆盖率 99.3%，263 项测试）。
 3. **看不懂就停下来查**：每个 Step 的"学习点"是刻意写的，遇到陌生概念先搞懂再往下。
 4. **用 `git log --oneline` 回顾**：定期看自己的提交历史，能直观看到成长轨迹。
 5. **卡住了就回到上一个断点**：`git status` 看改动，`git checkout .` 丢弃未提交改动重试。

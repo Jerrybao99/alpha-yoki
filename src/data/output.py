@@ -586,7 +586,8 @@ def format_value(field: str, value: Any) -> str:
         if unit == "比率":
             return f"{v:.2f}"
 
-        if abs(v) >= 1e8:
+        _w = abs(v) / 1e4
+        if abs(v) >= 1e8 or _w >= 9999.995:
             scaled, mag = v / 1e8, "亿"
         elif abs(v) >= 1e4:
             scaled, mag = v / 1e4, "万"
