@@ -70,16 +70,16 @@ def test_requirement_coverage_summary() -> None:
 
 
 def test_endpoint_field_lists_no_duplicate() -> None:
-    """各接口字段集内部无重复，且含 ts_code 主键。"""
+    """stock_basic 含 ts_code 主键；VIP 接口字段集为空（取全量字段）。"""
+    assert len(STOCK_BASIC_FIELDS) == len(set(STOCK_BASIC_FIELDS))
+    assert "ts_code" in STOCK_BASIC_FIELDS
     for fields in (
-        STOCK_BASIC_FIELDS,
         INCOME_FIELDS,
         BALANCESHEET_FIELDS,
         CASHFLOW_FIELDS,
         FINA_INDICATOR_FIELDS,
     ):
-        assert len(fields) == len(set(fields)), fields
-        assert "ts_code" in fields
+        assert fields == ()
 
 
 def test_output_columns_are_tushare_real_names() -> None:
@@ -105,10 +105,15 @@ def test_output_columns_are_tushare_real_names() -> None:
 
 
 def test_output_columns_match_model_fields() -> None:
-    """输出列必须是 StockFeatures 已声明字段，保证写盘不缺列。"""
-    declared = set(StockFeatures.model_fields)
-    assert set(OUTPUT_COLUMNS) <= declared
-    assert set(ALL_OUTPUT_COLUMNS) <= declared
+    """StockFeatures 显式声明的输出字段必须全部出现在输出列中；
+    symbol 仅用于内部标识不在输出列中；extra=allow 允许额外列。"""
+    declared = set(StockFeatures.model_fields) - {"symbol"}
+    assert declared <= set(OUTPUT_COLUMNS), (
+        f"StockFeatures 声明了但未在 OUTPUT_COLUMNS 中: {declared - set(OUTPUT_COLUMNS)}"
+    )
+    assert declared <= set(ALL_OUTPUT_COLUMNS), (
+        f"StockFeatures 声明了但未在 ALL_OUTPUT_COLUMNS 中: {declared - set(ALL_OUTPUT_COLUMNS)}"
+    )
 
 
 def test_supplementary_columns_no_overlap() -> None:
@@ -189,7 +194,8 @@ def test_stock_features_required_ts_code() -> None:
 
 
 def test_stock_features_real_field_roundtrip() -> None:
-    """用 Tushare 真实字段名构造与 dump，字段名保持不变（无 alias 改名）。"""
+    """用 Tushare 真实字段名构造与 dump，显式字段保持不变；
+    extra=allow + mode="python" 确保额外字段也被序列化。"""
     feat = StockFeatures(
         ts_code="600000.SH",
         symbol="600000",
@@ -203,7 +209,9 @@ def test_stock_features_real_field_roundtrip() -> None:
     assert dumped["ts_code"] == "600000.SH"
     assert dumped["n_income_attr_p"] == 3.4e9
     assert dumped["money_cap"] == 5.0e11
-    assert set(dumped) >= set(ALL_OUTPUT_COLUMNS)
+    # 显式声明字段应全部在 dump 中
+    for f in StockFeatures.model_fields:
+        assert f in dumped, f
 
 
 def test_stock_features_tolerates_missing() -> None:

@@ -68,7 +68,8 @@ class Cache:
         if not self.enabled:
             return
         self._path(ts_code, period).write_text(
-            features.model_dump_json(), encoding="utf-8"
+            json.dumps(features.model_dump(), ensure_ascii=False),
+            encoding="utf-8",
         )
 
 
@@ -107,7 +108,7 @@ class CollectionPipeline:
         fetcher: BaseFetcher,
         settings: Settings | None = None,
         cache: Cache | None = None,
-        executor: ThreadPoolExecutor | None = None,
+        executor: Any = None,
     ) -> None:
         self.fetcher = fetcher
         self.settings = settings or get_settings()
@@ -242,11 +243,16 @@ class CollectionPipeline:
         return [to_output_row(f) for f in result.successes]
 
     def write_failures(
-        self, failures: list[Failure], date: _dt.date | None = None
+        self,
+        failures: list[Failure],
+        date: _dt.date | None = None,
+        *,
+        out_dir: Path | None = None,
     ) -> Path:
-        """失败清单落 ``data/fin/YYMMDD-失败.csv``（审计可追溯，FR-DATA-05）。"""
+        """失败清单落盘（审计可追溯，FR-DATA-05）。"""
         date = date or _dt.date.today()
-        out = self.settings.data_path("fin") / f"{date.strftime('%y%m%d')}-失败.csv"
+        base = out_dir or self.settings.data_path("fin")
+        out = base / f"{date.strftime('%y%m%d')}-失败.csv"
         out.parent.mkdir(parents=True, exist_ok=True)
         with out.open("w", newline="", encoding="utf-8-sig") as fh:
             writer = csv.writer(fh, lineterminator="\n")

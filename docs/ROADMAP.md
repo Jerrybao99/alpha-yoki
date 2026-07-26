@@ -52,7 +52,7 @@ date: 2026-07-23
 - 涉及文件：`src/data/contract.py`、`src/data/provider.py`、`tests/data/test_contract.py`
 - 实现 BR-01
 - 实现 FR-DATA-01、FR-DATA-08
-- [x] 操作：在 `src/data/provider.py` 定义 `BaseFetcher` 抽象接口 + `TUSHARE_INTERFACES` 接口注册表；在 `src/contract.py` 定义 `StockFeatures`（44 列）+ `REQUIREMENT_ALIGNMENT`（53 需求对齐）+ `SUPPLEMENTARY_FIELDS`（3 个）。
+- [x] 操作：在 `src/data/provider.py` 定义 `BaseFetcher` 抽象接口 + `TUSHARE_INTERFACES` 接口注册表；在 `src/contract.py` 定义 `StockFeatures`（extra=allow 接受 VIP 接口全量字段，~460 输出列）+ `REQUIREMENT_ALIGNMENT`（53 需求对齐）+ `SUPPLEMENTARY_FIELDS`（3 个）+ `FIELD_CN`/`FIELD_UNIT`（全量字段→中文/单位映射，源自 20/JUL/2026 将 4 个 VIP 接口从指定字段改为取全量字段的变更）。
 - [x] 测试/验收：`uv run pytest tests/data/test_contract.py` 通过。
 
 ### Step 1-2 Tushare 适配器与限流重试
@@ -84,7 +84,7 @@ date: 2026-07-23
   - [x] csv 字段为真实字段名，翻译为准确中文，增强可读性
   - [x] csv 中所有字段在数值中放弃科学计数法，匹配合适的汉字单位，按数据来源 CSV 中记录的单位逐字段追加后缀，并保留两位小数
   - [x] 单列一个 csv 列出采用的：接口、字段、字段对应中文、该接口/字段对应的文档 URL，形如 `YYMMDD-数据来源.csv`
-  - [x] 生成的 csv 在 data 的 test 文件夹，形如 `YYMMDD.csv`
+  - [x] 生成的 csv 在 `data/fin/smoke_collect/`，形如 `YYMMDD.csv`
   - [x] 集成测试代码对齐`scripts/smoke_collect.py`、`src/data/output.py`、`ROADMAP.md`、`dev-guide.md`
 - [x] 测试/验收：`uv run python scripts/smoke_collect.py --sample 5`；`uv run pytest -m network integrated_tests/`（交叉校验 end_date 为 Tushare 最新）；打开生成的 csv 人工确认。
 
@@ -103,9 +103,9 @@ date: 2026-07-23
   - [x] **性能参考**（mid 模式 / 5000 积分 / 中配 4 核 16G）：批量模式 ~2-5 分钟（4 次 VIP 调用 + 1 次 stock_basic + 流式写盘）。逐股模式 ~40-50 分钟（20000 次调用 / 500 次每分钟）。low 模式批量 ~5-10 分钟。2000 积分模式下批量仍 ~2-5 分钟（VIP 接口不占用常规额度），逐股模式延至 ~100 分钟。
 - [x] 测试/验收（`integrated_tests/test_full_collect.py`）：
   - [x] **mock 测试（CI 可跑）**：`test_run_batch_collects_all_stocks`（全量批量） / `test_run_batch_fills_stock_info`（回填名称行业） / `test_run_batch_missing_stock_is_failure`（缺失记失败） / `test_run_batch_auto_period`（自动推算报告期） / `test_run_batch_no_batch_method_raises`（无批量方法报错） / `test_batch_matches_per_stock`（批量和逐股产出一致 cross-validate）
-  - [x] **CSV 落地测试（CI 可跑）**：`test_full_collect_csv_structure`（44 列中文列头 + 百分比/亿万格式化） / `test_csv_resume_reads_existing`（断点续采读已有 ts_code） / `test_csv_resume_empty_csv` / `test_csv_resume_no_file`
+  - [x] **CSV 落地测试（CI 可跑）**：`test_full_collect_csv_structure`（全量字段中文列头 + 百分比/亿万格式化） / `test_csv_resume_reads_existing`（断点续采读已有 ts_code） / `test_csv_resume_empty_csv` / `test_csv_resume_no_file`
   - [x] **network 测试（`-m network`）**：`test_real_batch_collects_all_stocks`（真实全量采集 ≥5000 股 + 产出落 `data/test/full_collect_test.csv` 自动覆盖） / `test_batch_vs_per_stock_cross_validate`（3 股逐字段比对）
-  - [x] `uv run python scripts/full_collect.py`——命令行跑通，产出 `data/fin/YYMMDD.csv`
+  - [x] `uv run python scripts/full_collect.py`——命令行跑通，产出 `data/fin/full_collect/YYMMDD.csv`
 
 ---
 
@@ -117,15 +117,15 @@ date: 2026-07-23
 
 ### Step 2-1 三维评分纯函数 + 单测
 
-- 涉及文件：`src/scoring/growth.py`、`src/scoring/stability.py`、`src/scoring/return.py`、`tests/test_scoring_growth.py`、`tests/test_scoring_stability.py`、`tests/test_scoring_return.py`
+- 涉及文件：`src/scoring/scores.py`、`tests/scoring/test_scores.py`
 - 实现 BR-04
 - 实现 FR-SCORE-02~05
 - 学习点：**纯函数** = 给相同输入永远得相同输出，不碰网络/文件/时间。这种函数最好测、最不易出 bug。dev-guide §6.3 原则 4 要求评分必须纯函数。**边界值测试**：如 8.5、7.0、5.5 这些临界点最容易出错，必须专门测。
-- [ ] 操作：在 `src/scoring/` 实现成长性/稳健性/资金回报三个评分纯函数（dev-guide §8.3），每个阈值表配单测覆盖区间边界。
-- [ ] 测试/验收：`uv run pytest tests/test_scoring_growth.py tests/test_scoring_stability.py tests/test_scoring_return.py`。
+- [ ] 操作：在 `src/scoring/scores.py` 实现成长性/稳健性/资金回报三个评分纯函数（dev-guide §8.3），每个阈值表配单测覆盖区间边界。
+- [ ] 测试/验收：`uv run pytest tests/scoring/test_scores.py`。
 - 断点提交：
   ```bash
-  git add src/scoring/growth.py src/scoring/stability.py src/scoring/return.py tests/test_scoring_*.py
+  git add src/scoring/scores.py tests/scoring/test_scores.py
   git commit -m "feat(scoring): 三维评分纯函数"
   ```
 

@@ -17,7 +17,7 @@ alpha-jerry 是面向 A 股基本面分析的 AI Native 工具集，覆盖"数�
 ## 管道逻辑
 
 ```
-全 A 股清单 → 采集(Tushare) → data/fin/YYMMDD.csv
+全 A 股清单 → 采集(Tushare) → data/fin/full_collect/YYMMDD.csv
   → 评分(否决→三维→行业权重→综合分) → data/fin/YYMMDD-评分.csv
   → 评级(四级+AI点评)              → data/fin/YYMMDD-评级.csv
   → 报告(Top20荐股+持仓表)         → data/analysis/YYMMDD-荐股.csv / data/hold/

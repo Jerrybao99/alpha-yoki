@@ -592,9 +592,7 @@ def test_call_paginated_single_page() -> None:
     pro = _FakePro()
     pro.set_response("income_vip", [{"ts_code": "600000.SH", "revenue": 1.5e10}])
     fetcher = TushareFetcher(settings=_settings(), pro=pro, sleep=_no_sleep)
-    rows = fetcher._call_paginated(
-        "income", ("ts_code", "revenue"), page_size=100, period="20241231"
-    )
+    rows = fetcher._call_paginated("income", page_size=100, period="20241231")
     assert len(rows) == 1
     assert rows[0]["ts_code"] == "600000.SH"
 
@@ -613,9 +611,7 @@ def test_call_paginated_multiple_pages() -> None:
             return _FakeDf(rows)
 
     fetcher = TushareFetcher(settings=_settings(), pro=_MultiPagePro(), sleep=_no_sleep)
-    rows = fetcher._call_paginated(
-        "income", ("ts_code",), page_size=5, period="20241231"
-    )
+    rows = fetcher._call_paginated("income", page_size=5, period="20241231")
     assert 0 < len(rows) <= 5
 
 
@@ -630,9 +626,7 @@ def test_call_paginated_second_page_partial() -> None:
             return _FakeDf([{"ts_code": "B00.SH"}])
 
     fetcher = TushareFetcher(settings=_settings(), pro=_TwoPagePro(), sleep=_no_sleep)
-    rows = fetcher._call_paginated(
-        "income", ("ts_code",), page_size=5, period="20241231"
-    )
+    rows = fetcher._call_paginated("income", page_size=5, period="20241231")
     assert len(rows) == 6
 
 

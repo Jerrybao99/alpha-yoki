@@ -1,4 +1,4 @@
-"""随机 N 股冒烟采集脚本。随机选股真实采集（最新报告期），落地两张 CSV 到 data/test/。
+"""随机 N 股冒烟采集脚本。随机选股真实采集（最新报告期），落地 CSV 到 data/fin/smoke_collect/。
 用法：uv run python scripts/smoke_collect.py --sample 5。
 """
 
@@ -72,7 +72,7 @@ def main() -> None:
     except TushareTokenError as exc:
         raise SystemExit(f"采集失败：{exc}（请在 .env 填入 TUSHARE_TOKEN）") from exc
 
-    out_dir = settings.data_root / "test"
+    out_dir = settings.data_path("fin") / "smoke_collect"
     feat_path, src_path, ok, fail = run_smoke(
         fetcher, settings, args.sample, out_dir, seed=args.seed
     )

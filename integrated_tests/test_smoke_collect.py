@@ -76,15 +76,15 @@ def test_features_csv_chinese_header_and_format(tmp_path: Path) -> None:
     )
     text = feat_path.read_text(encoding="utf-8-sig")
     header = text.strip().split("\n")[0].lstrip("\ufeff")
-    # 中文列头存在（首列：股票名称；次列：股票代码；symbol 列已删除）
-    assert "股票名称" in header
-    assert "股票代码" in header
+    # 中文列头存在（首列：name → 无映射回退原字段名；次列：ts_code → "TS代码"）
+    assert "name" in header
+    assert "TS代码" in header
     assert "营业收入" in header
     # symbol 列不再出现
     assert "股票代码(ts_code)" not in header
-    # 已删除的列不再出现（上市日期/公告日期/财务费用利息收入/每股分红/分红进度）
+    # 已删除/不再输出的列不应出现
     assert "上市日期" not in header
-    assert "公告日期" not in header
+    assert "公告日期" in header  # ann_date 已恢复为输出列
     assert "财务费用利息收入" not in header
     assert "每股分红" not in header
     assert "分红进度" not in header
@@ -141,9 +141,9 @@ def test_data_source_csv_content(tmp_path: Path) -> None:
     # 不再使用 dividend 接口
     assert "dividend" not in text
     # ts_code 归属 stock_basic 接口（不因 income 也含 ts_code 而被覆写）
-    assert "stock_basic,ts_code," in text
-    # 单位与来源：推断（百分比 %）
-    assert "netprofit_yoy,归母净利润同比增长率(%),%,推断," in text
+    assert "stock_basic,ts_code,TS代码," in text
+    # 单位与来源：推断（百分比 %），FIELD_CN 来自 field_mappings
+    assert "netprofit_yoy,归属母公司股东的净利润同比增长率,%,推断," in text
     # 每行 6 列（5 个逗号）
     for ln in text.strip().split("\n")[1:]:
         assert ln.count(",") == 5
@@ -177,7 +177,7 @@ def test_smoke_regenerates_latest_csv() -> None:
         for p in cache_dir.glob("*.json"):
             p.unlink()
     fetcher = TushareFetcher(settings)
-    out_dir = settings.data_root / "test"
+    out_dir = settings.data_root / "test" / "smoke_collect"
     feat_path, src_path, ok, fail = run_smoke(
         fetcher, settings, 5, out_dir, filename="smoke_collect_test"
     )

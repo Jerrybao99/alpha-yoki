@@ -169,7 +169,7 @@ def test_batch_matches_per_stock(tmp_path: Path) -> None:
 
 
 def test_full_collect_csv_structure(tmp_path: Path) -> None:
-    """批量采集产出 CSV：中文列头、全部 44 列、百分比/亿万格式化。"""
+    """批量采集产出 CSV：中文列头、全量列、百分比/亿万格式化。"""
     codes = [f"6000{i:02d}.SH" for i in range(5)]
     fetcher = _FakeBatchFetcher({c: _feat(c) for c in codes})
     out = tmp_path / "fin"
@@ -190,8 +190,8 @@ def test_full_collect_csv_structure(tmp_path: Path) -> None:
 
     text = feat_path.read_text(encoding="utf-8-sig")
     header = text.strip().split("\n")[0]
-    assert "股票名称" in header
-    assert "股票代码" in header
+    assert "name" in header
+    assert "TS代码" in header
     assert "营业收入" in header
     assert "20.00%" in text
     assert "150.00亿元" in text
@@ -257,7 +257,7 @@ def test_real_batch_collects_all_stocks() -> None:
     assert feat.revenue is not None
 
     # 输出 CSV 到 data/test/（固定文件名，每次运行覆盖同名）
-    out_dir = settings.data_root / "test"
+    out_dir = settings.data_root / "test" / "full_collect"
     out_dir.mkdir(parents=True, exist_ok=True)
     feat_path = out_dir / "full_collect_test.csv"
     src_path = out_dir / "full_collect_test-数据来源.csv"

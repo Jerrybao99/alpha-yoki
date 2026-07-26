@@ -92,7 +92,7 @@ def test_write_features_csv(tmp_path: Path) -> None:
     assert out.exists()
     content = out.read_text(encoding="utf-8-sig")
     header = list(csv.reader(content.splitlines()))[0]
-    assert header == [FIELD_CN[c] for c in ALL_OUTPUT_COLUMNS]
+    assert header == [FIELD_CN.get(c, c) for c in ALL_OUTPUT_COLUMNS]
     assert "150.00亿元" in content
     assert "15.00%" in content
     assert "20.00%" in content

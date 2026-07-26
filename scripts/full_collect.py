@@ -107,7 +107,11 @@ def main() -> None:
     date = _dt.date.today()
     stamp = date.strftime("%y%m%d")
 
-    out_dir = Path(args.out_dir) if args.out_dir else settings.data_path("fin")
+    out_dir = (
+        Path(args.out_dir)
+        if args.out_dir
+        else settings.data_path("fin") / "full_collect"
+    )
     feat_path = out_dir / f"{stamp}.csv"
     src_path = out_dir / f"{stamp}-数据来源.csv"
 
@@ -195,7 +199,7 @@ def _run_batch(
 
     # 失败清单
     if result.failures:
-        fail_path = pipe.write_failures(result.failures, date=date)
+        fail_path = pipe.write_failures(result.failures, date=date, out_dir=out_dir)
         print(f"失败 {len(result.failures)} 股 → {fail_path}")
 
     print(
@@ -249,7 +253,7 @@ def _run_per_stock(
     write_data_source_csv(src_path)
 
     if result.failures:
-        fail_path = pipe.write_failures(result.failures, date=date)
+        fail_path = pipe.write_failures(result.failures, date=date, out_dir=out_dir)
         print(f"失败 {len(result.failures)} 股 → {fail_path}")
 
     print(

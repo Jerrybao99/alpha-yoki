@@ -201,7 +201,7 @@ alpha-jerry/
 │   ├── data-contract.md       # 字段契约（已合并入 §8.1，不再单独维护）
 │   └── prompt-library.md      # Prompt 模板库（待建，M3 Step 3-3）
 ├── data/                      # 运行期数据（gitignore）
-│   ├── fin/                   # YYMMDD.csv / -评分 / -评级 / -否决 / -失败
+│   ├── fin/                   # full_collect/ 批量采集产物 / smoke_collect/ 冒烟采集产物
 │   ├── analysis/              # YYMMDD-荐股.csv
 │   ├── hold/                  # YYMMDD.csv / -09 / -17
 │   ├── hot/                   # YYMMDD-HH.csv
@@ -269,7 +269,7 @@ alpha-jerry/
 ```
 全 A 股清单
   │ ① 采集（Tushare，特征工程字段）
-  ▼ data/fin/YYMMDD.csv
+  ▼ data/fin/full_collect/YYMMDD.csv
   │ ② 评分（否决 → 三维评分 → 行业权重 → 综合分）
   ▼ data/fin/YYMMDD-评分.csv
   │ ③ 评级（综合分 → 四级评级 + AI 点评）
@@ -342,11 +342,11 @@ alpha-jerry/
 
 采集并落地到 `data/fin/YYMMDD.csv`，**列名采用 Tushare 接口真实返回字段名、数据为真实值**（owner 决策，对齐 https://tushare.pro/document/2；偏离原中文字段名约定已记 CHANGELOG）。
 
-单一事实来源为代码：`src/data/contract.py` 的 `OUTPUT_COLUMNS`（44 列）与 `REQUIREMENT_ALIGNMENT`。接口注册表见 `src/data/provider.py` 的 `TUSHARE_INTERFACES`（20 个接口）。
+单一事实来源为代码：`src/data/contract.py` 的 `OUTPUT_COLUMNS`（全量字段 ~460 列，VIP 接口不传 fields 取全部返回字段）与 `REQUIREMENT_ALIGNMENT`。接口注册表见 `src/data/provider.py` 的 `TUSHARE_INTERFACES`（20 个接口）。全量字段的中文名与单位映射（`FIELD_CN` / `FIELD_UNIT`）同文件维护。
 
-**接口选型（5000 积分可调用，优先 vip 高级接口）**：财务三表 / 指标 / 预告 / 快报 / 主营构成使用 `_vip` 后缀接口（按 `period` 批量取全市场），其余接口使用常规接口（≤5000 积分）。`fetch_financials` 实际调用 4 个 vip 接口：`income_vip` / `balancesheet_vip` / `cashflow_vip` / `fina_indicator_vip`。
+**接口选型（5000 积分可调用，优先 vip 高级接口）**：财务三表 / 指标 / 预告 / 快报 / 主营构成使用 `_vip` 后缀接口（按 `period` 批量取全市场），其余接口使用常规接口（≤5000 积分）。`fetch_financials` 实际调用 4 个 vip 接口：`income_vip` / `balancesheet_vip` / `cashflow_vip` / `fina_indicator_vip`，不传 `fields` 参数以获取各接口全部默认字段（~460 列），`stock_basic` 依然按指定字段调取。
 
-完整接口注册表（20 个，详见 `src/data/provider.py`）：
+完整接口注册表（20 个，详见 `src/data/provider.py`）。接口文档入口：<https://tushare.pro/document/2>。
 
 | 业务别名 | 常规接口 | vip 接口 | 最低积分 | doc_id | 用途 |
 |---|---|---|---|---|---|

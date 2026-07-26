@@ -17,6 +17,7 @@ from src.data.contract import (
     StockInfo,
 )
 from src.data.output import format_percent, to_output_row
+from src.data.provider import BaseFetcher
 
 
 # ===== 测试桩 =====
@@ -36,7 +37,7 @@ class _SeqExecutor:
         pass
 
 
-class _FakeFetcher:
+class _FakeFetcher(BaseFetcher):
     """可控 BaseFetcher：按 ts_code 返回脚本化特征或抛异常。"""
 
     def __init__(self) -> None:
@@ -142,7 +143,7 @@ def test_to_output_row_columns_order_and_percent() -> None:
     assert list(row.keys()) == list(ALL_OUTPUT_COLUMNS)
     assert row["ts_code"] == "600000.SH"
     assert row["netprofit_yoy"] == "20.00%"  # 百分比字段格式化
-    assert row["roe"] == 12.5  # 非百分比保持原值
+    assert row["roe"] == "12.50%"  # 百分比字段格式化
     assert row["revenue"] == 1.0e10
     assert row["eps"] is None
 
@@ -380,7 +381,7 @@ def test_pipeline_enrich_with_stock_info_none() -> None:
 def test_pipeline_batch_missing_stock_in_result(tmp_path: Path) -> None:
     """stock_basic 有但 batch 结果中没有 → 记入失败。"""
 
-    class _PartialBatchFetcher:
+    class _PartialBatchFetcher(BaseFetcher):
         def fetch_stock_list(self):
             return [
                 StockInfo(ts_code="600000.SH", symbol="600000", name="A"),
@@ -411,7 +412,7 @@ def test_pipeline_run_calls_sw_enrichment(tmp_path: Path) -> None:
     """fetcher 有 _enrich_with_sw_category 时 run() 会调用它。"""
     sw_calls: list[int] = []
 
-    class _SWFetcher:
+    class _SWFetcher(BaseFetcher):
         def fetch_stock_list(self):
             return [StockInfo(ts_code="600000.SH", symbol="600000", name="A")]
 
@@ -438,7 +439,7 @@ def test_pipeline_batch_calls_sw_enrichment(tmp_path: Path) -> None:
     """fetcher 有 _enrich_with_sw_category 时 run_batch() 会调用它。"""
     sw_calls: list[int] = []
 
-    class _SWBatchFetcher:
+    class _SWBatchFetcher(BaseFetcher):
         def fetch_stock_list(self):
             return [StockInfo(ts_code="600000.SH", symbol="600000", name="A")]
 

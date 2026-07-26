@@ -19,10 +19,6 @@ import tushare as ts
 
 from src.config import Settings, get_settings
 from src.data.contract import (
-    BALANCESHEET_FIELDS,
-    CASHFLOW_FIELDS,
-    FINA_INDICATOR_FIELDS,
-    INCOME_FIELDS,
     STOCK_BASIC_FIELDS,
     StockFeatures,
     StockInfo,
@@ -173,7 +169,7 @@ class BaseFetcher(ABC):
     @abstractmethod
     def fetch_financials(
         self, ts_code: str, period: str | None = None
-    ) -> StockFeatures:
+    ) -> StockFeatures | None:
         """按 §8.1 需求采集单股财务数据（FR-DATA-03）。
 
         实现需聚合 income / balancesheet / cashflow / fina_indicator / daily_basic
@@ -280,11 +276,14 @@ class TushareFetcher(BaseFetcher):
 
     # ===== 核心调用：限流 + 指数退避重试 =====
     def _call(
-        self, interface_key: str, fields: tuple[str, ...], **params: Any
+        self, interface_key: str, fields: tuple[str, ...] | None = None, **params: Any
     ) -> list[dict]:
-        """调用某接口，返回记录列表。vip 接口自动取 vip_api_name。"""
+        """调用某接口，返回记录列表。vip 接口自动取 vip_api_name。
+        fields 为空时调取接口全部字段（默认列）。"""
         api_name = get_vip_api_name(interface_key)
-        return self._call_raw(api_name, fields=",".join(fields), **params)
+        if fields:
+            return self._call_raw(api_name, fields=",".join(fields), **params)
+        return self._call_raw(api_name, **params)
 
     def _call_raw(self, api_name: str, **params: Any) -> list[dict]:
         """底层调用 Tushare API，限流 + 指数退避重试。"""
@@ -327,7 +326,7 @@ class TushareFetcher(BaseFetcher):
     def fetch_financials(
         self, ts_code: str, period: str | None = None
     ) -> StockFeatures:
-        """按 §8.1 聚合单股财务数据（FR-DATA-03/04）。
+        """按 §8.1 聚合单股财务数据（FR-DATA-03/04），调取各接口全部字段。
 
         period=None 走 _latest 取各接口最新报告期；period 指定时合并该期所有记录
         （逐股 VIP 可能返回多条，后条非空值覆写前条），确保与 fetch_financials_batch 一致。
@@ -341,32 +340,25 @@ class TushareFetcher(BaseFetcher):
         _no_end_date = {"end_date"}
 
         if explicit_period:
-            records = self._call("income", INCOME_FIELDS, **fin_params)
+            records = self._call("income", **fin_params)
             for r in records:
-                self._merge_non_none(data, self._clean_record(r, INCOME_FIELDS))
+                self._merge_non_none(data, self._clean_record(r))
         else:
-            rec = self._latest(
-                self._call("income", INCOME_FIELDS, **fin_params), "end_date"
-            )
-            data.update(self._clean_record(rec, INCOME_FIELDS))
+            rec = self._latest(self._call("income", **fin_params), "end_date")
+            data.update(self._clean_record(rec))
 
-        for key, fields in (
-            ("balancesheet", BALANCESHEET_FIELDS),
-            ("cashflow", CASHFLOW_FIELDS),
-            ("fina_indicator", FINA_INDICATOR_FIELDS),
-        ):
+        for key in ("balancesheet", "cashflow", "fina_indicator"):
             if explicit_period:
-                records = self._call(key, fields, **fin_params)
+                records = self._call(key, **fin_params)
                 for r in records:
                     self._merge_non_none(
-                        data, self._clean_record(r, fields, exclude=_no_end_date)
+                        data, self._clean_record(r, exclude=_no_end_date)
                     )
             else:
-                rec = self._latest(self._call(key, fields, **fin_params), "end_date")
-                data.update(self._clean_record(rec, fields, exclude=_no_end_date))
+                rec = self._latest(self._call(key, **fin_params), "end_date")
+                data.update(self._clean_record(rec, exclude=_no_end_date))
 
-        model_fields = set(StockFeatures.model_fields)
-        return StockFeatures(**{k: v for k, v in data.items() if k in model_fields})
+        return StockFeatures(**{k: v for k, v in data.items()})
 
     # ===== 辅助 =====
     @staticmethod
@@ -381,9 +373,12 @@ class TushareFetcher(BaseFetcher):
 
     @staticmethod
     def _clean_record(
-        rec: dict | None, fields: tuple[str, ...], *, exclude: set[str] | None = None
+        rec: dict | None,
+        fields: tuple[str, ...] | None = None,
+        *,
+        exclude: set[str] | None = None,
     ) -> dict[str, Any]:
-        """提取字段并把 NaN/None 归一化为 None（StockFeatures 容忍缺失）。
+        """提取字段并把 NaN/None 归一化为 None。fields 为 None 时取 rec 全部字段。
 
         exclude 中的字段不写入返回字典（用于保护 income 确定的报告期 end_date 不被覆盖）。
         """
@@ -391,7 +386,8 @@ class TushareFetcher(BaseFetcher):
         if not rec:
             return out
         exclude = exclude or set()
-        for f in fields:
+        keys = fields if fields is not None else tuple(rec.keys())
+        for f in keys:
             if f in exclude:
                 continue
             if f in rec:
@@ -527,16 +523,17 @@ class TushareFetcher(BaseFetcher):
     # ===== 批量采集（O(1) 全市场，ROADMAP Step 1-5）=====
 
     def _call_paginated(
-        self, interface_key: str, fields: tuple[str, ...], page_size: int, **params: Any
+        self, interface_key: str, page_size: int, **params: Any
     ) -> list[dict]:
-        """分页 API 调用：按 offset/limit 循环拉取直到无更多数据。每页走限流+退避。"""
+        """分页 API 调用：按 offset/limit 循环拉取直到无更多数据。每页走限流+退避。
+        不传 fields，调取接口全部字段。
+        """
         api_name = get_vip_api_name(interface_key)
         all_records: list[dict] = []
         offset = 0
         while True:
             page = self._call_raw(
                 api_name,
-                fields=",".join(fields),
                 offset=offset,
                 limit=page_size,
                 **params,
@@ -550,52 +547,43 @@ class TushareFetcher(BaseFetcher):
         return all_records
 
     def fetch_financials_batch(self, period: str) -> dict[str, StockFeatures]:
-        """批量采集全市场财务数据（ROADMAP Step 1-5）。
+        """批量采集全市场财务数据（ROADMAP Step 1-5），调取各接口全部字段。
 
         调用 4 个 VIP 接口只传 period 不传 ts_code，O(1) 拿全市场，按 ts_code 增量合并。
         end_date 锁定 income 报告期；其余接口 end_date 不覆盖。
         分页自动处理，单接口超限自动 offset 循环。
         """
         page_size = self.settings.vip_page_size
-        model_fields = set(StockFeatures.model_fields)
         merged: dict[str, dict[str, Any]] = {}
 
         logger = logging.getLogger(__name__)
         logger.info("批量采集开始：period=%s page_size=%d", period, page_size)
 
         # income 作为主接口（确定股票列表与 end_date）
-        income_rows = self._call_paginated(
-            "income", INCOME_FIELDS, page_size, period=period
-        )
+        income_rows = self._call_paginated("income", page_size, period=period)
         for r in income_rows:
             tc = self._str(r.get("ts_code"))
             if tc:
-                merged[tc] = self._clean_record(r, INCOME_FIELDS)
+                merged[tc] = self._clean_record(r)
         logger.info("  income: %d 条记录，%d 只股票", len(income_rows), len(merged))
 
         # 其余三个接口：排除 end_date，仅更新已存在的 ts_code
         _no_end = {"end_date"}
-        for key, fields in (
-            ("balancesheet", BALANCESHEET_FIELDS),
-            ("cashflow", CASHFLOW_FIELDS),
-            ("fina_indicator", FINA_INDICATOR_FIELDS),
-        ):
-            rows = self._call_paginated(key, fields, page_size, period=period)
+        for key in ("balancesheet", "cashflow", "fina_indicator"):
+            rows = self._call_paginated(key, page_size, period=period)
             hits = 0
             for r in rows:
                 tc = self._str(r.get("ts_code"))
                 if tc and tc in merged:
                     self._merge_non_none(
-                        merged[tc], self._clean_record(r, fields, exclude=_no_end)
+                        merged[tc], self._clean_record(r, exclude=_no_end)
                     )
                     hits += 1
             logger.info("  %s: %d 条记录，命中 %d 只股票", key, len(rows), hits)
 
         result: dict[str, StockFeatures] = {}
         for tc, data in merged.items():
-            result[tc] = StockFeatures(
-                **{k: v for k, v in data.items() if k in model_fields}
-            )
+            result[tc] = StockFeatures(**{k: v for k, v in data.items()})
         logger.info("批量采集完成：%d 只股票", len(result))
         return result
 
