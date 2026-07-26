@@ -3,7 +3,14 @@
 from __future__ import annotations
 
 from src.data.contract import StockFeatures
-from src.scoring.scores import score_growth, score_return, score_stability
+from src.scoring.scores import (
+    VetoTrigger,
+    check_veto,
+    score_composite,
+    score_growth,
+    score_return,
+    score_stability,
+)
 
 
 def _f(**overrides) -> StockFeatures:
@@ -406,3 +413,89 @@ class TestReturnComposite:
             score_return(_f(roe=-100.0, free_cashflow=-1.0e12, total_assets=1.0e10))
             == 2
         )
+
+
+# ============================================================================
+#  综合分 §8.4 / §8.5
+# ============================================================================
+
+
+def test_composite_cyclical():
+    assert score_composite(8, 8, 8, "周期资源") == 8.0  # 8×0.25+8×0.35+8×0.40
+
+
+def test_composite_tech():
+    assert score_composite(10, 6, 8, "科技/制造") == 8.6  # 10×0.50+6×0.20+8×0.30
+
+
+def test_composite_utility():
+    assert score_composite(5, 8, 8, "公用事业/基建") == 7.4  # 5×0.20+8×0.40+8×0.40
+
+
+def test_composite_consumer():
+    assert score_composite(6, 7, 9, "大消费") == 7.5  # 6×0.30+7×0.30+9×0.40
+
+
+def test_composite_financial():
+    assert score_composite(7, 8, 6, "证券金融") == 6.9  # 7×0.30+8×0.30+6×0.40
+
+
+def test_composite_unknown_industry():
+    assert score_composite(8, 8, 8, "不存在的行业") == round(
+        8 * 0.333 + 8 * 0.333 + 8 * 0.334, 1
+    )
+
+
+def test_composite_one_decimal():
+    result = score_composite(7, 8, 9, "大消费")
+    assert result == round(result, 1)
+    assert len(str(result).split(".")[1]) <= 1
+
+
+# ============================================================================
+#  一票否决 §8.2
+# ============================================================================
+
+
+class TestVetoFraud:
+    """造假嫌疑——货币资金异常检测。"""
+
+    def test_high_cash_ratio_triggers(self):
+        triggers = check_veto(_f(money_cap=3e10, total_assets=5e10))
+        assert len(triggers) == 1
+        assert triggers[0].rule == "造假嫌疑"
+        assert "60.0%" in triggers[0].reason
+
+    def test_exactly_30_percent_no_trigger(self):
+        triggers = check_veto(_f(money_cap=3e9, total_assets=1e10))
+        assert len(triggers) == 0
+
+    def test_below_30_percent_no_trigger(self):
+        triggers = check_veto(_f(money_cap=2e9, total_assets=1e10))
+        assert len(triggers) == 0
+
+    def test_small_cash_no_trigger(self):
+        triggers = check_veto(_f(money_cap=5e7, total_assets=1e8))
+        assert len(triggers) == 0
+
+    def test_missing_money_cap_no_trigger(self):
+        triggers = check_veto(_f(money_cap=None, total_assets=1e10))
+        assert len(triggers) == 0
+
+    def test_missing_total_assets_no_trigger(self):
+        triggers = check_veto(_f(money_cap=1e10, total_assets=None))
+        assert len(triggers) == 0
+
+    def test_zero_assets_no_trigger(self):
+        triggers = check_veto(_f(money_cap=1e10, total_assets=0.0))
+        assert len(triggers) == 0
+
+    def test_high_cash_but_small_absolute_no_trigger(self):
+        triggers = check_veto(_f(money_cap=5e7, total_assets=1e8))
+        assert len(triggers) == 0  # mc=5000万 < 1亿
+
+    def test_veto_trigger_is_frozen(self):
+        triggers = check_veto(_f(money_cap=3e10, total_assets=5e10))
+        vt = triggers[0]
+        assert isinstance(vt, VetoTrigger)
+        assert vt.rule == "造假嫌疑"

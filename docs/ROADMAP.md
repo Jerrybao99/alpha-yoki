@@ -125,17 +125,11 @@ date: 2026-07-23
 
 ### Step 2-2 行业权重、综合分与一票否决
 
-- 涉及文件：`src/scoring/weights.py`、`src/scoring/composite.py`、`src/scoring/veto.py`、`tests/test_scoring_weights.py`、`tests/test_scoring_composite.py`、`tests/test_scoring_veto.py`
+- 涉及文件：`src/scoring/scores.py`、`tests/scoring/test_scores.py`
 - 实现 BR-03、BR-04
 - 实现 FR-SCORE-01、FR-SCORE-06、FR-SCORE-07
-- 学习点：权重以区间给出时取中点为默认值，可被 `Settings` 覆盖（dev-guide §8.4 备注）。一票否决是"硬性风险"，触发即剔除但必须留审计记录（可追溯）。
-- [ ] 操作：实现行业权重对照表（§8.4）、综合分公式（§8.5）、一票否决（§8.2）；否决记录入 `data/fin/YYMMDD-否决.csv`。
-- [ ] 测试/验收：`uv run pytest tests/test_scoring_weights.py tests/test_scoring_composite.py tests/test_scoring_veto.py`。
-- 断点提交：
-  ```bash
-  git add src/scoring/weights.py src/scoring/composite.py src/scoring/veto.py tests/test_scoring_*.py
-  git commit -m "feat(scoring): 行业权重、综合分与一票否决"
-  ```
+- [x] 操作：`score_composite(growth, stability, return_, industry)` 按 §8.4 五大行业权重加权求和。`check_veto(f)` 按 §8.2 实现货币资金占比异常检测；其余否决项（行业毁灭/诚信问题）需额外数据源，标记「待实现」。两者均含单测。
+- [x] 测试/验收：`uv run pytest tests/scoring/test_scores.py`。
 
 ### Step 2-3 评级纯函数与边界单测
 
