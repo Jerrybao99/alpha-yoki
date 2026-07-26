@@ -52,7 +52,7 @@ date: 2026-07-23
 - 涉及文件：`src/data/contract.py`、`src/data/provider.py`、`tests/data/test_contract.py`
 - 实现 BR-01
 - 实现 FR-DATA-01、FR-DATA-08
-- [x] 操作：在 `src/data/provider.py` 定义 `BaseFetcher` 抽象接口 + `TUSHARE_INTERFACES` 接口注册表；在 `src/contract.py` 定义 `StockFeatures`（extra=allow 接受 VIP 接口全量字段，~460 输出列）+ `REQUIREMENT_ALIGNMENT`（53 需求对齐）+ `SUPPLEMENTARY_FIELDS`（3 个）+ `FIELD_CN`/`FIELD_UNIT`（全量字段→中文/单位映射，源自 20/JUL/2026 将 4 个 VIP 接口从指定字段改为取全量字段的变更）。
+- [x] 操作：在 `src/data/provider.py` 定义 `BaseFetcher` 抽象接口 + `TUSHARE_INTERFACES` 接口注册表；在 `src/data/contract.py` 定义 `StockFeatures`（extra=allow 接受 VIP 接口全量字段，~460 输出列）+ `REQUIREMENT_ALIGNMENT`（53 需求对齐）+ `SUPPLEMENTARY_FIELDS`（3 个）+ `FIELD_CN`/`FIELD_UNIT`（全量字段→中文/单位映射，源自 20/JUL/2026 将 4 个 VIP 接口从指定字段改为取全量字段的变更）。
 - [x] 测试/验收：`uv run pytest tests/data/test_contract.py` 通过。
 
 ### Step 1-2 Tushare 适配器与限流重试

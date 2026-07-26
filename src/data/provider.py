@@ -137,6 +137,28 @@ TUSHARE_INTERFACES: dict[str, TushareInterface] = {
         2000,
         "申万行业成分（分级）",
     ),
+    # ===== 公募基金 / ETF（doc_id 见 Tushare ETF 专题）=====
+    "fund_basic": TushareInterface(
+        "fund_basic", "fund_basic", _DOC + "384", 2000, "基金/ETF 列表（基本信息）"
+    ),
+    "fund_daily": TushareInterface(
+        "fund_daily", "fund_daily", _DOC + "127", 5000, "ETF 日线行情（逐股）"
+    ),
+    "fund_nav": TushareInterface(
+        "fund_nav", "fund_nav", _DOC + "119", 2000, "基金净值"
+    ),
+    "fund_share": TushareInterface(
+        "fund_share", "fund_share", _DOC + "384", 2000, "基金份额"
+    ),
+    "fund_portfolio": TushareInterface(
+        "fund_portfolio", "fund_portfolio", _DOC + "121", 2000, "基金持仓"
+    ),
+    "fund_div": TushareInterface(
+        "fund_div", "fund_div", _DOC + "120", 400, "基金分红"
+    ),
+    "fund_adj": TushareInterface(
+        "fund_adj", "fund_adj", _DOC + "384", 2000, "ETF 复权因子"
+    ),
 }
 
 

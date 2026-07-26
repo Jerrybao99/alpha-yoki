@@ -97,15 +97,29 @@ def test_run_batch_fills_stock_info(tmp_path: Path) -> None:
 
 def test_run_batch_missing_stock_is_failure(tmp_path: Path) -> None:
     """stock_basic 有但 batch 结果无此股 → 记入失败。"""
-    fetcher = _FakeBatchFetcher({"600000.SH": _feat("600000.SH")})
-    # 给股票清单加一只不存在的
-    fetcher.features["000001.SZ"] = _feat("000001.SZ")
-    pipe = CollectionPipeline(fetcher, settings=_settings(tmp_path))
+
+    class _SplitFetcher(BaseFetcher):
+        def fetch_stock_list(self):
+            return [
+                StockInfo(ts_code="600000.SH", symbol="600000", name="A", industry="银行"),
+                StockInfo(ts_code="000001.SZ", symbol="000001", name="B", industry="银行"),
+            ]
+
+        def fetch_financials(self, ts_code, period=None):
+            return _feat(ts_code)
+
+        def fetch_financials_batch(self, period):
+            return {"600000.SH": _feat("600000.SH")}  # 不含 000001.SZ
+
+    pipe = CollectionPipeline(_SplitFetcher(), settings=_settings(tmp_path))
     try:
         result = pipe.run_batch(period="20241231")
     finally:
         pipe.close()
-    assert result.success_count == 2
+    assert result.success_count == 1
+    assert result.failure_count == 1
+    assert result.failures[0].ts_code == "000001.SZ"
+    assert "批次结果中无此股" in result.failures[0].error
 
 
 def test_run_batch_auto_period(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -172,7 +186,8 @@ def test_full_collect_csv_structure(tmp_path: Path) -> None:
     """批量采集产出 CSV：中文列头、全量列、百分比/亿万格式化。"""
     codes = [f"6000{i:02d}.SH" for i in range(5)]
     fetcher = _FakeBatchFetcher({c: _feat(c) for c in codes})
-    out = tmp_path / "fin"
+    out = tmp_path / "fin" / "full_collect"
+    out.mkdir(parents=True)
     from scripts.full_collect import _append_csv_rows
     from src.data.output import FIELD_CN
 
@@ -232,7 +247,7 @@ def test_csv_resume_no_file(tmp_path: Path) -> None:
 @pytest.mark.network
 def test_real_batch_collects_all_stocks() -> None:
     """真实批量采集全 A 股（最新报告期），断言 CSV 行数 ≥ 5000，
-    产出落 ``data/test/full_collect_test.csv``（固定文件名，每次运行覆盖）。
+    产出落 ``data/test/full_collect/full_collect.csv``（固定文件名，每次运行覆盖）。
 
     ``uv run pytest -m network integrated_tests/test_full_collect.py::test_real_batch_collects_all_stocks``
     """
@@ -259,9 +274,9 @@ def test_real_batch_collects_all_stocks() -> None:
     # 输出 CSV 到 data/test/（固定文件名，每次运行覆盖同名）
     out_dir = settings.data_root / "test" / "full_collect"
     out_dir.mkdir(parents=True, exist_ok=True)
-    feat_path = out_dir / "full_collect_test.csv"
-    src_path = out_dir / "full_collect_test-数据来源.csv"
-    fail_path = out_dir / "full_collect_test-失败.csv"
+    feat_path = out_dir / "full_collect.csv"
+    src_path = out_dir / "full_collect-数据来源.csv"
+    fail_path = out_dir / "full_collect-失败.csv"
 
     headers = [FIELD_CN.get(c, c) for c in ALL_OUTPUT_COLUMNS]
     batch_size = settings.batch_size

@@ -179,7 +179,7 @@ def test_smoke_regenerates_latest_csv() -> None:
     fetcher = TushareFetcher(settings)
     out_dir = settings.data_root / "test" / "smoke_collect"
     feat_path, src_path, ok, fail = run_smoke(
-        fetcher, settings, 5, out_dir, filename="smoke_collect_test"
+        fetcher, settings, 5, out_dir, filename="smoke_collect"
     )
     assert ok == 5 and fail == 0, f"采集未全部成功：ok={ok} fail={fail}"
     assert feat_path.exists() and src_path.exists()
