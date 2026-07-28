@@ -1,7 +1,7 @@
 ---
 tags: [roadmap, 路线图]
 status: active
-version: 2.0.0
+version: 2.2.0
 date: 2026-07-28
 依据: [dev-guide.md](./dev-guide.md) §9 功能需求清单 + §13 里程碑 + §12 验证门禁
 ---
@@ -19,7 +19,6 @@ date: 2026-07-28
 
 - 涉及文件：`.gitignore`、`README.md`、`CHANGELOG.md`
 - 实现 BR-*（工程基线）
-- 总结精华/设计巧思：从零搭建项目地基，`.gitignore` 排除虚拟环境和构建产物，`README` 写清定位与免责声明，`CHANGELOG` 建好版本记录习惯。
 
 - [x] 操作
   - [x] 在项目根目录初始化 git 仓库
@@ -41,7 +40,6 @@ date: 2026-07-28
 
 - 涉及文件：`pyproject.toml`、`uv.lock`、`.env.example`
 - 实现 BR-*（工程基线）
-- 总结精华/设计巧思：uv 替代 pip 做包管理更快更稳；pytest 分 mock/network 两组标记隔离网络依赖；ruff 一次配齐格式+lint；hatchling 构建让 `uv run` 零配置导入 `src` 包。
 
 - [x] 操作
   - [x] 用 `uv` 初始化 Python 项目，配置 `pyproject.toml`
@@ -64,7 +62,6 @@ date: 2026-07-28
 
 - 涉及文件：`AGENTS.md`、`src/config.py`、`src/__init__.py`、`src/main.py`、`.env.example`
 - 实现 BR-*（工程基线）
-- 总结精华/设计巧思：`pydantic-settings` 单例集中管理所有配置项；`Settings.data_path(sub)` 自动按需创建 data/子目录，让运行期目录跟随数据生命周期；`AGENTS.md` 作为 AI 行为入口，只放刚性规则。
 
 - [x] 操作
   - [x] 按 dev-guide §5 创建源码目录结构（`src/` / `tests/` / `scripts/` / `docs/`）
@@ -86,7 +83,6 @@ date: 2026-07-28
 
 - 涉及文件：`.github/workflows/ci.yml`、`tests/test_skeleton.py`
 - 实现 BR-*（工程基线）
-- 总结精华/设计巧思：GitHub Actions 用 `astral-sh/setup-uv@v5` 自动装 Python 并同步依赖；CI 三步流水线（format→lint→pytest）阻断不合规提交；骨架测试验证 Settings 单例、默认值、数据目录自动创建。
 
 - [x] 操作
   - [x] 创建 `.github/workflows/ci.yml`（push/PR 触发 main 分支）
@@ -116,7 +112,6 @@ date: 2026-07-28
 - 涉及文件：`src/data/contract.py`、`src/data/provider.py`、`tests/data/test_contract.py`
 - 实现 BR-01
 - 实现 FR-DATA-01、FR-DATA-08
-- 总结精华/设计巧思：`BaseFetcher` 抽象基类做依赖倒置，未来换数据源只改适配层；`StockFeatures(extra="allow")` 让 VIP 接口 ~460 字段动态接受，无需逐个声明；`REQUIREMENT_ALIGNMENT(53项)` 做需求追溯，`FIELD_CN/FIELD_UNIT` 全量映射做中文翻译与单位格式化。
 
 - [x] 操作
   - [x] 在 `src/data/provider.py` 定义 `BaseFetcher` 抽象接口（fetch_stock_list / fetch_financials / fetch_financials_batch）
@@ -143,7 +138,6 @@ date: 2026-07-28
 - 涉及文件：`src/data/provider.py`、`.env`、`tests/data/test_provider.py`
 - 实现 BR-01
 - 实现 FR-DATA-03、FR-DATA-04、FR-DATA-07
-- 总结精华/设计巧思：`RateLimiter` 用滑动窗口 + 可注入 clock/sleep 实现可单测的限流；指数退避 1/2/4 秒做自动重试；`_clean_record` 将 NaN→None 归一化避免 pydantic 校验报错；`_latest()` 按 date_field 取最新记录。
 
 - [x] 操作
   - [x] 实现 `RateLimiter` 滑动窗口限流器（limit/window/sleep/clock 可注入）
@@ -173,7 +167,6 @@ date: 2026-07-28
 - 涉及文件：`src/data/collect.py`、`src/data/output.py`、`tests/data/test_collect.py`
 - 实现 BR-02
 - 实现 FR-DATA-05、FR-DATA-06
-- 总结精华/设计巧思：线程池控制并发（默认 4），避免 5000+ 只股票同时请求；缓存键 = `ts_code + period`，同季重跑不重复调接口省积分；`Failure` 记录隔离单股错误不拖垮整体；`_SeqExecutor` 注入让 pipeline 可确定性单测；`expected_latest_period()` 按法定披露截止日推算最新报告期。
 
 - [x] 操作
   - [x] 实现 `Cache` 类（文件缓存 + TTL 过期，disabled 模式用于测试）
@@ -202,7 +195,6 @@ date: 2026-07-28
 - 涉及文件：`scripts/smoke_collect.py`、`src/data/output.py`、`integrated_tests/test_smoke_collect.py`、`src/data/collect.py`、`tests/data/test_collect.py`、`src/data/provider.py`
 - 实现 BR-02
 - 实现 FR-DATA-09、FR-DATA-10
-- 总结精华/设计巧思：SW 行业通过 `index_member_all` 接口按 `ts_code` 查申万二级分类→五大类（周期资源/大消费/证券金融/科技制造/公用事业基建），增量写缓存秒级命中；CSV 中文列头+单位后缀（亿万%倍次元/股比率）抛弃科学计数法；数据来源 CSV 列出接口/字段/中文/文档 URL 实现全链可追溯。
 
 - [x] 操作
   - [x] 写 `scripts/smoke_collect.py`（随机选 5 股真实采集，落地 `data/fin/smoke_collect/YYMMDD.csv`）
@@ -229,8 +221,7 @@ date: 2026-07-28
 
 - 涉及文件：`src/data/provider.py`（新增 `fetch_financials_batch`）、`src/data/collect.py`（新增 `run_batch`）、`scripts/full_collect.py`、`scripts/sw_industry.py`、`integrated_tests/test_full_collect.py`、`.env.example`
 - 实现 BR-02
-- 实现 FR-DATA-09、FR-DATA-10、NFR-03
-- 总结精华/设计巧思：VIP 接口只传 period 不传 ts_code 做 O(1) 全市场获取（4 次 API 调用 vs 逐股 20000+ 次）；`_call_paginated` 按 offset/limit 循环拉取直到数据集完整；流式分批写 CSV（每 500 行 flush）防止内存溢出；断点续采跳过已完成股票不重复；采集启动前自动检查 SW 缓存。
+- 实现 FR-DATA-09、FR-DATA-10、NFR-03。
 
 - [x] 操作
   - [x] **Provider 层**：`TushareFetcher` 加 `fetch_financials_batch(period)` + `_call_paginated`
@@ -269,7 +260,6 @@ date: 2026-07-28
 - 涉及文件：`src/scoring/scores.py`、`tests/scoring/test_scores.py`
 - 实现 BR-04
 - 实现 FR-SCORE-02~05
-- 总结精华/设计巧思：三维评分全部为无副作用的纯函数，相同输入永远得相同输出；每维度按五档阈值（1-2/3-4/5-6/7-8/9-10）取档位中点 1.5/3.5/5.5/7.5/9.5，多维度平均后四舍五入得 1-10 整数；缺失维度自动跳过容错。
 
 - [x] 操作
   - [x] 实现 `score_growth(f)` 成长性评分（4 维度：营收增速/净利增速/毛利率/现金流匹配）
@@ -296,7 +286,6 @@ date: 2026-07-28
 - 涉及文件：`src/scoring/scores.py`、`tests/scoring/test_scores.py`
 - 实现 BR-03、BR-04
 - 实现 FR-SCORE-01、FR-SCORE-06、FR-SCORE-07
-- 总结精华/设计巧思：五大行业权重（周期 25/35/40、消费 30/30/40、金融 30/30/40、科技 50/20/30、公用事业 20/40/40）取 BRD 区间中点固化；综合分保留 1 位小数；`check_veto()` 返回 `list[VetoTrigger]` 供审计追溯；未知行业默认三等分兜底。
 
 - [x] 操作
   - [x] 实现 `score_composite(growth, stability, return_, industry)` 按 §8.4 行业权重加权
@@ -320,7 +309,6 @@ date: 2026-07-28
 - 涉及文件：`src/scoring/scores.py`、`tests/scoring/test_scores.py`
 - 实现 BR-05
 - 实现 FR-RATE-01
-- 总结精华/设计巧思：四级评级（8.5→皇冠明珠 / 7.0→优秀白马 / 5.5→鸡肋·观察 / 以下→垃圾）用 `list[tuple[threshold, label]]` 降序遍历，边界值归属代码即文档；三个临界值恰好是评分阈值边界，必须专门单测防止四舍五入漂移引起错配。
 
 - [x] 操作
   - [x] 实现 `score_rating(composite: float) -> str` 四级评级映射
@@ -342,7 +330,6 @@ date: 2026-07-28
 - 涉及文件：`scripts/full_scores.py`、`integrated_tests/test_full_scores.py`
 - 实现 BR-05
 - 实现 FR-RATE-02~04、FR-SCORE-08、FR-SCORE-09
-- 总结精华/设计巧思：`_parse_value()` 把 format_value 格式化后的 CSV 文本反序列化为原始 float 值（逆向解析亿万%等后缀），实现"采集 CSV → 格式化 → 反序列化 → 评分"的完整闭环；否决股不入评分 CSV 而记入 `-否决.csv` 审计追溯；`_find_latest()` 自动取最新 YYMMDD 采集文件无需传参。
 
 - [x] 操作
   - [x] 写 `scripts/full_scores.py`（读取采集 CSV → 反序列化 → 评分 → 追加五列 → 落盘）
@@ -367,16 +354,15 @@ date: 2026-07-28
 
 ## M3 报告输出
 
-- 实现需求：BR-06/07 · FR-REPORT-01~07
-- 目标：生成荐股 Top20 报告与持仓表，含 AI 亮点与点评。
-- 验收：`data/analysis/YYMMDD-荐股.csv` 生成。
+- 实现需求：BR-06/14 · FR-REPORT-01~04、FR-REPORT-07 · FR-CHAT-04（BR-07 持仓表挪至 M5，用户通过 UI 对话生成）
+- 目标：LLM 接入 + 荐股 Top20 报告生成，含 AI 核心亮点与风险提示。
+- 验收：`data/fin/recommend/YYMMDD.csv` 生成。
 
 ### Step 3-1 公司类型与操作建议
 
 - 涉及文件：`src/reports/evaluation.py`、`tests/reports/test_evaluation.py`
 - 实现 BR-06
 - 实现 FR-REPORT-02、FR-REPORT-04
-- 总结精华/设计巧思：`classify_company_type()` 和 `get_advice()` 合并为单文件纯函数（预计 <120 行），避免过度拆分。公司类型分类与操作建议均为规则引擎，不做 LLM 调用，避免幻觉影响投资建议。申万二级→五大分类复用 M1 的 `sw_l2_to_category()`。
 
 - [x] 操作
   - [x] 实现 `classify_company_type()` 公司类型判断（千里马/现金牛/护城河，§8.7）
@@ -391,33 +377,69 @@ date: 2026-07-28
   - [x] 本步骤全部产出物符合预期功能需求
   - [x] 本步骤产出物命名合规（`evaluation.py` / `test_evaluation.py`）
   - [x] 本步骤产出物位置合规（`src/reports/` / `tests/reports/`）
-- [ ] 提交
-  - [ ] `git commit -m "feat(report): 公司类型分类与操作建议规则引擎"`
+- [x] 提交
+  - [x] `git commit -m "feat(report): 公司类型分类与操作建议规则引擎"`
 
-### Step 3-2 荐股 Top20 与持仓表生成
+### Step 3-2 LLM 适配层与 DeepSeek 接入
 
-- 涉及文件：`src/reports/picks.py`、`src/reports/portfolio.py`、`integrated_tests/test_reports.py`
-- 实现 BR-06、BR-07
-- 实现 FR-REPORT-01、FR-REPORT-05、FR-REPORT-06
-- 总结精华/设计巧思：核心亮点（≤30 字）与点评（≤50 字）由 LLM 生成，但关键决策（排序/筛选/类型/权重）走规则引擎，LLM 只写文案并由规则校验长度和必要字段；持仓表通过对话录入生成，复用评分管道重算风险。
+- 涉及文件：`src/agents/llm_adapter.py`、`tests/agents/test_llm_adapter.py`、`pyproject.toml`
+- 实现 BR-14
+- 实现 FR-CHAT-04
+- 总结精华/设计巧思：`LLMClient` 封装 `chat_completion` + `stream_completion` 双接口，默认启用 DeepSeek 最高深度思考模式（`reasoning_effort="high"` + `thinking: enabled`），V4 Pro 的 `reasoning_content` 为空时自动回退取值。OpenAI SDK 兼容，换模型只改 `base_url` 和 `model`。
+
+- [x] 操作
+  - [x] 在 `src/agents/llm_adapter.py` 封装 DeepSeek（OpenAI 兼容接口）
+  - [x] 统一 provider 接口（`chat_completion` / `stream_completion`）
+  - [x] `.env.example` 已含 `DEEPSEEK_API_KEY` / `DEEPSEEK_MODEL` / `DEEPSEEK_BASE_URL`
+  - [x] 新增 `openai` SDK 依赖同步 `pyproject.toml`
+- [x] 测试
+  - [x] mock 测试验证调用参数正确 + `reasoning_content` 回退 + 流式混合输出（7 项）
+  - [x] 真实调用冒烟测试（3 项 `@pytest.mark.network`，CI 不跑）
+- [x] 验收
+  - [x] 本步骤各文件单元测试覆盖率 ≥ 80%（llm_adapter.py 100%）
+  - [x] 本步骤全部产出物符合预期功能需求
+  - [x] 本步骤产出物命名合规（`llm_adapter.py` / `test_llm_adapter.py`）
+  - [x] 本步骤产出物位置合规（`src/agents/` / `tests/agents/`）
+- [x] 提交
+  - [x] `git commit -m "feat(llm): DeepSeek适配层"`
+
+### Step 3-3 荐股 Top20 生成
+
+- 涉及文件：`src/reports/reporting.py`、`integrated_tests/test_reporting.py`
+- 实现 BR-06
+- 实现 FR-REPORT-01、FR-REPORT-03
+- 总结精华/设计巧思：`build_top20()` 读取 `data/fin/scoring/` 最新评分 CSV，按综合分降序取前 20 名，复用 Step 3-1 的 `classify_company_type()` 确定公司类型，调用 Step 3-2 的 LLM 适配层生成核心亮点和风险提示。
+
+**性能预估**：瓶颈在 20 股 × 2 = 40 次 LLM 调用。每次 prompt ~14 字段 + 评分结果，token 量小、响应快（单次 ~1-2s）。并发 4 分组并行 → 总计约 **10-20 秒**。排序/分类/写盘均在毫秒级，可忽略。传入 LLM 的字段（14 个，按角色分组）：
+
+| 角色 | 字段 |
+|---|---|
+| 身份 | `ts_code` `name` `industry` |
+| 评分 | `成长分` `稳健分` `回报分` `综合分` `评级` |
+| 增长 | `or_yoy` `netprofit_yoy` `grossprofit_margin` |
+| 安全 | `debt_to_assets` `current_ratio` |
+| 回报 | `roe` `free_cashflow` `eps` |
+
+每个字段附带其中文释义与单位，LLM prompt 模板写入 `docs/prompt-library.md`（Step 3-4）。
 
 - [ ] 操作
-  - [ ] 实现荐股 Top20 生成（综合分降序，渲染荐股表字段 §8.10）
-  - [ ] 实现 LLM 生成核心亮点（≤30 字）与点评（≤50 字）
-  - [ ] 实现持仓表生成（对话录入→生成 `data/hold/YYMMDD.csv`）
-  - [ ] 长度校验规则确保 LLM 输出不超出字数限制
+  - [ ] 实现 `build_top20(csv_path)` 读取评分 CSV → 降序 Top20
+  - [ ] 实现 `_llm_highlight()` 调 LLM 生成核心亮点（传入 15-20 个关键字段的 prompt）
+  - [ ] 实现 `_llm_risk_tip()` 调 LLM 生成风险提示（同上精简字段）
+  - [ ] LLM 输出附带长度校验（亮点 ≤30 字，风险提示 ≤30 字）
+  - [ ] 调用 `classify_company_type()` + `get_advice()` 确定公司类型与操作建议
+  - [ ] 输出到 `data/fin/recommend/YYMMDD.csv`
 - [ ] 测试
-  - [ ] `uv run pytest integrated_tests/test_reports.py -m "not network"` 全部通过
-  - [ ] 覆盖：Top20 排序正确/字段齐全/字数校验/持仓表字段完整
+  - [ ] `uv run pytest integrated_tests/test_reporting.py -m network` — 真实评分数据 + 真实 LLM 调用，校验 Top20 CSV 产出、亮点和风险提示非空且长度合规
 - [ ] 验收
   - [ ] 本步骤各文件单元测试覆盖率 ≥ 80%
   - [ ] 本步骤全部产出物符合预期功能需求
-  - [ ] 本步骤产出物命名合规（`picks.py` / `portfolio.py` / `test_reports.py`）
-  - [ ] 本步骤产出物位置合规（`src/reports/` / `integrated_tests/` / `data/analysis/`）
+  - [ ] 本步骤产出物命名合规（`reporting.py` / `test_reporting.py`）
+  - [ ] 本步骤产出物位置合规（`src/reports/` / `integrated_tests/` / `data/fin/recommend/`）
 - [ ] 提交
-  - [ ] `git commit -m "feat(report): 荐股Top20与持仓表生成"`
+  - [ ] `git commit -m "feat(report): 荐股Top20生成"`
 
-### Step 3-3 字段契约与 Prompt 文档
+### Step 3-4 字段契约与 Prompt 文档
 
 - 涉及文件：`docs/dev-guide.md`（§8.1 字段契约）、`docs/prompt-library.md`
 - 实现 BR-06
@@ -438,39 +460,17 @@ date: 2026-07-28
 - [ ] 提交
   - [ ] `git commit -m "docs: Prompt文档"`
 
-> M3 验收：step1~step4 全流程一键跑通并产出 csv（dev-guide §12.3 DoD 第 1 条）。
+> M3 验收：荐股 Top20 落到 `data/fin/recommend/YYMMDD-荐股.csv`。
 
 ---
 
 ## M4 多 Agent 编排
 
-- 实现需求：BR-12/14/17 · AR-*（§7）· FR-CHAT-01~05
+- 实现需求：BR-12/17 · AR-*（§7）· FR-CHAT-01~03、FR-CHAT-05（LLM 适配层已迁至 M3 Step 3-2）
 - 目标：把单线 pipeline 升级为多 Agent 编排，支持自然语言对话驱动。
 - 验收：对话可触发各 Agent。
 
-### Step 4-1 LLM 适配层与 DeepSeek 接入
-
-- 涉及文件：`src/agents/llm_adapter.py`、`.env.example`（补 `DEEPSEEK_*`，对齐 §10.2）、`tests/test_llm_adapter.py`
-- 实现 BR-14
-- 实现 FR-CHAT-04
-- 总结精华/设计巧思：LLM 适配层做依赖倒置，业务代码不直接依赖 DeepSeek SDK；OpenAI 兼容接口使得换模型只改 adapter 一行；mock 测试用假响应验证调用参数正确性，network 冒烟标 `@pytest.mark.network` 由 CI 跳过。
-
-- [ ] 操作
-  - [ ] 在 `src/agents/llm_adapter.py` 封装 DeepSeek（OpenAI 兼容接口）
-  - [ ] 统一 provider 接口（`chat_completion` / `stream_completion`）
-  - [ ] `.env.example` 已含 `DEEPSEEK_API_KEY` / `DEEPSEEK_MODEL` / `DEEPSEEK_BASE_URL`
-- [ ] 测试
-  - [ ] mock 测试验证调用参数正确
-  - [ ] 一个真实调用冒烟测试（标 `@pytest.mark.network`，CI 不跑）
-- [ ] 验收
-  - [ ] 本步骤各文件单元测试覆盖率 ≥ 80%
-  - [ ] 本步骤全部产出物符合预期功能需求
-  - [ ] 本步骤产出物命名合规（`llm_adapter.py` / `test_llm_adapter.py`）
-  - [ ] 本步骤产出物位置合规（`src/agents/` / `tests/`）
-- [ ] 提交
-  - [ ] `git commit -m "feat(llm): DeepSeek适配层"`
-
-### Step 4-2 RAG 知识库
+### Step 4-1 RAG 知识库
 
 - 涉及文件：`src/rag/store.py`、`src/rag/indexer.py`、`src/rag/retriever.py`、`tests/test_rag_retriever.py`
 - 实现 BR-12
@@ -492,7 +492,7 @@ date: 2026-07-28
 - [ ] 提交
   - [ ] `git commit -m "feat(rag): 本地知识库构建"`
 
-### Step 4-3 RouterAgent 与 Agent 编排
+### Step 4-2 RouterAgent 与 Agent 编排
 
 - 涉及文件：`src/agents/router.py`、`src/agents/data_agent.py`、`src/agents/scoring_agent.py` 等、`src/agents/graph.py`、`tests/test_agents_router.py`
 - 实现 BR-12、BR-17
@@ -514,7 +514,7 @@ date: 2026-07-28
 - [ ] 提交
   - [ ] `git commit -m "feat(agents): 路由与Agent编排"`
 
-### Step 4-4 ChatAgent、记忆与流式对话 API
+### Step 4-3 ChatAgent、记忆与流式对话 API
 
 - 涉及文件：`src/agents/chat_agent.py`、`src/agents/memory.py`、`api/routes/chat.py`、`tests/test_chat.py`
 - 实现 BR-14
@@ -590,11 +590,12 @@ date: 2026-07-28
 ### Step 5-3 PortfolioAgent 持股监控
 
 - 涉及文件：`src/agents/portfolio_agent.py`、`tests/test_portfolio_agent.py`
-- 实现 BR-09
-- 实现 FR-PORT-01~05
-- 总结精华/设计巧思：复用已有采集+评分管道重算持仓；一票否决触发→高亮提醒；与上次评分做差值对比输出趋势（↑/↓/→）；自动生成操作建议（持有/加仓/减仓/止损），但从不自动执行。
+- 实现 BR-07、BR-09
+- 实现 FR-REPORT-05、FR-REPORT-06、FR-PORT-01~05
+- 总结精华/设计巧思：用户通过 UI 对话录入持仓（代码+名称），系统生成 `data/hold/YYMMDD.csv` 基线表（字段同荐股表 §8.10）；复用已有采集+评分管道重算持仓；一票否决触发→高亮提醒；与上次评分做差值对比输出趋势；自动生成操作建议但不自动执行。
 
 - [ ] 操作
+  - [ ] 实现 UI 对话录入持仓，生成 `data/hold/YYMMDD.csv` 持仓基线表
   - [ ] 实现持仓重算（重爬+重评）
   - [ ] 风险高亮（一票否决触发时标注）
   - [ ] 趋势对比（与上次评分差值计算）
@@ -608,7 +609,7 @@ date: 2026-07-28
   - [ ] 本步骤产出物命名合规
   - [ ] 本步骤产出物位置合规（`data/hold/`）
 - [ ] 提交
-  - [ ] `git commit -m "feat(portfolio): 持股监控Agent"`
+  - [ ] `git commit -m "feat(portfolio): 持仓录入与持股监控Agent"`
 
 ### Step 5-4 推送通知（邮件/微信）
 
@@ -805,10 +806,10 @@ date: 2026-07-28
 |---|---|---|---|---|---|
 | M0 工程骨架 | 4 | 4 | 工程基线（支撑全部 FR/NFR） | `uv run pytest` | 直接推 main |
 | M1 数据采集 | 5 | 5 | BR-01/02 · FR-DATA-01~10 · FR-UPDATE-02/03 · NFR-03 | 全量批量采集 + 5 股冒烟，`data/fin/full_collect/YYMMDD.csv` 字段齐全 | 直接推 main |
-| M2 评分评级 | 4 | 4 | BR-03/04/05 · FR-SCORE-01~09 · FR-RATE-01~04 | 阈值单测全覆盖（263 项，cov 99.3%）；`data/fin/scoring/YYMMDD.csv` + `-否决.csv` | 直接推 main |
-| M3 报告输出 | 3 | 3 | BR-06/07 · FR-REPORT-01~07 | step1~4 一键跑通 | 直接推 main |
-| M4 Agent 编排 | 4 | 4 | BR-12/14/17 · AR-* · FR-CHAT-01~05 | 对话触发各 Agent | 直接推 main |
-| M5 监控推送 | 4 | 4 | BR-08/09/10/11 · FR-HOTSPOT/PORT/PUSH · FR-UPDATE-01 | 09/17 定时 + 推送 | 直接推 main |
+| M2 评分评级 | 4 | 4 | BR-03/04/05 · FR-SCORE-01~09 · FR-RATE-01~04 | 阈值单测全覆盖（297 项 mock，cov 99.4%）；`data/fin/scoring/YYMMDD.csv` + `-否决.csv` + 公司类型规则引擎 | 直接推 main |
+| M3 报告输出 | 4 | 2/4 | BR-06/14 · FR-REPORT-01~04/07 · FR-CHAT-04 | LLM 适配层已完成，荐股/文档待完成 | 直接推 main |
+| M4 Agent 编排 | 3 | 3 | BR-12/17 · AR-* · FR-CHAT-01~03/05 | 对话触发各 Agent | 直接推 main |
+| M5 监控推送 | 4 | 4 | BR-07/08/09/10/11 · FR-REPORT-05/06 · FR-HOTSPOT/PORT/PUSH · FR-UPDATE-01 | 09/17 定时 + 推送 | 直接推 main |
 | M6 桌面端 | 4 | 4 | BR-13/15/16 · FR-UI-01~07 · NFR-01/02 | Win/Mac 可安装 | 直接推 main |
 | M7 监控反馈 | 3 | 3 | BR-12（监控/反馈）· NFR-05 | DoD 全勾 | 直接推 main |
 
@@ -819,7 +820,7 @@ date: 2026-07-28
 ## 附：断点学习小贴士
 
 1. **每步只做一件事**：不要顺手改别的，保持 commit 干净，出问题好回滚（`git revert`）。
-2. **提交前必验证**：`uv run ruff check . && uv run pytest -m "not network" --cov=src --cov-fail-under=80` 是你的安全带（当前覆盖率 99.3%，263 项测试）。
+2. **提交前必验证**：`uv run ruff check . && uv run pytest -m "not network" --cov=src --cov-fail-under=80` 是你的安全带（当前覆盖率 99.4%，297 项测试）。
 3. **看不懂就停下来查**：每个 Step 的"总结精华"是刻意写的，遇到陌生概念先搞懂再往下。
 4. **用 `git log --oneline` 回顾**：定期看自己的提交历史，能直观看到成长轨迹。
 5. **卡住了就回到上一个断点**：`git status` 看改动，`git checkout .` 丢弃未提交改动重试。

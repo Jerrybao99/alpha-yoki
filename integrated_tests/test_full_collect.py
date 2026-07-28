@@ -209,8 +209,8 @@ def test_full_collect_csv_structure(tmp_path: Path) -> None:
 
     text = feat_path.read_text(encoding="utf-8-sig")
     header = text.strip().split("\n")[0]
-    assert "name" in header
-    assert "TS代码" in header
+    assert "股票名称" in header
+    assert "股票代码" in header
     assert "营业收入" in header
     assert "20.00%" in text
     assert "150.00亿元" in text

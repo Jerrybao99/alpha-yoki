@@ -1,8 +1,8 @@
 ---
 tags: [dev-guide, 开发指南, single-source-of-truth]
 status: active
-version: 1.0.0
-date: 2026-07-21
+version: 1.2.0
+date: 2026-07-28
 合并自: [brd.md](./brd.md)（prd.md 待补充）
 适用对象: AI Coding Agent / 开发者
 ---
@@ -163,11 +163,11 @@ date: 2026-07-21
 | 语言 | Python | >= 3.12 | 后端/Agent/数据管道 |
 | 包管理 | uv | latest | 单虚拟环境，`uv.lock` |
 | 构建 | hatchling | latest | `[build-system]`，使 `uv run` 可导入 `src`/`api` 包 |
-| LLM | DeepSeek V4 Pro | 默认 provider | OpenAI 兼容接口 |
+| LLM | DeepSeek V4 Pro | 默认 provider | OpenAI 兼容接口，`openai` SDK 调用 |
 | UI 设计参考 | Kimi K3 | — | 设计稿生成参考 |
 | 数据源 | Tushare Pro | latest | A 股基本面/行情/资金面 |
 | Agent 框架 | LangGraph | 0.2+ | 多 Agent 编排、状态机、条件路由 |
-| LLM 抽象 | LiteLLM / OpenAI SDK | latest | 统一 provider |
+| LLM 抽象 | OpenAI SDK | latest | 统一 provider（`openai>=2.49`） |
 | RAG 向量库 | ChromaDB | latest | 本地嵌入向量 |
 | 嵌入模型 | bge-small-zh（本地） | — | 中文金融语义，离线可跑 |
 | 后端 API | FastAPI | 0.110+ | 桌面端与调度调用 |
@@ -213,16 +213,27 @@ alpha-jerry/
 ├── src/                       # 源代码
 │   ├── main.py                # 运行入口
 │   ├── config.py              # Settings 入口
+│   ├── agents/                # Agent 层
+│   │   └── llm_adapter.py     # DeepSeek 适配层（chat/stream completion）
 │   ├── data/                  # 数据采集与输出层
 │   │   ├── contract.py        # StockFeatures 字段模型 + 字段对齐表 + 列序
 │   │   ├── provider.py        # Tushare 适配器 + 接口注册表 + 行业分类
 │   │   ├── collect.py         # 采集编排 + 缓存 + 报告期推算
 │   │   └── output.py          # CSV 写盘 + 数值格式化
+│   ├── reports/               # 报告输出规则引擎
+│   │   └── evaluation.py     # 公司类型分类 + 操作建议
 │   └── scoring/               # 评分/评级/否决纯函数层
 │       └── scores.py          # 三维评分 + 综合分 + 一票否决 + 评级映射
 ├── scripts/                   # 辅助脚本
+│   ├── full_collect.py        # 全量批量采集
+│   ├── full_scores.py         # 全量评分评级
+│   ├── smoke_collect.py       # 随机 5 股冒烟
+│   └── sw_industry.py         # SW 行业缓存生成
 ├── tests/                     # 单元测试
+│   ├── agents/                # Agent 层单测
+│   │   └── test_llm_adapter.py
 │   ├── data/                  # 采集层单测
+│   ├── reports/               # 报告层单测
 │   └── scoring/               # 评分/评级/否决单测
 ├── integrated_tests/          # 集成测试
 └── manifests/                 # 部署清单（Win/Mac 打包）

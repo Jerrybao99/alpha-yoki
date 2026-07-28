@@ -76,9 +76,9 @@ def test_features_csv_chinese_header_and_format(tmp_path: Path) -> None:
     )
     text = feat_path.read_text(encoding="utf-8-sig")
     header = text.strip().split("\n")[0].lstrip("\ufeff")
-    # 中文列头存在（首列：name → 无映射回退原字段名；次列：ts_code → "TS代码"）
-    assert "name" in header
-    assert "TS代码" in header
+    # 中文列头存在（首列：股票名称；次列：股票代码）
+    assert "股票名称" in header
+    assert "股票代码" in header
     assert "营业收入" in header
     # symbol 列不再出现
     assert "股票代码(ts_code)" not in header
@@ -141,7 +141,7 @@ def test_data_source_csv_content(tmp_path: Path) -> None:
     # 不再使用 dividend 接口
     assert "dividend" not in text
     # ts_code 归属 stock_basic 接口（不因 income 也含 ts_code 而被覆写）
-    assert "stock_basic,ts_code,TS代码," in text
+    assert "stock_basic,ts_code,股票代码," in text
     # 单位与来源：推断（百分比 %），FIELD_CN 来自 field_mappings
     assert "netprofit_yoy,归属母公司股东的净利润同比增长率,%,推断," in text
     # 每行 6 列（5 个逗号）

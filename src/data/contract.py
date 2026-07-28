@@ -990,8 +990,12 @@ def requirement_coverage() -> dict[str, int]:
 # ========================================================================
 
 FIELD_CN: dict[str, str] = {
+    # ===== stock_basic — 股票基本信息 =====
+    "name": "股票名称",
+    "ts_code": "股票代码",
+    "symbol": "股票代码(数字)",
+    "industry": "行业分类",
     # ===== income_vip (doc_id=33) — 利润表 =====
-    "ts_code": "TS代码",
     "ann_date": "公告日期",
     "f_ann_date": "实际公告日期",
     "end_date": "报告期",
