@@ -2,7 +2,7 @@
 
 > A 股基本面分析的 AI Native 工具集——覆盖"数据采集 → 个股评分 → 个股评级 → 报告输出 → 持仓监控 → 热点追踪 → 推送通知"完整业务闭环，帮助个人投资者识别优质公司并持续监控持仓风险。
 
-**当前阶段**：M1 数据采集已完成（5516 股批量采集 < 10 秒，86/87 测试通过），M2 评分评级待开发。
+**当前阶段**：M2 评分评级已完成（263 项单测，覆盖率 99.3%），M3 报告输出待开发。
 
 ## 快速开始
 
@@ -12,8 +12,11 @@ cp .env.example .env                                 # 填入 TUSHARE_TOKEN
 
 # 数据采集
 uv run python scripts/sw_industry.py                 # SW 行业缓存（首次 ~11 分钟）
-uv run python scripts/full_collect.py                # 全量批量采集（~5 秒）
+uv run python scripts/full_collect.py                # 全量批量采集（~2-5 分钟）
 uv run python scripts/smoke_collect.py --sample 5    # 随机 5 股冒烟
+
+# 评分评级
+uv run python scripts/full_scores.py                 # 全量评分评级
 
 # 测试
 uv run pytest                                        # 全部测试（含网络集成）
@@ -22,31 +25,50 @@ uv run pytest -m "not network"                       # 仅 mock 测试（CI）
 
 ## 技术栈
 
-Python 3.14+ · uv · pydantic-settings · Tushare Pro · DeepSeek V4 Pro · LangGraph 0.2+ · pytest · ruff
+Python 3.12+ · uv · pydantic-settings · Tushare Pro · DeepSeek V4 Pro · LangGraph 0.2+ · pytest 8+ · ruff
 
 ## 项目结构
 
 ```
 src/
-├── config.py              # Settings 全局配置
-├── main.py                # 运行入口
-└── data/                  # 数据采集与输出
-    ├── contract.py        # 字段契约（44 列 + 53 需求对齐表）
-    ├── provider.py        # Tushare 适配器 + 限流重试 + SW 行业分类
-    ├── collect.py         # 采集编排（逐股/批量 + 缓存 + 报告期推算）
-    └── output.py          # CSV 输出与格式化
+├── config.py                # Settings 全局配置
+├── main.py                  # 运行入口
+├── data/                    # 数据采集与输出
+│   ├── contract.py          # 字段契约（~460 列 + 53 需求对齐表）
+│   ├── provider.py          # Tushare 适配器 + 限流重试 + SW 行业分类
+│   ├── collect.py           # 采集编排（逐股/批量 + 缓存 + 报告期推算）
+│   └── output.py            # CSV 输出与格式化
+└── scoring/                 # 评分/评级/否决
+    └── scores.py            # 三维评分纯函数 + 行业权重 + 评级映射
 data/
-├── fin/                   # 采集产物
-├── ref/                   # 参考数据（sw_industry.csv）
-├── test/                  # 集成测试产物（自动覆盖）
+├── fin/                     # 采集/评分产物
+├── ref/                     # 参考数据（sw_industry.csv）
+├── cache/                   # 采集缓存
+├── test/                    # 集成测试产物（自动覆盖）
 └── ...
 scripts/
-├── full_collect.py        # 全量批量采集
-├── sw_industry.py         # SW 行业缓存生成
-└── smoke_collect.py       # 随机 5 股冒烟
-tests/                     # 单元测试（81 项）
-integrated_tests/          # 集成测试（6 项 mock + 2 项 network）
-docs/                      # 文档（dev-guide + ROADMAP）
+├── full_collect.py          # 全量批量采集
+├── full_scores.py           # 全量评分评级
+├── smoke_collect.py         # 随机 5 股冒烟
+└── sw_industry.py           # SW 行业缓存生成
+tests/                       # 单元测试（263 项）
+├── data/                    # 采集层（contract/provider/collect/output）
+└── scoring/                 # 评分层（三维评分/否决/评级）
+integrated_tests/            # 集成测试（8 项 mock + 3 项 network）
+docs/                        # 文档（dev-guide + ROADMAP + BRD）
+```
+
+## 核心流程
+
+```
+stock_basic(全 A 股清单)
+  → income_vip / balancesheet_vip / cashflow_vip / fina_indicator_vip (VIP 批量)
+  → StockFeatures (~460 字段)
+  → check_veto() 一票否决
+  → score_growth/stability/return() 三维评分
+  → score_composite() 行业权重加权综合分
+  → score_rating() 四级评级（皇冠明珠/优秀白马/鸡肋·观察/垃圾）
+  → 输出 data/fin/scoring/YYMMDD.csv
 ```
 
 ## 定位
@@ -59,6 +81,7 @@ docs/                      # 文档（dev-guide + ROADMAP）
 
 - [开发指南](docs/dev-guide.md) — 单一事实来源（业务规则 §8 RIGID）
 - [路线图](docs/ROADMAP.md) — M0~M7 里程碑
+- [业务需求](docs/brd.md) — 需求基线（55 字段 + step1~4 流程）
 
 ## 免责声明
 
