@@ -373,26 +373,26 @@ date: 2026-07-28
 
 ### Step 3-1 公司类型与操作建议
 
-- 涉及文件：`src/reports/company_type.py`、`src/reports/advice.py`、`tests/reports/test_company_type.py`、`tests/reports/test_advice.py`
+- 涉及文件：`src/reports/evaluation.py`、`tests/reports/test_evaluation.py`
 - 实现 BR-06
 - 实现 FR-REPORT-02、FR-REPORT-04
-- 总结精华/设计巧思：三种公司类型（千里马/现金牛/护城河）各有不同的成长/稳健/回报权重；评级→操作建议映射（皇冠明珠→重仓 10-20%/优秀白马→分批 5-10%/鸡肋→观望 <3%/垃圾→回避 0%）为纯规则引擎，不做 LLM 调用，避免幻觉影响投资建议。
+- 总结精华/设计巧思：`classify_company_type()` 和 `get_advice()` 合并为单文件纯函数（预计 <120 行），避免过度拆分。公司类型分类与操作建议均为规则引擎，不做 LLM 调用，避免幻觉影响投资建议。申万二级→五大分类复用 M1 的 `sw_l2_to_category()`。
 
-- [ ] 操作
-  - [ ] 实现公司类型判断逻辑（千里马/现金牛/护城河，§8.7）
-  - [ ] 实现评级→操作建议映射（§8.9）
-  - [ ] 申万二级→五大分类复用 M1 Step 1-4 的 `sw_l2_to_category()`
-  - [ ] 写 unit tests 覆盖三种类型的边界条件
-- [ ] 测试
-  - [ ] `uv run pytest tests/reports/ -m "not network"` 全部通过
-  - [ ] 覆盖：三种公司类型判断/全部四种评级的操作建议映射
-- [ ] 验收
-  - [ ] 本步骤各文件单元测试覆盖率 ≥ 80%，核心功能 100% 覆盖
-  - [ ] 本步骤全部产出物符合预期功能需求
-  - [ ] 本步骤产出物命名合规（`company_type.py` / `advice.py` / `test_company_type.py` / `test_advice.py`）
-  - [ ] 本步骤产出物位置合规（`src/reports/` / `tests/reports/`）
+- [x] 操作
+  - [x] 实现 `classify_company_type()` 公司类型判断（千里马/现金牛/护城河，§8.7）
+  - [x] 实现 `get_advice()` 评级→操作建议映射（§8.9）
+  - [x] 申万二级→五大分类复用 M1 Step 1-4 的 `sw_l2_to_category()`
+  - [x] 写 unit tests 覆盖三种类型边界与四种评级操作建议
+- [x] 测试
+  - [x] `uv run pytest tests/reports/test_evaluation.py -m "not network"` 全部通过
+  - [x] 覆盖：三种公司类型判断/全部四种评级的操作建议映射
+- [x] 验收
+  - [x] 本步骤各文件单元测试覆盖率 ≥ 80%，核心功能 100% 覆盖
+  - [x] 本步骤全部产出物符合预期功能需求
+  - [x] 本步骤产出物命名合规（`evaluation.py` / `test_evaluation.py`）
+  - [x] 本步骤产出物位置合规（`src/reports/` / `tests/reports/`）
 - [ ] 提交
-  - [ ] `git commit -m "feat(report): 公司类型与操作建议"`
+  - [ ] `git commit -m "feat(report): 公司类型分类与操作建议规则引擎"`
 
 ### Step 3-2 荐股 Top20 与持仓表生成
 
