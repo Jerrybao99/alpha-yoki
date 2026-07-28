@@ -1,7 +1,7 @@
 """全量 A 股评分评级脚本（ROADMAP Step 2-4）。
 
 读取 ``data/fin/full_collect/`` 最新日期 csv，逐行调用 scores.py 纯函数计算
-三维评分/综合分/评级，追加五列后落盘 ``data/fin/scoring/YYMMDD.csv``，
+三维评分/综合分/评级，追加五列后落盘 ``data/fin/full_scores/YYMMDD.csv``，
 触发一票否决的股票记入 ``-否决.csv``。
 
 用法：
@@ -190,7 +190,7 @@ def main() -> None:
         "--input", default=None, help="full_collect CSV 路径（默认取最新）"
     )
     parser.add_argument(
-        "--out-dir", default=None, help="输出目录（默认 data/fin/scoring/）"
+        "--out-dir", default=None, help="输出目录（默认 data/fin/full_scores/）"
     )
     args = parser.parse_args()
 
@@ -216,7 +216,9 @@ def main() -> None:
     print(f"评分完成：{len(results)} 股通过，{len(vetoes)} 股否决")
 
     out_dir = (
-        Path(args.out_dir) if args.out_dir else settings.data_path("fin") / "scoring"
+        Path(args.out_dir)
+        if args.out_dir
+        else settings.data_path("fin") / "full_scores"
     )
 
     out_path = out_dir / f"{stamp}.csv"

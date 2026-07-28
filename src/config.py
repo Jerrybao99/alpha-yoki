@@ -11,7 +11,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 # data/ 下属子目录英文简写映射（AGENTS.md 管道逻辑）
 DATA_SUBDIRS = {
     "fin": "财务",
-    "analysis": "荐股",
+    "full_report": "荐股",
     "hold": "持股",
     "hot": "热点",
     "monitor": "监控",

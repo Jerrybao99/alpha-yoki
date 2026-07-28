@@ -1,7 +1,7 @@
 ---
 tags: [roadmap, 路线图]
 status: active
-version: 2.2.0
+version: 2.3.0
 date: 2026-07-28
 依据: [dev-guide.md](./dev-guide.md) §9 功能需求清单 + §13 里程碑 + §12 验证门禁
 ---
@@ -332,7 +332,7 @@ date: 2026-07-28
 - 实现 FR-RATE-02~04、FR-SCORE-08、FR-SCORE-09
 
 - [x] 操作
-  - [x] 写 `scripts/full_scores.py`（读取采集 CSV → 反序列化 → 评分 → 追加五列 → 落盘）
+  - [x] 写 `scripts/full_scores.py`（读取采集 CSV → 反序列化 → 评分 → 追加五列 → 落盘 `data/fin/full_scores/`）
   - [x] 实现 `_load_features()` 中文列头→英文字段名反序列化
   - [x] 实现 `_parse_value()` 逆向解析格式化数值（亿×1e8/万×1e4/%移除符号等）
   - [x] 实现 `run_scores()` 逐行评分+否决分离
@@ -346,7 +346,7 @@ date: 2026-07-28
   - [x] 本步骤各文件单元测试覆盖率 ≥ 80%（核心功能 100% 覆盖）
   - [x] 本步骤全部产出物符合预期功能需求（评分 CSV + 否决 CSV 产出）
   - [x] 本步骤产出物命名合规（`full_scores.py` / `test_full_scores.py` / `YYMMDD.csv`）
-  - [x] 本步骤产出物位置合规（`scripts/` / `integrated_tests/` / `data/fin/scoring/`）
+  - [x] 本步骤产出物位置合规（`scripts/` / `integrated_tests/` / `data/fin/full_scores/` / `data/test/full_scores/`）
 - [x] 提交
   - [x] `git commit -m "feat(scoring): 评分评级串联CSV落地"`
 
@@ -356,7 +356,7 @@ date: 2026-07-28
 
 - 实现需求：BR-06/14 · FR-REPORT-01~04、FR-REPORT-07 · FR-CHAT-04（BR-07 持仓表挪至 M5，用户通过 UI 对话生成）
 - 目标：LLM 接入 + 荐股 Top20 报告生成，含 AI 核心亮点与风险提示。
-- 验收：`data/fin/recommend/YYMMDD.csv` 生成。
+- 验收：`data/fin/full_report/YYMMDD.csv` 生成。
 
 ### Step 3-1 公司类型与操作建议
 
@@ -385,11 +385,11 @@ date: 2026-07-28
 - 涉及文件：`src/agents/llm_adapter.py`、`tests/agents/test_llm_adapter.py`、`pyproject.toml`
 - 实现 BR-14
 - 实现 FR-CHAT-04
-- 总结精华/设计巧思：`LLMClient` 封装 `chat_completion` + `stream_completion` 双接口，默认启用 DeepSeek 最高深度思考模式（`reasoning_effort="high"` + `thinking: enabled`），V4 Pro 的 `reasoning_content` 为空时自动回退取值。OpenAI SDK 兼容，换模型只改 `base_url` 和 `model`。
 
 - [x] 操作
   - [x] 在 `src/agents/llm_adapter.py` 封装 DeepSeek（OpenAI 兼容接口）
   - [x] 统一 provider 接口（`chat_completion` / `stream_completion`）
+  - [x] `reasoning_effort="max"` 启用最高深度思考模式（DeepSeek V4 Pro）
   - [x] `.env.example` 已含 `DEEPSEEK_API_KEY` / `DEEPSEEK_MODEL` / `DEEPSEEK_BASE_URL`
   - [x] 新增 `openai` SDK 依赖同步 `pyproject.toml`
 - [x] 测试
@@ -405,62 +405,95 @@ date: 2026-07-28
 
 ### Step 3-3 荐股 Top20 生成
 
-- 涉及文件：`src/reports/reporting.py`、`integrated_tests/test_reporting.py`
+- 涉及文件：`src/reports/reporting.py`（纯逻辑）、`scripts/full_report.py`（LLM 编排）、`tests/reports/test_reporting.py`（31 项单测）、`integrated_tests/test_full_report.py`（网络集成）
 - 实现 BR-06
 - 实现 FR-REPORT-01、FR-REPORT-03
-- 总结精华/设计巧思：`build_top20()` 读取 `data/fin/scoring/` 最新评分 CSV，按综合分降序取前 20 名，复用 Step 3-1 的 `classify_company_type()` 确定公司类型，调用 Step 3-2 的 LLM 适配层生成核心亮点和风险提示。
 
-**性能预估**：瓶颈在 20 股 × 2 = 40 次 LLM 调用。每次 prompt ~14 字段 + 评分结果，token 量小、响应快（单次 ~1-2s）。并发 4 分组并行 → 总计约 **10-20 秒**。排序/分类/写盘均在毫秒级，可忽略。传入 LLM 的字段（14 个，按角色分组）：
+**AI 参考字段**（14 个，传入 LLM 时附带中文释义与单位）：
 
-| 角色 | 字段 |
+| 角色 | 字段 | 中文释义 | 单位 |
+|---|---|---|---|
+| 身份 | `ts_code` | 股票代码 | — |
+| | `name` | 股票名称 | — |
+| | `industry` | 行业分类 | — |
+| | `公司类型` | 公司类型 | 千里马/现金牛/护城河 |
+| 评分 | `成长分` | 成长性评分 | 1-10 |
+| | `稳健分` | 稳健性评分 | 1-10 |
+| | `回报分` | 资金回报评分 | 1-10 |
+| | `综合分` | 综合评分 | 0-10 |
+| | `评级` | 综合评级 | 皇冠明珠/优秀白马/鸡肋·观察/垃圾 |
+| 增长 | `or_yoy` | 营业收入同比增长率 | % |
+| | `netprofit_yoy` | 归母净利润同比增长率 | % |
+| | `grossprofit_margin` | 销售毛利率 | % |
+| 安全 | `debt_to_assets` | 资产负债率 | % |
+| | `current_ratio` | 流动比率 | 倍 |
+| 回报 | `roe` | 净资产收益率 | % |
+| | `free_cashflow` | 企业自由现金流 | 元 |
+| | `eps` | 基本每股收益 | 元/股 |
+
+LLM prompt 模板写入 `data/ref/prompt-library.md`（Step 3-4）。
+
+**输出列**（按 dev-guide §8.10，共 13 列）：
+
+| 列名 | 来源 |
 |---|---|
-| 身份 | `ts_code` `name` `industry` |
-| 评分 | `成长分` `稳健分` `回报分` `综合分` `评级` |
-| 增长 | `or_yoy` `netprofit_yoy` `grossprofit_margin` |
-| 安全 | `debt_to_assets` `current_ratio` |
-| 回报 | `roe` `free_cashflow` `eps` |
+| 股票代码 | `ts_code`（去后缀） |
+| 股票名称 | `name` |
+| 公司类型 | `classify_company_type()` |
+| 行业分类 | `industry` |
+| 核心亮点 | LLM 生成 ≤120 字（`_generate_single` + `_clean_llm_output` 清洗回声） |
+| 成长性 | `成长分` |
+| 稳健性 | `稳健分` |
+| 回报性 | `回报分` |
+| 综合分 | `综合分` |
+| 评级 | `评级` |
+| 操作建议 | `get_advice()` |
+| 风险提示 | LLM 生成 ≤120 字 |
+| 点评 | LLM 生成 ≤180 字 |
 
-每个字段附带其中文释义与单位，LLM prompt 模板写入 `docs/prompt-library.md`（Step 3-4）。
-
-- [ ] 操作
-  - [ ] 实现 `build_top20(csv_path)` 读取评分 CSV → 降序 Top20
-  - [ ] 实现 `_llm_highlight()` 调 LLM 生成核心亮点（传入 15-20 个关键字段的 prompt）
-  - [ ] 实现 `_llm_risk_tip()` 调 LLM 生成风险提示（同上精简字段）
-  - [ ] LLM 输出附带长度校验（亮点 ≤30 字，风险提示 ≤30 字）
-  - [ ] 调用 `classify_company_type()` + `get_advice()` 确定公司类型与操作建议
-  - [ ] 输出到 `data/fin/recommend/YYMMDD.csv`
-- [ ] 测试
-  - [ ] `uv run pytest integrated_tests/test_reporting.py -m network` — 真实评分数据 + 真实 LLM 调用，校验 Top20 CSV 产出、亮点和风险提示非空且长度合规
+- [x] 操作
+  - [x] 实现 `build_top20(csv_path)` 读取评分 CSV → 降序 Top20 → 并发 LLM（6 worker，`reasoning_effort="max"`）
+  - [x] 实现 `src/reports/reporting.py` 纯逻辑：`parse_back`/`make_features`/`build_llm_context`/`clean_llm_output`/`write_full_report_csv`
+  - [x] 实现 `_generate_single()` 统一调 LLM 生成亮点/风险/点评（token=300/300/500，chars≤120/120/180，temperature=0.3→0.6 重试）
+  - [x] 实现三层分层 system prompt：基本面分析师/风控分析师/投资顾问，各自独立角色约束与禁止项
+  - [x] 实现 user prompt 含 few-shot 示例（好/差对照）、公司类型差异化焦点（千里马重增速/现金牛重现金流/护城河重壁垒）
+  - [x] 实现字段子集裁剪：`_HL_FIELDS`(6)、`_RISK_FIELDS`(7)、`_CMT_FIELDS`(7)，prompt 不提及 LLM 看不到的字段
+  - [x] 实现 `clean_llm_output()` 噪声剥离：`_RE_NOISE`（30+ 句首模式）+ `_RE_DATA_READOUT` + `_RE_HAS_CONTENT`（50+ 关键词）+ 中文引号剥离
+  - [x] 元推理抑制：去编号化 system prompt（禁止"规则1/2/3"触发 checklist 行为）、软化"必须带数据"为"有数据用数据"、禁止语助词（'这里''那么''但''或许'）
+  - [x] 调用 `classify_company_type()` + `get_advice()` 确定公司类型与操作建议
+  - [x] 输出到 `data/fin/full_report/YYMMDD.csv`（并发 6 worker，~50s）
+- [x] 测试
+  - [x] `tests/reports/test_reporting.py`（31 项 mock）— 解析/上下文/清洗/写盘全覆盖，99% 覆盖率
+  - [x] `uv run pytest integrated_tests/test_full_report.py -m network` — 真实评分 + 60 次 LLM 调用，校验 13 列完整、亮点/风险 ≤120 字、点评 ≤180 字
 - [ ] 验收
-  - [ ] 本步骤各文件单元测试覆盖率 ≥ 80%
   - [ ] 本步骤全部产出物符合预期功能需求
-  - [ ] 本步骤产出物命名合规（`reporting.py` / `test_reporting.py`）
-  - [ ] 本步骤产出物位置合规（`src/reports/` / `integrated_tests/` / `data/fin/recommend/`）
+  - [x] 本步骤产出物命名合规（`reporting.py` / `full_report.py` / `test_reporting.py` / `test_full_report.py` / `YYMMDD.csv`）
+  - [x] 本步骤产出物位置合规（`src/reports/` / `scripts/` / `tests/reports/` / `integrated_tests/` / `data/fin/full_report/` / `data/test/full_report/`）
 - [ ] 提交
-  - [ ] `git commit -m "feat(report): 荐股Top20生成"`
+  - [ ] `git commit -m "feat(report): 荐股Top20生成与纯逻辑单测"`
 
 ### Step 3-4 字段契约与 Prompt 文档
 
-- 涉及文件：`docs/dev-guide.md`（§8.1 字段契约）、`docs/prompt-library.md`
+- 涉及文件：`docs/dev-guide.md`（§8.1 字段契约）、`data/ref/prompt-library.md`
 - 实现 BR-06
 - 实现 FR-REPORT-07
-- 总结精华/设计巧思：字段计算口径已合并入 `docs/dev-guide.md` §8.1 作为单一事实来源，无需独立 `data-contract.md`；`prompt-library.md` 集中管理亮点/点评 Prompt 模板，便于调优迭代。
+- 总结精华/设计巧思：字段计算口径已合并入 `docs/dev-guide.md` §8.1 作为单一事实来源，无需独立 `data-contract.md`；`data/ref/prompt-library.md` 存放亮点/风险提示 Prompt 模板（含 13 字段的中文释义+单位拼装示例），与 SW 行业缓存同目录，`data/ref/` 为参考数据统一存放地。
 
 - [x] 操作
   - [x] 字段计算口径已合并入 `docs/dev-guide.md` §8.1（无需单独文件）
 - [ ] 操作
-  - [ ] 待补 `docs/prompt-library.md`（亮点/点评 Prompt 模板）
+  - [ ] 待补 `data/ref/prompt-library.md`（亮点/风险提示 Prompt 模板，含 14 字段拼装格式）
   - [ ] 人工核对字段口径与代码一致
 - [ ] 测试
   - [ ] Prompt 模板经 5+ 样本输出人工验证
 - [ ] 验收
   - [ ] 本步骤全部产出物符合预期功能需求
   - [ ] 本步骤产出物命名合规（`prompt-library.md`）
-  - [ ] 本步骤产出物位置合规（`docs/`）
+  - [ ] 本步骤产出物位置合规（`data/ref/`）
 - [ ] 提交
   - [ ] `git commit -m "docs: Prompt文档"`
 
-> M3 验收：荐股 Top20 落到 `data/fin/recommend/YYMMDD-荐股.csv`。
+> M3 验收：荐股 Top20 落到 `data/fin/full_report/YYMMDD.csv`，LLM prompt 模板在 `data/ref/prompt-library.md`。
 
 ---
 
@@ -807,7 +840,7 @@ date: 2026-07-28
 | M0 工程骨架 | 4 | 4 | 工程基线（支撑全部 FR/NFR） | `uv run pytest` | 直接推 main |
 | M1 数据采集 | 5 | 5 | BR-01/02 · FR-DATA-01~10 · FR-UPDATE-02/03 · NFR-03 | 全量批量采集 + 5 股冒烟，`data/fin/full_collect/YYMMDD.csv` 字段齐全 | 直接推 main |
 | M2 评分评级 | 4 | 4 | BR-03/04/05 · FR-SCORE-01~09 · FR-RATE-01~04 | 阈值单测全覆盖（297 项 mock，cov 99.4%）；`data/fin/scoring/YYMMDD.csv` + `-否决.csv` + 公司类型规则引擎 | 直接推 main |
-| M3 报告输出 | 4 | 2/4 | BR-06/14 · FR-REPORT-01~04/07 · FR-CHAT-04 | LLM 适配层已完成，荐股/文档待完成 | 直接推 main |
+| M3 报告输出 | 4 | 3/4 | BR-06/14 · FR-REPORT-01~04/07 · FR-CHAT-04 | 荐股 Top20 CSV（13 列，LLM 亮点/风险/点评 30/30/50 字，~30s） | 直接推 main |
 | M4 Agent 编排 | 3 | 3 | BR-12/17 · AR-* · FR-CHAT-01~03/05 | 对话触发各 Agent | 直接推 main |
 | M5 监控推送 | 4 | 4 | BR-07/08/09/10/11 · FR-REPORT-05/06 · FR-HOTSPOT/PORT/PUSH · FR-UPDATE-01 | 09/17 定时 + 推送 | 直接推 main |
 | M6 桌面端 | 4 | 4 | BR-13/15/16 · FR-UI-01~07 · NFR-01/02 | Win/Mac 可安装 | 直接推 main |

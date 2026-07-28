@@ -53,7 +53,7 @@ def test_data_subdirs_mapping_complete() -> None:
     """data 子目录映射与 dev-guide §0 约定一致。"""
     assert set(DATA_SUBDIRS) == {
         "fin",
-        "analysis",
+        "full_report",
         "hold",
         "hot",
         "monitor",

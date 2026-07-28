@@ -18,6 +18,9 @@ uv run python scripts/smoke_collect.py --sample 5    # 随机 5 股冒烟
 # 评分评级
 uv run python scripts/full_scores.py                 # 全量评分评级
 
+# 报告输出
+uv run python scripts/full_report.py                 # 荐股 Top20 报告
+
 # 测试
 uv run pytest                                        # 全部测试（含网络集成）
 uv run pytest -m "not network"                       # 仅 mock 测试（CI）
@@ -38,10 +41,15 @@ src/
 │   ├── provider.py          # Tushare 适配器 + 限流重试 + SW 行业分类
 │   ├── collect.py           # 采集编排（逐股/批量 + 缓存 + 报告期推算）
 │   └── output.py            # CSV 输出与格式化
-└── scoring/                 # 评分/评级/否决
-    └── scores.py            # 三维评分纯函数 + 行业权重 + 评级映射
+├── scoring/                 # 评分/评级/否决
+│   └── scores.py            # 三维评分纯函数 + 行业权重 + 评级映射
+├── reports/                 # 报告输出规则引擎
+│   ├── evaluation.py        # 公司类型分类 + 操作建议
+│   └── reporting.py         # 荐股报告纯逻辑（解析/上下文/清洗）
+└── agents/                  # LLM 适配
+    └── llm_adapter.py       # DeepSeek 适配层
 data/
-├── fin/                     # 采集/评分产物
+├── fin/                     # 采集/评分/荐股产物
 ├── ref/                     # 参考数据（sw_industry.csv）
 ├── cache/                   # 采集缓存
 ├── test/                    # 集成测试产物（自动覆盖）
@@ -49,12 +57,15 @@ data/
 scripts/
 ├── full_collect.py          # 全量批量采集
 ├── full_scores.py           # 全量评分评级
+├── full_report.py           # 荐股 Top20 报告
 ├── smoke_collect.py         # 随机 5 股冒烟
 └── sw_industry.py           # SW 行业缓存生成
-tests/                       # 单元测试（263 项）
+tests/                       # 单元测试（297 项）
 ├── data/                    # 采集层（contract/provider/collect/output）
-└── scoring/                 # 评分层（三维评分/否决/评级）
-integrated_tests/            # 集成测试（8 项 mock + 3 项 network）
+├── scoring/                 # 评分层（三维评分/否决/评级）
+├── reports/                 # 报告层（公司类型/操作建议）
+└── agents/                  # LLM 适配层
+integrated_tests/            # 集成测试
 docs/                        # 文档（dev-guide + ROADMAP + BRD）
 ```
 
@@ -68,7 +79,7 @@ stock_basic(全 A 股清单)
   → score_growth/stability/return() 三维评分
   → score_composite() 行业权重加权综合分
   → score_rating() 四级评级（皇冠明珠/优秀白马/鸡肋·观察/垃圾）
-  → 输出 data/fin/scoring/YYMMDD.csv
+  → 输出 data/fin/full_scores/YYMMDD.csv
 ```
 
 ## 定位

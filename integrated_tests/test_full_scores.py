@@ -196,7 +196,7 @@ def test_real_full_scores() -> None:
     assert len(results) > 0
     assert len(results) + len(vetoes) == len(features)
 
-    out_dir = settings.data_root / "test" / "scoring"
+    out_dir = settings.data_root / "test" / "full_scores"
     out_dir.mkdir(parents=True, exist_ok=True)
     out_path = out_dir / "full_scores.csv"
     _write_scoring_csv(out_path, results, ALL_OUTPUT_COLUMNS)

@@ -52,22 +52,43 @@
 
 ### M3
 
-- LLM 适配层做依赖倒置，业务代码不直接依赖 DeepSeek SDK；OpenAI 兼容接口使得换模型只改 adapter 一行
+- LLM 适配层做依赖倒置，业务代码不直接依赖 DeepSeek SDK
 - mock 测试验证调用参数正确
+- 增强系统提示：`src/reports/reporting.py:196` — `_generate_single` 函数内的 `chat_completion` 调用
+- **该高的必须高**：`scores.py` 100%（RIGID 规则，全部阈值边界必测）
+- **该低的低也没事**：`reporting.py` 22%（LLM 相关，mock 它没意义，靠 network 测试真跑验证）
+- **这项目当前 89% 足够**：核心业务逻辑（评分/评级/否决/权重）全覆盖，I/O 层够用即可
+- IO 进集成保单测
+
+1. **`reasoning=False` → `True`** — 最大单点提升。不用阉割版模型。
+2. **max_tokens 80→300 / max_chars 30→120** — 给足输出空间，消除截断。
+3. **system prompt 去编号化** — 删除"规则1/2/3"，改为自然角色描述；编号格式是元推理触发器。
+4. **prompt 与 field_set 对齐** — `_RISK_FIELDS` 补 `roe`+`free_cashflow`；user prompt 不再提及模型看不到的字段。
+5. **软化数据约束** — "每句必须带数据"→"有数据优先用数据，无数据直接写评分结论"。缺数据时模型不再崩溃自语。
+6. **`clean_llm_output` 正则扩军** — `_RE_NOISE` 追加 20+ 元推理模式（排查/规则/这里/那么/或许/有可能/只能/否则）；`_RE_HAS_CONTENT` 扩展 30+ 关键词；`clean_llm_output` 入口剥中文引号。
 
 ## 待定
 
+- [ ] 校验成果
+- [ ] 对齐 dev、RM
+- [ ] 如果没有，层层新建
 - [ ] 双端目录
+- [ ] 更新 AG、RD
+
+- [ ] quanttide/qtdata
 
 - [ ] 模型参数
   - [ ] 思考深度
 - [ ] 已完成的步骤中未实现的功能
 - [ ] Tushare skill
 - [ ] 先指引用户生成本地数据基础
+- [ ] 老王的 DS 账号替换 Key
+- [ ] 系统提示规范和准确性提高的思路
 
 - [ ] 知识产权保护
 - [ ] 法律风险
 - [ ] 评审：果哥、昂哥、哥、郑哥
+- [ ] 更合适的语言
 
 ## 参考资料
 

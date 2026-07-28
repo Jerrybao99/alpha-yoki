@@ -38,10 +38,10 @@ stock_basic(全 A 股清单)
   → score_growth() / score_stability() / score_return() 三维评分
   → score_composite() 按行业权重加权 (五大类权重: 周期资源 25/35/40, 大消费 30/30/40, 证券金融 30/30/40, 科技/制造 50/20/30, 公用事业/基建 20/40/40)
   → score_rating() 四级评级 (8.5/7.0/5.5 三临界)
-  → 输出 data/fin/scoring/YYMMDD.csv + -否决.csv
+  → 输出 data/fin/full_scores/YYMMDD.csv + -否决.csv
 ```
 
-数据目录映射：`fin`(财务) / `analysis`(荐股) / `hold`(持股) / `hot`(热点) / `monitor`(监控) / `feedback`(反馈) / `rag`(知识库) / `ref`(参考数据) / `test`(测试产物)。
+数据目录映射：`fin`(财务) / `full_report`(荐股) / `hold`(持股) / `hot`(热点) / `monitor`(监控) / `feedback`(反馈) / `rag`(知识库) / `ref`(参考数据) / `test`(测试产物)。
 
 ## Commands
 
@@ -53,6 +53,7 @@ stock_basic(全 A 股清单)
 - full-collect: `uv run python scripts/full_collect.py`
 - smoke-collect: `uv run python scripts/smoke_collect.py --sample 5`
 - full-scores: `uv run python scripts/full_scores.py`
+- full-report: `uv run python scripts/full_report.py`
 - sw-cache: `uv run python scripts/sw_industry.py`
 
 ## Stack
@@ -80,6 +81,8 @@ stock_basic(全 A 股清单)
 - `src/data/provider.py` — Tushare 适配器(20 接口注册表)、RateLimiter 限流、指数退避重试、SW 行业 5 大类映射(~130 行业)
 - `src/data/collect.py` — 采集编排(Cache TTL + CollectionPipeline + run/run_batch)、报告期推算
 - `src/scoring/scores.py` — 三维评分纯函数 + 综合分 + 一票否决 + 评级映射
+- `src/reports/reporting.py` — 荐股报告纯逻辑（CSV 解析/LLM 上下文/输出清洗）
+- `scripts/full_report.py` — LLM 荐股 Top20 生成（核心亮点/风险/点评）
 - `.env.example` — 配置样板(新增配置项必须同步)
 
 ## Constraints

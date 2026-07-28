@@ -1,7 +1,7 @@
 ---
 tags: [dev-guide, 开发指南, single-source-of-truth]
 status: active
-version: 1.2.0
+version: 1.3.0
 date: 2026-07-28
 合并自: [brd.md](./brd.md)（prd.md 待补充）
 适用对象: AI Coding Agent / 开发者
@@ -64,7 +64,7 @@ date: 2026-07-28
   | 中文 | 英文简写 | 用途 |
   |---|---|---|
   | 财务 | `fin` | 采集/评分/评级/否决/失败 csv |
-  | 分析 | `analysis` | 荐股 Top20 报告 |
+  | 分析 | `full_report` | 荐股 Top20 报告 |
   | 持股 | `hold` | 持仓基线与 09/17 重算结果 |
   | 热点 | `hot` | 热搜缓存与识别结果 |
   | 监控 | `monitor` | Agent 执行链 |
@@ -199,16 +199,15 @@ alpha-jerry/
 │   ├── brd.md / dev-guide.md（本文件）/ dev-log.md
 │   ├── architecture.md        # 架构详解 ADR（待建）
 │   ├── data-contract.md       # 字段契约（已合并入 §8.1，不再单独维护）
-│   └── prompt-library.md      # Prompt 模板库（待建，M3 Step 3-3）
+│   └── prompt-library.md      # Prompt 模板库（待建，现位于 data/ref/）
 ├── data/                      # 运行期数据（gitignore）
-│   ├── fin/                   # full_collect/ 批量采集产物 / smoke_collect/ 冒烟采集产物 / scoring/评分评级产物
-│   ├── analysis/              # YYMMDD-荐股.csv
+│   ├── fin/                   # full_collect/ 批量采集 | full_scores/评分评级 | full_report/荐股 Top20
 │   ├── hold/                  # YYMMDD.csv / -09 / -17
 │   ├── hot/                   # YYMMDD-HH.csv
 │   ├── monitor/               # Agent 执行链
 │   ├── feedback/              # 用户反馈
-│   ├── ref/                   # 参考数据（SW 行业分类等）
-│   ├── test/                  # 集成测试产物（full_collect / smoke_collect / scoring）
+│   ├── ref/                   # 参考数据（sw_industry.csv + prompt-library.md）
+│   ├── test/                  # 集成测试产物（full_collect / full_scores / full_report / smoke_collect）
 │   └── rag/                   # 向量库与知识库
 ├── src/                       # 源代码
 │   ├── main.py                # 运行入口
@@ -221,12 +220,14 @@ alpha-jerry/
 │   │   ├── collect.py         # 采集编排 + 缓存 + 报告期推算
 │   │   └── output.py          # CSV 写盘 + 数值格式化
 │   ├── reports/               # 报告输出规则引擎
-│   │   └── evaluation.py     # 公司类型分类 + 操作建议
+│   │   ├── evaluation.py     # 公司类型分类 + 操作建议
+│   │   └── reporting.py      # 荐股报告纯逻辑（解析/上下文/清洗/CSV）
 │   └── scoring/               # 评分/评级/否决纯函数层
 │       └── scores.py          # 三维评分 + 综合分 + 一票否决 + 评级映射
 ├── scripts/                   # 辅助脚本
 │   ├── full_collect.py        # 全量批量采集
 │   ├── full_scores.py         # 全量评分评级
+│   ├── full_report.py         # 荐股 Top20 报告生成
 │   ├── smoke_collect.py       # 随机 5 股冒烟
 │   └── sw_industry.py         # SW 行业缓存生成
 ├── tests/                     # 单元测试
@@ -234,6 +235,8 @@ alpha-jerry/
 │   │   └── test_llm_adapter.py
 │   ├── data/                  # 采集层单测
 │   ├── reports/               # 报告层单测
+│   │   ├── test_evaluation.py
+│   │   └── test_reporting.py
 │   └── scoring/               # 评分/评级/否决单测
 ├── integrated_tests/          # 集成测试
 └── manifests/                 # 部署清单（Win/Mac 打包）
@@ -286,11 +289,10 @@ alpha-jerry/
   │ ① 采集（Tushare，特征工程字段）
   ▼ data/fin/full_collect/YYMMDD.csv
   │ ② 评分评级（否决 → 三维评分 → 行业权重 → 综合分 → 评级）
-  ▼ data/fin/scoring/YYMMDD.csv（原始字段 + 成长性/稳健性/资金回报/综合分/评级）
-  ▼ data/fin/scoring/YYMMDD-否决.csv（一票否决清单）
-  │ ③ 报告（综合分降序 Top20 + 持仓表）
-  ▼ data/analysis/YYMMDD-荐股.csv   ← 用户据此决策
-     data/hold/YYMMDD.csv        ← 持仓基线
+   ▼ data/fin/full_scores/YYMMDD.csv（原始字段 + 成长性/稳健性/资金回报/综合分/评级）
+   ▼ data/fin/full_scores/YYMMDD-否决.csv（一票否决清单）
+   │ ③ 报告（综合分降序 Top20 + LLM 生成亮点/风险/点评）
+   ▼ data/fin/full_report/YYMMDD.csv   ← 用户据此决策
 ```
 
 **持续运营流程：**
@@ -331,7 +333,7 @@ alpha-jerry/
 | DataAgent | 采集全 A 股并落地特征字段 | `fetch_stock_list`/`fetch_financials`/`save_csv` | 采集进度 | `data/fin/YYMMDD.csv` |
 | ScoringAgent | 否决 + 三维评分 + 权重 + 综合分 | `scoring` 纯函数族（`scores.py`） | 评分快照 | `-评分.csv` |
 | RatingAgent | 评级 + 公司类型 + 行业分类 + AI 点评 | `score_rating` 纯函数 + `llm_comment` | 评级历史 | `-评级.csv` |
-| ReportAgent | 荐股 Top20 + 持仓表 | `build_top20`/`render_portfolio`/`llm_highlight` | 报告索引 | `data/analysis/荐股.csv`、`data/hold/*.csv` |
+| ReportAgent | 荐股 Top20 + 持仓表 | `build_top20`/`render_portfolio`/`llm_highlight` | 报告索引 | `data/fin/full_report/`、`data/hold/*.csv` |
 | HotspotAgent | 采热搜 → LLM 识别 → 受益行业/个股 | `fetch_hot_search`/`llm_identify_opportunity`/`rag_map_industry_to_stocks` | 热点时序 | `data/hot/` |
 | PortfolioAgent | 持仓重算、风险高亮、趋势、操作建议 | `reload_holdings`/`rescore`/`diff_last_score`/`suggest_action` | 持仓变化 | `data/hold/YYMMDD-09.csv` 等 |
 | ChatAgent | 自由对话，调用其他 Agent（受权限约束） | 全部工具 | 长期会话 + RAG | 对话回复 |
@@ -580,16 +582,19 @@ $$
 | 股票名称（Name） | 文本 | 浦发银行 |
 | 公司类型 | 文本 | 千里马/现金牛/护城河 |
 | 行业分类 | 文本 | 周期资源/大消费/证券金融/新能源制造/公用事业基建 |
-| 核心亮点 | 文本 | AI 生成，≤30 字 |
+| 核心亮点 | 文本 | AI 生成，≤120 字 |
 | 成长性 | 数值(1位) | 0-10 |
 | 稳健性 | 数值(1位) | 0-10 |
 | 回报性 | 数值(1位) | 0-10 |
 | 综合分 | 数值(1位) | 0-10 |
 | 评级 | 文本 | 皇冠明珠/优秀白马/鸡肋·观察/垃圾 |
-| 点评 | 文本 | AI 点评，≤50 字 |
+| 操作建议 | 文本 | 规则映射（§8.9） |
+| 风险提示 | 文本 | AI 生成，≤120 字 |
+| 点评 | 文本 | AI 点评，≤180 字 |
 
-- 荐股：按综合分降序取 Top20，落地 `data/analysis/YYMMDD-荐股.csv`。
+- 荐股：按综合分降序取 Top20，落地 `data/fin/full_report/YYMMDD.csv`。
 - 持仓：用户对话录入（代码+名称），系统生成 `data/hold/YYMMDD.csv`，字段同荐股表。
+- **Prompt 架构**：三层分层 system prompt（基本面分析师/风控分析师/投资顾问），user prompt 含 few-shot 好/差对照示例；字段按角色子集裁剪传入（亮点 6 字段/风险 7 字段/点评 7 字段），prompt 不提及 LLM 看不到的数据；公司类型差异化焦点（千里马/现金牛/护城河各有侧重）；LLM 输出经 `clean_llm_output()` 剥离回声/元推理/数据回显后截断落盘。
 
 ---
 
@@ -603,7 +608,7 @@ $$
 | BR-03 | FR-SCORE-01 | 一票否决（§8.2）剔除并审计 | P0 |
 | BR-04 | FR-SCORE-02~09 | 三维评分（§8.3）+ 行业权重（§8.4）+ 综合分（§8.5）；纯函数单测；公司类型权重微调 | P0 |
 | BR-05 | FR-RATE-01~04 | 四级评级（§8.6）；边界单测；否决记录审计 | P0 |
-| BR-06 | FR-REPORT-01~07 | 荐股 Top20（§8.10）；AI 亮点≤30字/点评≤50字；公司类型+行业分类规则校验；操作建议（§8.9） | P0 |
+| BR-06 | FR-REPORT-01~07 | 荐股 Top20（§8.10）；AI 亮点≤120字/点评≤180字；公司类型+行业分类规则校验；操作建议（§8.9） | P0 |
 | BR-07 | FR-REPORT-06 | 持仓录入生成持仓表 | P0 |
 | BR-08 | FR-HOTSPOT-01~05 | 每日 09:00/17:00；采 Top10 热搜；LLM 识别机会；RAG 映射个股 Top5 | P0/P1 |
 | BR-09 | FR-PORT-01~05 | 每日 09:00/17:00；重爬重算；风险高亮；趋势对比；操作建议 | P0 |
@@ -735,7 +740,7 @@ LLM_LOCAL_FALLBACK=false     # 是否启用本地模型兜底
 | M0 工程骨架 | 目录/AGENTS.md/pyproject/Settings/CI | `uv run pytest` 骨架用例通过 |
 | M1 数据采集 | DataAgent + Tushare 适配 + 字段落地 | 随机 5 股采集成功，csv 字段齐全 |
 | M2 评分评级 | 纯函数 + 单测 + 行业权重 + 否决 | 阈值表单测全覆盖；`-评分`/`-评级` csv 产出 |
-| M3 报告输出 | 荐股 Top20 + 持仓表 + AI 点评 | `data/analysis/荐股.csv` 生成 |
+| M3 报告输出 | 荐股 Top20 + 持仓表 + AI 点评 | `data/fin/full_report/` 生成 |
 | M4 多 Agent 编排 | RouterAgent + ChatAgent + LangGraph + 记忆/RAG | 对话可触发各 Agent |
 | M5 热点+持仓监控+推送 | HotspotAgent + PortfolioAgent + 邮件/微信 | 定时任务与推送链路打通 |
 | M6 桌面端 UI | Electron + React 双端 + 图标 + 打包 | Win/Mac 可安装运行 |
