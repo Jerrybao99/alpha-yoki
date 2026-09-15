@@ -69,6 +69,16 @@ def test_uin_is_random_per_request() -> None:
     assert random_wechat_uin() != random_wechat_uin()
 
 
+def test_extract_login_qr_separates_poll_token_and_image_url() -> None:
+    from src.wechat.ilink import extract_login_qr
+
+    token, image = extract_login_qr(
+        {"qrcode": "qrc_token", "qrcode_img_content": "https://weixin.qq.com/x/abc"}
+    )
+    assert token == "qrc_token"
+    assert image == "https://weixin.qq.com/x/abc"
+
+
 def test_qrcode_status_machine() -> None:
     assert qr_status({"status": "wait"}) == QR_WAIT
     assert qr_status({"status": "scaned"}) == QR_SCANNED

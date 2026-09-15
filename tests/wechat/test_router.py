@@ -93,6 +93,7 @@ def test_help_and_split_by_limit() -> None:
     reply = handle_incoming(incoming, settings, owner_id="me", tools={})
     assert reply is not None
     assert "状态" in reply
+    assert "600519（示例，可换其他代码如 000001）" in reply
     chunks = split_message("abcdefghij", 4)
     assert chunks == ["abcd", "efgh", "ij"]
     assert all(len(chunk) <= 4 for chunk in chunks)

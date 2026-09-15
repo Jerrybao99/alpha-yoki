@@ -101,6 +101,13 @@ def latest(kind: Kind, settings: Settings | None = None) -> Path | None:
     return find_latest_csv(kind_dir(kind, settings))
 
 
+def _period_from_stamp(kind: Kind, stamp: str, settings: Settings) -> str | None:
+    human = kind_dir(kind, settings) / f"{stamp}.csv"
+    if not human.exists():
+        return None
+    return _period_from_artifact(human)
+
+
 def _period_from_artifact(human_path: Path) -> str | None:
     raw = sibling_raw(human_path)
     if raw.exists():
@@ -129,6 +136,12 @@ def freshness(kind: Kind, today: date, settings: Settings | None = None) -> Fres
             reason="missing",
         )
     period = _period_from_artifact(path)
+    if period is None and kind == Kind.REPORT:
+        resolved = settings or get_settings()
+        for source in (Kind.SCORES, Kind.COLLECT):
+            period = _period_from_stamp(source, path.stem, resolved)
+            if period:
+                break
     if period is None:
         return Freshness(
             kind=kind,

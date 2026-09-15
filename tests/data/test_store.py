@@ -124,6 +124,28 @@ def test_load_features_falls_back_to_human(tmp_path: Path) -> None:
     assert loaded[0].name == "浦发银行"
 
 
+def test_freshness_report_inherits_period_from_same_stamp_scores(tmp_path: Path) -> None:
+    """荐股 CSV 无 end_date，按同日评分 raw 的报告期判断，避免 missing_period 误判。"""
+    settings = _settings(tmp_path)
+    today = _dt.date(2026, 9, 15)
+    expected = expected_latest_period(today)
+    scores = settings.data_path("fin") / "full_scores"
+    report = settings.data_path("fin") / "full_report"
+    scores.mkdir(parents=True)
+    report.mkdir(parents=True)
+    (scores / "260915.csv").write_text("ts_code\n", encoding="utf-8")
+    write_raw_csv(
+        [{"ts_code": "600000.SH", "end_date": expected}],
+        raw_path(scores, "260915"),
+        ("ts_code", "end_date"),
+    )
+    (report / "260915.csv").write_text("股票代码,点评\n000807,盯住增速\n", encoding="utf-8")
+    info = freshness(Kind.REPORT, today, settings=settings)
+    assert info.is_stale is False
+    assert info.reason == "fresh"
+    assert info.period == expected
+
+
 def test_write_raw_uses_all_output_columns(tmp_path: Path) -> None:
     feat = StockFeatures(ts_code="600000.SH", holder_num=99, revenue=1.0)
     path = raw_path(tmp_path, "260915")

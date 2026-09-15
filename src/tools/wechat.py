@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import time
 from collections.abc import Callable
+from pathlib import Path
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict
@@ -12,7 +13,14 @@ from pydantic import BaseModel, ConfigDict
 from src.config import Settings, get_settings
 from src.tools import EXIT_CONFIG, EXIT_DATA, EXIT_OK, ToolError, envelope
 from src.wechat.bot import WechatBot
-from src.wechat.ilink import QR_CONFIRMED, QR_EXPIRED, ILinkClient, SessionExpired, qr_status
+from src.wechat.ilink import (
+    QR_CONFIRMED,
+    QR_EXPIRED,
+    ILinkClient,
+    SessionExpired,
+    extract_login_qr,
+    qr_status,
+)
 from src.wechat.notify import push_text
 from src.wechat.session import SessionStore
 
@@ -46,11 +54,15 @@ def _login(
     sleeper: Callable[[float], None],
 ) -> tuple[int, dict[str, Any]]:
     payload = client.get_qrcode()
-    qrcode = str(payload.get("qrcode") or (payload.get("data") or {}).get("qrcode") or "")
-    if not qrcode:
+    qrcode, image = extract_login_qr(payload)
+    if not qrcode or not image:
         raise ToolError("未能获取登录二维码", EXIT_DATA)
-    qr_path = settings.data_path("wechat") / "qrcode.txt"
-    qr_path.write_text(qrcode, encoding="utf-8")
+    qr_dir = settings.data_path("wechat")
+    qr_path = qr_dir / "qrcode.txt"
+    png_path = qr_dir / "qrcode.png"
+    qr_path.write_text(image, encoding="utf-8")
+    _write_qr_png(image, png_path)
+    print(f"请用微信 ClawBot 扫描：{png_path}", flush=True)
     status = _poll_login(client, qrcode, sleeper)
     token = str(status.get("bot_token") or status.get("token") or "")
     user_id = str(status.get("ilink_user_id") or status.get("user_id") or "")
@@ -69,8 +81,14 @@ def _login(
     return EXIT_OK, envelope(
         ok=True,
         command="wechat",
-        data={"message": f"已保存二维码 {qr_path}：{qrcode}", "user_id": user_id},
+        data={"message": f"已登录。二维码文件：{png_path}", "user_id": user_id},
     )
+
+
+def _write_qr_png(content: str, path: Path) -> None:
+    import segno
+
+    segno.make(content, error="m").save(str(path), scale=8)
 
 
 def _poll_login(client: Any, qrcode: str, sleeper: Callable[[float], None], rounds: int = 120) -> dict[str, Any]:

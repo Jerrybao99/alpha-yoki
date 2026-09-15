@@ -13,7 +13,10 @@ from src.tools.holdings import HoldingsParams, run_holdings
 from src.tools.market import CollectParams, run_collect
 from src.tools.status import StatusParams, run_status
 
-HELP_TEXT = "可用指令：帮助 / 状态 / 报告 / 更新 / 持仓 / 加仓 600519 / 减仓 600519 / 查 600519"
+HELP_TEXT = (
+    "可用指令：帮助 / 状态 / 报告 / 更新 / 持仓 / "
+    "加仓 600519 / 减仓 600519 / 查 600519（示例，可换其他代码如 000001）"
+)
 
 _CODED = re.compile(r"^(加仓|减仓|查)\s+(\S+)$")
 _NAMED = {

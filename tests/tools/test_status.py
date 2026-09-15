@@ -52,6 +52,29 @@ def test_status_check_fresh_collect_still_fails_if_scores_missing(tmp_path: Path
     assert kinds["scores"]["is_stale"] is True
 
 
+def test_status_check_ok_when_report_has_no_period(tmp_path: Path) -> None:
+    settings = _settings(tmp_path)
+    today = _dt.date(2026, 9, 15)
+    expected = expected_latest_period(today)
+    for folder in ("full_collect", "full_scores"):
+        directory = settings.data_path("fin") / folder
+        directory.mkdir(parents=True)
+        (directory / "260915.csv").write_text("ts_code\n", encoding="utf-8")
+        write_raw_csv(
+            [{"ts_code": "600000.SH", "end_date": expected}],
+            raw_path(directory, "260915"),
+            ("ts_code", "end_date"),
+        )
+    report = settings.data_path("fin") / "full_report"
+    report.mkdir(parents=True)
+    (report / "260915.csv").write_text("股票代码,点评\n000807,盯住增速\n", encoding="utf-8")
+    code, payload = run_status(StatusParams(check=True), settings, today=today)
+    assert code == EXIT_OK
+    kinds = {item["kind"]: item for item in payload["data"]["items"]}
+    assert kinds["report"]["is_stale"] is False
+    assert kinds["report"]["period"] == expected
+
+
 def test_status_without_check_ok_when_missing(tmp_path: Path) -> None:
     code, payload = run_status(StatusParams(check=False), _settings(tmp_path))
     assert code == EXIT_OK

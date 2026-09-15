@@ -20,6 +20,14 @@ QR_CONFIRMED = "confirmed"
 QR_EXPIRED = "expired"
 
 
+def extract_login_qr(payload: dict[str, Any]) -> tuple[str, str]:
+    """轮询令牌与可绘成二维码的 URL；二者不能混用。"""
+    nested = payload.get("data") if isinstance(payload.get("data"), dict) else {}
+    token = str(payload.get("qrcode") or nested.get("qrcode") or "")
+    image = str(payload.get("qrcode_img_content") or nested.get("qrcode_img_content") or "")
+    return token, image
+
+
 def qr_status(payload: dict[str, Any]) -> str:
     nested = payload.get("data") if isinstance(payload.get("data"), dict) else {}
     return str(payload.get("status") or nested.get("status") or "")

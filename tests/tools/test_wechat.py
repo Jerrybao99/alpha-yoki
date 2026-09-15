@@ -29,10 +29,10 @@ class _FakeKeyring:
 
 class _LoginClient:
     def get_qrcode(self) -> dict:
-        return {"qrcode": "https://qr.example/login"}
+        return {"qrcode": "qrc_poll_token", "qrcode_img_content": "https://weixin.qq.com/x/demo"}
 
     def poll_qrcode_status(self, qrcode: str) -> dict:
-        assert qrcode == "https://qr.example/login"
+        assert qrcode == "qrc_poll_token"
         return {
             "status": "confirmed",
             "bot_token": "login-token-xyz",
@@ -60,10 +60,12 @@ def test_login_saves_qrcode_and_session(tmp_path: Path) -> None:
     )
     assert code == EXIT_OK
     qr_path = tmp_path / "wechat" / "qrcode.txt"
-    assert qr_path.read_text(encoding="utf-8") == "https://qr.example/login"
+    png_path = tmp_path / "wechat" / "qrcode.png"
+    assert qr_path.read_text(encoding="utf-8") == "https://weixin.qq.com/x/demo"
+    assert png_path.exists()
     assert store.get_token() == "login-token-xyz"
     assert store.load_meta()["user_id"] == "owner-9"
-    assert "https://qr.example/login" in (payload["data"] or {}).get("message", "")
+    assert "qrcode.png" in (payload["data"] or {}).get("message", "")
 
 
 def test_status_without_session(tmp_path: Path) -> None:

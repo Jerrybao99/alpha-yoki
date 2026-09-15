@@ -12,6 +12,7 @@ dependencies = [
     "pandas>=3.0.3",
     "pydantic-settings>=2.14.2",
     "python-dotenv>=1.2.2",
+    "segno>=1.6.6",
     "tushare>=1.4.29",
 ]
 
