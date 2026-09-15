@@ -42,9 +42,7 @@ def describe_error(exc: BaseException) -> str:
 
 
 class ReviewCache(Protocol):
-    def key(
-        self, facts: ReviewFacts, prompt_version: str, provider: str, model: str
-    ) -> str: ...
+    def key(self, facts: ReviewFacts, prompt_version: str, provider: str, model: str) -> str: ...
 
     def get(self, key: str) -> ReviewResult | None: ...
 
@@ -90,10 +88,7 @@ def _violation_fields(violations: list[Violation]) -> dict[str, list[str]]:
     """trace 里同时落违规码与截断后的中文说明，便于事后按段落/原因聚合。"""
     return {
         "violations": [violation.code for violation in violations],
-        "details": [
-            f"{violation.field}: {violation.message[:_DETAIL_CHARS]}"
-            for violation in violations
-        ],
+        "details": [f"{violation.field}: {violation.message[:_DETAIL_CHARS]}" for violation in violations],
     }
 
 
@@ -128,17 +123,13 @@ def build_fallback_client(
 def _attempt_chain(
     primary: ChatClient, fallback_client: ChatClient | None, options: ReviewOptions
 ) -> list[tuple[ChatClient, bool]]:
-    chain: list[tuple[ChatClient, bool]] = [(primary, False)] * (
-        1 + max(options.max_retries, 0)
-    )
+    chain: list[tuple[ChatClient, bool]] = [(primary, False)] * (1 + max(options.max_retries, 0))
     if fallback_client is not None:
         chain.append((fallback_client, True))
     return chain
 
 
-def _to_result(
-    draft: ReviewDraft, status: ReviewStatus, provider: str, model: str, attempts: int
-) -> ReviewResult:
+def _to_result(draft: ReviewDraft, status: ReviewStatus, provider: str, model: str, attempts: int) -> ReviewResult:
     return ReviewResult(
         highlight=draft.highlight,
         risk=draft.risk,
@@ -226,9 +217,7 @@ def review(
             **_violation_fields(feedback),
         )
         if status is not None and previous is not None:
-            result = _to_result(
-                previous, status, attempt_provider, attempt_model, attempt
-            )
+            result = _to_result(previous, status, attempt_provider, attempt_model, attempt)
             if cache is not None:
                 cache.put(cache_key, result)
             return result

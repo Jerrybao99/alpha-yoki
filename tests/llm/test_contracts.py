@@ -47,14 +47,8 @@ def test_review_fields_order_matches_output_columns() -> None:
 
 
 def test_metric_render_signed_and_unsigned() -> None:
-    assert (
-        Metric("or_yoy", "营收同比", 20.30, "%", signed=True).render()
-        == "营收同比+20.3%"
-    )
-    assert (
-        Metric("or_yoy", "营收同比", -5.25, "%", signed=True).render()
-        == "营收同比-5.2%"
-    )
+    assert Metric("or_yoy", "营收同比", 20.30, "%", signed=True).render() == "营收同比+20.3%"
+    assert Metric("or_yoy", "营收同比", -5.25, "%", signed=True).render() == "营收同比-5.2%"
     assert Metric("roe", "ROE", 21.89, "%").render(2) == "ROE 21.89%"
     assert Metric("current_ratio", "流动比率", 3.2, "倍").render() == "流动比率3.2倍"
 
@@ -107,9 +101,7 @@ def test_review_status_values_are_english_enums() -> None:
 
 
 def test_review_result_defaults() -> None:
-    result = ReviewResult(
-        highlight="a", risk="b", comment="c", status=ReviewStatus.FALLBACK
-    )
+    result = ReviewResult(highlight="a", risk="b", comment="c", status=ReviewStatus.FALLBACK)
     assert result.attempts == 0
     assert result.violations == ()
     assert result.status == "fallback"

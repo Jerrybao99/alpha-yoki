@@ -58,12 +58,8 @@ def run_smoke(
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="随机 N 股冒烟采集并落地 CSV")
-    parser.add_argument(
-        "--sample", type=int, default=5, help="随机采样股票数（默认 5）"
-    )
-    parser.add_argument(
-        "--seed", type=int, default=42, help="随机种子（默认 42，便于复现）"
-    )
+    parser.add_argument("--sample", type=int, default=5, help="随机采样股票数（默认 5）")
+    parser.add_argument("--seed", type=int, default=42, help="随机种子（默认 42，便于复现）")
     args = parser.parse_args()
 
     settings = get_settings()
@@ -73,9 +69,7 @@ def main() -> None:
         raise SystemExit(f"采集失败：{exc}（请在 .env 填入 TUSHARE_TOKEN）") from exc
 
     out_dir = settings.data_path("fin") / "smoke_collect"
-    feat_path, src_path, ok, fail = run_smoke(
-        fetcher, settings, args.sample, out_dir, seed=args.seed
-    )
+    feat_path, src_path, ok, fail = run_smoke(fetcher, settings, args.sample, out_dir, seed=args.seed)
     print(f"成功 {ok} 股，失败 {fail} 股")
     print(f"特征数据：{feat_path}")
     print(f"数据来源：{src_path}")

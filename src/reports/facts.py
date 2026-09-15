@@ -109,16 +109,12 @@ def derive_flags(
         flags.append(Flag(FlagCode.HIGH_LEVERAGE, f"资产负债率{debt:.1f}%偏高"))
     roe = features.roe
     if roe is not None and roe > EXTREME_ROE:
-        flags.append(
-            Flag(FlagCode.EXTREME_ROE, f"ROE {roe:.1f}%处于极端高位，持续性存疑")
-        )
+        flags.append(Flag(FlagCode.EXTREME_ROE, f"ROE {roe:.1f}%处于极端高位，持续性存疑"))
     scores = {"growth": growth, "stability": stability, "return_score": return_score}
     for key, label in _DIMENSION_LABELS:
         score = scores[key]
         if score is not None and score < WEAK_DIMENSION_SCORE:
-            flags.append(
-                Flag(FlagCode.WEAK_DIMENSION, f"{label}评分{int(score)}分为短板")
-            )
+            flags.append(Flag(FlagCode.WEAK_DIMENSION, f"{label}评分{int(score)}分为短板"))
     if (features.industry or "").strip() == CAT_CYCLICAL:
         flags.append(Flag(FlagCode.CYCLICAL, "周期资源行业，盈利随产品价格波动"))
     return tuple(flags)

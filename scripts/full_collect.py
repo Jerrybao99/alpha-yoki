@@ -107,11 +107,7 @@ def main() -> None:
     date = _dt.date.today()
     stamp = date.strftime("%y%m%d")
 
-    out_dir = (
-        Path(args.out_dir)
-        if args.out_dir
-        else settings.data_path("fin") / "full_collect"
-    )
+    out_dir = Path(args.out_dir) if args.out_dir else settings.data_path("fin") / "full_collect"
     feat_path = out_dir / f"{stamp}.csv"
     src_path = out_dir / f"{stamp}-数据来源.csv"
 
@@ -187,9 +183,7 @@ def _run_batch(
     written = 0
     for i in range(0, total, batch_size):
         chunk = successes[i : i + batch_size]
-        _append_csv_rows(
-            feat_path, chunk, headers, ALL_OUTPUT_COLUMNS, write_header=(i == 0)
-        )
+        _append_csv_rows(feat_path, chunk, headers, ALL_OUTPUT_COLUMNS, write_header=(i == 0))
         written += len(chunk)
         pct = written * 100 // total if total else 0
         print(f"  写盘进度：{written}/{total} ({pct}%)")
@@ -202,9 +196,7 @@ def _run_batch(
         fail_path = pipe.write_failures(result.failures, date=date, out_dir=out_dir)
         print(f"失败 {len(result.failures)} 股 → {fail_path}")
 
-    print(
-        f"批量采集完成：成功 {result.success_count} 股，失败 {result.failure_count} 股"
-    )
+    print(f"批量采集完成：成功 {result.success_count} 股，失败 {result.failure_count} 股")
 
 
 def _run_per_stock(
@@ -244,9 +236,7 @@ def _run_per_stock(
         feat_path.write_text(old_text + "\n", encoding="utf-8-sig")  # 保留旧数据
         # 追加新行
         headers = [FIELD_CN.get(c, c) for c in ALL_OUTPUT_COLUMNS]
-        _append_csv_rows(
-            feat_path, result.successes, headers, ALL_OUTPUT_COLUMNS, write_header=False
-        )
+        _append_csv_rows(feat_path, result.successes, headers, ALL_OUTPUT_COLUMNS, write_header=False)
     else:
         write_features_csv(result.successes, feat_path)
 
@@ -257,8 +247,7 @@ def _run_per_stock(
         print(f"失败 {len(result.failures)} 股 → {fail_path}")
 
     print(
-        f"逐股采集完成：成功 {result.success_count} 股（缓存命中 {result.cached_hits}），"
-        f"失败 {result.failure_count} 股"
+        f"逐股采集完成：成功 {result.success_count} 股（缓存命中 {result.cached_hits}），失败 {result.failure_count} 股"
     )
 
 

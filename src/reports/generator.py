@@ -108,13 +108,8 @@ def _prepare(candidate: Candidate) -> tuple[dict[str, str], ReviewFacts]:
 def _print_progress(result: Top20Result) -> None:
     total = len(result.rows)
     for index, (row, status) in enumerate(zip(result.rows, result.statuses), start=1):
-        print(
-            f"  [{index:>2}/{total}] {row['股票名称']} | {status:<9} | {row['核心亮点']}"
-        )
-    summary = " ".join(
-        f"{status}={result.statuses.count(status)}"
-        for status in dict.fromkeys(result.statuses)
-    )
+        print(f"  [{index:>2}/{total}] {row['股票名称']} | {status:<9} | {row['核心亮点']}")
+    summary = " ".join(f"{status}={result.statuses.count(status)}" for status in dict.fromkeys(result.statuses))
     if summary:
         print(f"锐评状态：{summary}")
 

@@ -109,12 +109,8 @@ def _write_veto_csv(out_path: Path, vetoes: list[dict]) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="全量 A 股评分评级并落地 CSV")
-    parser.add_argument(
-        "--input", default=None, help="full_collect CSV 路径（默认取最新）"
-    )
-    parser.add_argument(
-        "--out-dir", default=None, help="输出目录（默认 data/fin/full_scores/）"
-    )
+    parser.add_argument("--input", default=None, help="full_collect CSV 路径（默认取最新）")
+    parser.add_argument("--out-dir", default=None, help="输出目录（默认 data/fin/full_scores/）")
     args = parser.parse_args()
 
     settings = get_settings()
@@ -127,9 +123,7 @@ def main() -> None:
         collect_dir = settings.data_path("fin") / "full_collect"
         csv_path = _find_latest(collect_dir)
         if csv_path is None:
-            raise SystemExit(
-                "找不到采集数据，请先运行 uv run python scripts/full_collect.py"
-            )
+            raise SystemExit("找不到采集数据，请先运行 uv run python scripts/full_collect.py")
 
     print(f"读取采集数据：{csv_path}")
     features = _load_features(csv_path)
@@ -138,11 +132,7 @@ def main() -> None:
     results, vetoes = run_scores(features)
     print(f"评分完成：{len(results)} 股通过，{len(vetoes)} 股否决")
 
-    out_dir = (
-        Path(args.out_dir)
-        if args.out_dir
-        else settings.data_path("fin") / "full_scores"
-    )
+    out_dir = Path(args.out_dir) if args.out_dir else settings.data_path("fin") / "full_scores"
 
     out_path = out_dir / f"{stamp}.csv"
     _write_scoring_csv(out_path, results, ALL_OUTPUT_COLUMNS)

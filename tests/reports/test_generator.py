@@ -19,9 +19,7 @@ _HEADER = (
     "资产负债率,流动比率,净资产收益率\n"
 )
 _MOUTAI = "600519.SH,贵州茅台,大消费,8,8,8,8.0,⭐ 优秀白马,20.00%,18.00%,90.00%,20.00%,3.00倍,18.00%\n"
-_BANK = (
-    "600000.SH,浦发银行,证券金融,6,8,8,7.4,⭐ 优秀白马,5.00%,4.00%,,92.00%,,10.00%\n"
-)
+_BANK = "600000.SH,浦发银行,证券金融,6,8,8,7.4,⭐ 优秀白马,5.00%,4.00%,,92.00%,,10.00%\n"
 
 GOOD_MOUTAI = json.dumps(
     {
@@ -43,9 +41,7 @@ class _FakeClient:
         self.calls.append(kwargs)
         if isinstance(self._content, Exception):
             raise self._content
-        return LLMResponse(
-            content=self._content, model="fake-model", input_tokens=10, output_tokens=5
-        )
+        return LLMResponse(content=self._content, model="fake-model", input_tokens=10, output_tokens=5)
 
 
 def _settings(tmp_path: Path, **overrides) -> Settings:
@@ -135,18 +131,14 @@ def test_build_top20_writes_cache_and_trace_under_data_dir(tmp_path: Path) -> No
     assert record["status"] == "success" and record["code"] == "600519"
 
     second = _FakeClient()
-    result = build_top20(
-        _scoring_csv(tmp_path, _MOUTAI), client=second, settings=settings
-    )  # type: ignore[arg-type]
+    result = build_top20(_scoring_csv(tmp_path, _MOUTAI), client=second, settings=settings)  # type: ignore[arg-type]
     assert second.calls == []
     assert result.statuses == [ReviewStatus.CACHE_HIT.value]
 
 
 def test_build_top20_can_disable_cache(tmp_path: Path) -> None:
     settings = _settings(tmp_path, review_cache_enabled=False)
-    build_top20(
-        _scoring_csv(tmp_path, _MOUTAI), client=_FakeClient(), settings=settings
-    )  # type: ignore[arg-type]
+    build_top20(_scoring_csv(tmp_path, _MOUTAI), client=_FakeClient(), settings=settings)  # type: ignore[arg-type]
     assert not (tmp_path / "data" / "cache" / "review").exists()
 
 

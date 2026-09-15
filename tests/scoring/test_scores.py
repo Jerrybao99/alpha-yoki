@@ -130,25 +130,17 @@ class TestGrowthComposite:
     """成长性综合分：多维度平均与边界。"""
 
     def test_all_dims_avg(self):
-        f = _f(
-            or_yoy=30.0, netprofit_yoy=40.0, grossprofit_margin=35.0, ocfps=2.0, eps=1.0
-        )
+        f = _f(or_yoy=30.0, netprofit_yoy=40.0, grossprofit_margin=35.0, ocfps=2.0, eps=1.0)
         assert score_growth(f) == 8  # (7.5+7.5+7.5+9.5)/4=8.0
 
     def test_all_dims_none_returns_5(self):
         assert score_growth(_f()) == 5
 
     def test_round_up(self):
-        assert (
-            score_growth(_f(or_yoy=30.0, netprofit_yoy=40.0, grossprofit_margin=35.0))
-            == 8
-        )  # (7.5+7.5+7.5)/3=7.5→8
+        assert score_growth(_f(or_yoy=30.0, netprofit_yoy=40.0, grossprofit_margin=35.0)) == 8  # (7.5+7.5+7.5)/3=7.5→8
 
     def test_round_down(self):
-        assert (
-            score_growth(_f(or_yoy=15.0, netprofit_yoy=15.0, grossprofit_margin=15.0))
-            == 6
-        )  # (5.5*3)/3=5.5→6
+        assert score_growth(_f(or_yoy=15.0, netprofit_yoy=15.0, grossprofit_margin=15.0)) == 6  # (5.5*3)/3=5.5→6
 
     def test_single_dim(self):
         assert score_growth(_f(or_yoy=10.0)) == 4
@@ -282,18 +274,10 @@ class TestStabilityComposite:
         assert score_stability(f) == 6  # (5.5+5.5+5.5)/3=5.5→6
 
     def test_min_score_is_2(self):
-        assert (
-            score_stability(_f(debt_to_assets=99.0, current_ratio=0.1, inv_turn=0.1))
-            == 2
-        )
+        assert score_stability(_f(debt_to_assets=99.0, current_ratio=0.1, inv_turn=0.1)) == 2
 
     def test_max_score_is_10(self):
-        assert (
-            score_stability(
-                _f(debt_to_assets=10.0, current_ratio=100.0, inv_turn=999.0)
-            )
-            == 10
-        )
+        assert score_stability(_f(debt_to_assets=10.0, current_ratio=100.0, inv_turn=999.0)) == 10
 
     def test_round_up_boundary(self):
         f = _f(debt_to_assets=50.0, current_ratio=2.0)
@@ -338,9 +322,7 @@ class TestReturnFreeCashflow:
     """自由现金流(free_cashflow) 归一化阈值边界。"""
 
     def test_normalized_above_0_10(self):
-        assert (
-            score_return(_f(free_cashflow=2.0e9, total_assets=1.0e10)) == 10
-        )  # 0.20>0.10
+        assert score_return(_f(free_cashflow=2.0e9, total_assets=1.0e10)) == 10  # 0.20>0.10
 
     def test_normalized_at_0_03(self):
         assert score_return(_f(free_cashflow=3.0e8, total_assets=1.0e10)) == 8
@@ -349,35 +331,25 @@ class TestReturnFreeCashflow:
         assert score_return(_f(free_cashflow=5.0e8, total_assets=1.0e10)) == 8
 
     def test_normalized_between_0_and_0_03(self):
-        assert (
-            score_return(_f(free_cashflow=1.0e8, total_assets=1.0e10)) == 6
-        )  # 0.01→5.5→6
+        assert score_return(_f(free_cashflow=1.0e8, total_assets=1.0e10)) == 6  # 0.01→5.5→6
 
     def test_normalized_zero(self):
         assert score_return(_f(free_cashflow=0.0, total_assets=1.0e10)) == 6
 
     def test_normalized_negative(self):
-        assert (
-            score_return(_f(free_cashflow=-1.0e8, total_assets=1.0e10)) == 4
-        )  # -0.01→3.5→4
+        assert score_return(_f(free_cashflow=-1.0e8, total_assets=1.0e10)) == 4  # -0.01→3.5→4
 
     def test_normalized_very_negative(self):
-        assert (
-            score_return(_f(free_cashflow=-1.0e9, total_assets=1.0e10)) == 2
-        )  # -0.1→1.5→2
+        assert score_return(_f(free_cashflow=-1.0e9, total_assets=1.0e10)) == 2  # -0.1→1.5→2
 
     def test_no_total_assets_positive_large(self):
-        assert (
-            score_return(_f(free_cashflow=2.0e9, total_assets=None)) == 8
-        )  # >10亿→7.5→8
+        assert score_return(_f(free_cashflow=2.0e9, total_assets=None)) == 8  # >10亿→7.5→8
 
     def test_no_total_assets_positive_small(self):
         assert score_return(_f(free_cashflow=1.0e8, total_assets=None)) == 6  # >0→5.5→6
 
     def test_no_total_assets_negative(self):
-        assert (
-            score_return(_f(free_cashflow=-1.0e8, total_assets=None)) == 4
-        )  # ≤0→3.5→4
+        assert score_return(_f(free_cashflow=-1.0e8, total_assets=None)) == 4  # ≤0→3.5→4
 
     def test_total_assets_zero_falls_back(self):
         assert score_return(_f(free_cashflow=2.0e9, total_assets=0.0)) == 8
@@ -405,15 +377,10 @@ class TestReturnComposite:
         assert score_return(f) == 4
 
     def test_max_score_is_10(self):
-        assert (
-            score_return(_f(roe=100.0, free_cashflow=1.0e12, total_assets=1.0e10)) == 10
-        )
+        assert score_return(_f(roe=100.0, free_cashflow=1.0e12, total_assets=1.0e10)) == 10
 
     def test_min_score_is_2(self):
-        assert (
-            score_return(_f(roe=-100.0, free_cashflow=-1.0e12, total_assets=1.0e10))
-            == 2
-        )
+        assert score_return(_f(roe=-100.0, free_cashflow=-1.0e12, total_assets=1.0e10)) == 2
 
 
 # ============================================================================
@@ -442,9 +409,7 @@ def test_composite_financial():
 
 
 def test_composite_unknown_industry():
-    assert score_composite(8, 8, 8, "不存在的行业") == round(
-        8 * 0.333 + 8 * 0.333 + 8 * 0.334, 1
-    )
+    assert score_composite(8, 8, 8, "不存在的行业") == round(8 * 0.333 + 8 * 0.333 + 8 * 0.334, 1)
 
 
 def test_composite_one_decimal():

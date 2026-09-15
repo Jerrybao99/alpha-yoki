@@ -25,10 +25,7 @@ class _FakeBatchFetcher(BaseFetcher):
         self.calls: list[str] = []
 
     def fetch_stock_list(self) -> list[StockInfo]:
-        return [
-            StockInfo(ts_code=c, symbol=c.split(".")[0], name=c, industry="银行")
-            for c in sorted(self.features)
-        ]
+        return [StockInfo(ts_code=c, symbol=c.split(".")[0], name=c, industry="银行") for c in sorted(self.features)]
 
     def fetch_financials(self, ts_code, period=None):
         self.calls.append(f"per-stock:{ts_code}")
@@ -101,12 +98,8 @@ def test_run_batch_missing_stock_is_failure(tmp_path: Path) -> None:
     class _SplitFetcher(BaseFetcher):
         def fetch_stock_list(self):
             return [
-                StockInfo(
-                    ts_code="600000.SH", symbol="600000", name="A", industry="银行"
-                ),
-                StockInfo(
-                    ts_code="000001.SZ", symbol="000001", name="B", industry="银行"
-                ),
+                StockInfo(ts_code="600000.SH", symbol="600000", name="A", industry="银行"),
+                StockInfo(ts_code="000001.SZ", symbol="000001", name="B", industry="银行"),
             ]
 
         def fetch_financials(self, ts_code, period=None):
@@ -203,9 +196,7 @@ def test_full_collect_csv_structure(tmp_path: Path) -> None:
 
     feat_path = out / "260724.csv"
     headers = [FIELD_CN.get(c, c) for c in ALL_OUTPUT_COLUMNS]
-    _append_csv_rows(
-        feat_path, result.successes, headers, ALL_OUTPUT_COLUMNS, write_header=True
-    )
+    _append_csv_rows(feat_path, result.successes, headers, ALL_OUTPUT_COLUMNS, write_header=True)
 
     text = feat_path.read_text(encoding="utf-8-sig")
     header = text.strip().split("\n")[0]
@@ -287,16 +278,13 @@ def test_real_batch_collects_all_stocks() -> None:
     successes = result.successes
     for i in range(0, len(successes), batch_size):
         chunk = successes[i : i + batch_size]
-        _append_csv_rows(
-            feat_path, chunk, headers, ALL_OUTPUT_COLUMNS, write_header=(i == 0)
-        )
+        _append_csv_rows(feat_path, chunk, headers, ALL_OUTPUT_COLUMNS, write_header=(i == 0))
 
     write_data_source_csv(src_path)
 
     if result.failures:
         fail_path.write_text(
-            "ts_code,name,error\n"
-            + "\n".join(f"{f.ts_code},{f.name},{f.error}" for f in result.failures),
+            "ts_code,name,error\n" + "\n".join(f"{f.ts_code},{f.name},{f.error}" for f in result.failures),
             encoding="utf-8-sig",
         )
 
@@ -334,6 +322,4 @@ def test_batch_vs_per_stock_cross_validate() -> None:
         per_dump = per_feat.model_dump()
         batch_dump = batch_feat.model_dump()
         for key in per_dump:
-            assert per_dump[key] == batch_dump[key], (
-                f"{tc}.{key}: 批量={batch_dump[key]} 逐股={per_dump[key]}"
-            )
+            assert per_dump[key] == batch_dump[key], f"{tc}.{key}: 批量={batch_dump[key]} 逐股={per_dump[key]}"

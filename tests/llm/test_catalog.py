@@ -59,14 +59,8 @@ def test_current_model_parameters_match_official_docs() -> None:
 
 def test_provider_api_urls_include_current_protocols() -> None:
     assert PROVIDER_API_URLS["deepseek"]["openai_chat"] == "https://api.deepseek.com"
-    assert (
-        PROVIDER_API_URLS["glm"]["openai_chat"]
-        == "https://open.bigmodel.cn/api/paas/v4/"
-    )
-    assert (
-        PROVIDER_API_URLS["glm"]["openai_responses"]
-        == "https://open.bigmodel.cn/api/v1"
-    )
+    assert PROVIDER_API_URLS["glm"]["openai_chat"] == "https://open.bigmodel.cn/api/paas/v4/"
+    assert PROVIDER_API_URLS["glm"]["openai_responses"] == "https://open.bigmodel.cn/api/v1"
 
 
 def test_get_model_returns_known_model() -> None:

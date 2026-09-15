@@ -112,18 +112,14 @@ def test_huchenghe_high_gross_margin():
 
 def test_huchenghe_high_roe_fallback():
     """护城河 毛利率低但 ROE >25% → 确认抗通胀。"""
-    result = classify_company_type(
-        _f(grossprofit_margin=30.0, roe=28.0), industry="大消费"
-    )
+    result = classify_company_type(_f(grossprofit_margin=30.0, roe=28.0), industry="大消费")
     assert result.type_label == TYPE_HUCHENGHE
     assert "25%" in result.detail
 
 
 def test_huchenghe_low_metrics_demotes():
     """护城河 毛利/ROE 均不达标 → 现金牛。"""
-    result = classify_company_type(
-        _f(grossprofit_margin=10.0, roe=8.0), industry="大消费"
-    )
+    result = classify_company_type(_f(grossprofit_margin=10.0, roe=8.0), industry="大消费")
     assert result.type_label == TYPE_XIANJINNIU
 
 

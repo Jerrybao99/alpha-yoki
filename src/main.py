@@ -16,12 +16,8 @@ def main() -> None:
     print(f"  DeepSeek 模型 : {settings.deepseek_model}")
     print(f"  GLM 模型      : {settings.glm_model}")
     print(f"  Tushare 已配置: {'是' if settings.tushare_token else '否'}")
-    print(
-        f"  DeepSeek Key  : {'是' if has_api_key('deepseek', settings=settings) else '否'}"
-    )
-    print(
-        f"  GLM Key       : {'是' if has_api_key('glm', settings=settings) else '否'}"
-    )
+    print(f"  DeepSeek Key  : {'是' if has_api_key('deepseek', settings=settings) else '否'}")
+    print(f"  GLM Key       : {'是' if has_api_key('glm', settings=settings) else '否'}")
 
 
 if __name__ == "__main__":

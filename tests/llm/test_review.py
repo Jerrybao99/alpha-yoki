@@ -54,9 +54,7 @@ class _FakeClient:
         item = self._script.pop(0) if self._script else GOOD
         if isinstance(item, Exception):
             raise item
-        return LLMResponse(
-            content=item, model=self.spec.model, input_tokens=1, output_tokens=2
-        )
+        return LLMResponse(content=item, model=self.spec.model, input_tokens=1, output_tokens=2)
 
 
 class _MemoryCache:
@@ -64,9 +62,7 @@ class _MemoryCache:
         self.store: dict[str, ReviewResult] = {}
         self.keys: list[str] = []
 
-    def key(
-        self, facts: ReviewFacts, prompt_version: str, provider: str, model: str
-    ) -> str:
+    def key(self, facts: ReviewFacts, prompt_version: str, provider: str, model: str) -> str:
         key = f"{facts.code}|{prompt_version}|{provider}|{model}"
         self.keys.append(key)
         return key
@@ -169,9 +165,7 @@ def test_rule_fallback_when_every_attempt_fails() -> None:
 
 
 def test_provider_errors_are_recorded_and_degrade_to_fallback() -> None:
-    primary = _FakeClient(
-        "deepseek", "deepseek-flash", [RuntimeError("boom"), RuntimeError("boom")]
-    )
+    primary = _FakeClient("deepseek", "deepseek-flash", [RuntimeError("boom"), RuntimeError("boom")])
     tracer = _Tracer()
     result = review(_facts(), primary, tracer=tracer)
     assert result.status is ReviewStatus.FALLBACK
@@ -185,9 +179,7 @@ def test_describe_error_redacts_key_fragments_and_keeps_status() -> None:
     class _AuthError(Exception):
         status_code = 401
 
-    text = describe_error(
-        _AuthError("Authentication Fails, Your api key: ****ecd7 is invalid")
-    )
+    text = describe_error(_AuthError("Authentication Fails, Your api key: ****ecd7 is invalid"))
     assert text.startswith("_AuthError 401: ")
     assert "ecd7" not in text and "***" in text
     assert describe_error(RuntimeError("")) == "RuntimeError"
@@ -272,16 +264,9 @@ class _NoKeyring:
 def test_build_fallback_client_skips_same_provider_and_missing_key() -> None:
     settings = Settings(_env_file=None, glm_api_key="", deepseek_api_key="k")
     backend = _NoKeyring()
-    assert (
-        build_fallback_client("glm", "glm", settings=settings, backend=backend) is None
-    )
-    assert (
-        build_fallback_client("deepseek", "glm", settings=settings, backend=backend)
-        is None
-    )
-    client = build_fallback_client(
-        "glm", "deepseek", settings=settings, backend=backend
-    )
+    assert build_fallback_client("glm", "glm", settings=settings, backend=backend) is None
+    assert build_fallback_client("deepseek", "glm", settings=settings, backend=backend) is None
+    client = build_fallback_client("glm", "deepseek", settings=settings, backend=backend)
     assert client is not None and client.spec.name == "deepseek"
 
 
@@ -290,7 +275,4 @@ def test_build_fallback_client_auto_picks_the_other_provider() -> None:
     backend = _NoKeyring()
     auto = build_fallback_client("glm", "", settings=settings, backend=backend)
     assert auto is not None and auto.spec.name == "deepseek"
-    assert (
-        build_fallback_client("deepseek", "auto", settings=settings, backend=backend)
-        is None
-    )
+    assert build_fallback_client("deepseek", "auto", settings=settings, backend=backend) is None

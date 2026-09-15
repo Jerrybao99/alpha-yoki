@@ -198,8 +198,7 @@ def run_report(
                 return EXIT_CONFIG
         else:
             print(
-                "非交互终端必须显式指定 --provider deepseek 或 --provider glm，"
-                "或先在交互终端保存一次模型选择",
+                "非交互终端必须显式指定 --provider deepseek 或 --provider glm，或先在交互终端保存一次模型选择",
                 file=sys.stderr,
             )
             return EXIT_CONFIG
@@ -210,9 +209,7 @@ def run_report(
             print(str(exc), file=sys.stderr)
             return EXIT_CONFIG
 
-    configured_model = str(
-        getattr(resolved_settings, f"{selected_provider}_model")
-    ).strip()
+    configured_model = str(getattr(resolved_settings, f"{selected_provider}_model")).strip()
     if model is not None:
         selected_model = model.strip()
     elif provider is None and saved_preference is not None:

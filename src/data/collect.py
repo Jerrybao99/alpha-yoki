@@ -29,9 +29,7 @@ class Cache:
     重新采集以获取新报告期；显式 period 的历史数据不可变，不受 TTL 约束。
     """
 
-    def __init__(
-        self, cache_dir: Path, enabled: bool = True, ttl_seconds: float | None = None
-    ) -> None:
+    def __init__(self, cache_dir: Path, enabled: bool = True, ttl_seconds: float | None = None) -> None:
         self.cache_dir = cache_dir
         self.enabled = enabled
         self.ttl_seconds = ttl_seconds
@@ -117,19 +115,13 @@ class CollectionPipeline:
             if cache is not None
             else Cache(
                 self.settings.data_root / "cache" / "fin",
-                ttl_seconds=self.settings.cache_ttl_hours * 3600
-                if self.settings.cache_ttl_hours > 0
-                else None,
+                ttl_seconds=self.settings.cache_ttl_hours * 3600 if self.settings.cache_ttl_hours > 0 else None,
             )
         )
         self._owns_executor = executor is None
-        self._executor = executor or ThreadPoolExecutor(
-            max_workers=max(1, self.settings.concurrency)
-        )
+        self._executor = executor or ThreadPoolExecutor(max_workers=max(1, self.settings.concurrency))
 
-    def run(
-        self, period: str | None = None, codes: list[str] | None = None
-    ) -> CollectionResult:
+    def run(self, period: str | None = None, codes: list[str] | None = None) -> CollectionResult:
         """执行采集。codes 非空时只采指定股票（冒烟测试用）。"""
         stocks = self.fetcher.fetch_stock_list()
         if codes:
@@ -141,19 +133,14 @@ class CollectionPipeline:
         name_map = {s.ts_code: s.name for s in stocks}
         info_map = {s.ts_code: s for s in stocks}
 
-        futures = {
-            self._executor.submit(self._fetch_one, s.ts_code, period): s.ts_code
-            for s in stocks
-        }
+        futures = {self._executor.submit(self._fetch_one, s.ts_code, period): s.ts_code for s in stocks}
         for fut in futures:
             ts_code = futures[fut]
             try:
                 features, hit = fut.result()
             except Exception as exc:  # noqa: BLE001
                 logger.warning("采集失败 %s: %s", ts_code, exc)
-                result.failures.append(
-                    Failure(ts_code, name_map.get(ts_code, ""), str(exc))
-                )
+                result.failures.append(Failure(ts_code, name_map.get(ts_code, ""), str(exc)))
                 continue
             if hit:
                 result.cached_hits += 1
@@ -161,15 +148,11 @@ class CollectionPipeline:
                 self._enrich_with_stock_info(features, info_map.get(ts_code))
                 result.successes.append(features)
             else:
-                result.failures.append(
-                    Failure(ts_code, name_map.get(ts_code, ""), "无数据")
-                )
+                result.failures.append(Failure(ts_code, name_map.get(ts_code, ""), "无数据"))
         return result
 
     @staticmethod
-    def _enrich_with_stock_info(
-        features: StockFeatures, info: StockInfo | None
-    ) -> None:
+    def _enrich_with_stock_info(features: StockFeatures, info: StockInfo | None) -> None:
         """回填 stock_basic 字段（symbol/name/industry）。"""
         if info is None:
             return
@@ -180,9 +163,7 @@ class CollectionPipeline:
         if not features.industry:
             features.industry = info.industry
 
-    def _fetch_one(
-        self, ts_code: str, period: str | None
-    ) -> tuple[StockFeatures | None, bool]:
+    def _fetch_one(self, ts_code: str, period: str | None) -> tuple[StockFeatures | None, bool]:
         """采集单股：先查缓存，未命中再调接口并回写缓存。"""
         cached = self.cache.get(ts_code, period)
         if cached is not None:
@@ -217,9 +198,7 @@ class CollectionPipeline:
         try:
             features_map = fetcher.fetch_financials_batch(stable_period)
         except NotImplementedError as exc:
-            raise RuntimeError(
-                "当前 Fetcher 不支持批量采集，请用 CollectionPipeline.run() 逐股模式"
-            ) from exc
+            raise RuntimeError("当前 Fetcher 不支持批量采集，请用 CollectionPipeline.run() 逐股模式") from exc
 
         result = CollectionResult(total=len(stocks))
         for s in stocks:

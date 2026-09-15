@@ -95,9 +95,7 @@ def test_token_whitespace_only_raises() -> None:
 # ===== RateLimiter =====
 def test_rate_limiter_allows_under_limit() -> None:
     slept: list[float] = []
-    rl = RateLimiter(
-        limit=3, window=60.0, sleep=slept.append, clock=_clock_seq([0, 1, 2])
-    )
+    rl = RateLimiter(limit=3, window=60.0, sleep=slept.append, clock=_clock_seq([0, 1, 2]))
     for _ in range(3):
         rl.acquire()
     assert slept == []
@@ -107,9 +105,7 @@ def test_rate_limiter_blocks_when_exceed() -> None:
     """窗口内第 limit+1 次必须 sleep 到最早一次滑出窗口。"""
     slept: list[float] = []
     # acquire1 取 now=10；acquire2 取 now=20；acquire3 取 now=30 后阻塞，sleep 后再取 now=30
-    rl = RateLimiter(
-        limit=2, window=60.0, sleep=slept.append, clock=_clock_seq([10, 20, 30, 30])
-    )
+    rl = RateLimiter(limit=2, window=60.0, sleep=slept.append, clock=_clock_seq([10, 20, 30, 30]))
     rl.acquire()  # t=10
     rl.acquire()  # t=20
     rl.acquire()  # t=30，超额 → sleep(60-(30-10))=40
@@ -131,9 +127,7 @@ def test_call_retry_then_success() -> None:
     )
     pro.fail_then_ok("stock_basic", 2)
     delays: list[float] = []
-    fetcher = TushareFetcher(
-        settings=_settings(), pro=pro, sleep=delays.append, max_retries=3
-    )
+    fetcher = TushareFetcher(settings=_settings(), pro=pro, sleep=delays.append, max_retries=3)
     rows = fetcher._call("stock_basic", ("ts_code", "symbol", "name"), list_status="L")
     assert rows[0]["ts_code"] == "600000.SH"
     assert delays == [BACKOFF_BASE_SECONDS * 1, BACKOFF_BASE_SECONDS * 2]
@@ -144,9 +138,7 @@ def test_call_retry_exhausted_raises() -> None:
     pro = _FakePro()
     pro.fail_then_ok("stock_basic", 99)  # 永远失败
     delays: list[float] = []
-    fetcher = TushareFetcher(
-        settings=_settings(), pro=pro, sleep=delays.append, max_retries=3
-    )
+    fetcher = TushareFetcher(settings=_settings(), pro=pro, sleep=delays.append, max_retries=3)
     with pytest.raises(TushareApiError, match="stock_basic"):
         fetcher._call("stock_basic", ("ts_code",), list_status="L")
     assert delays == [1.0, 2.0, 4.0]
@@ -252,9 +244,7 @@ def test_fetch_financials_picks_latest_and_aggregates() -> None:
         ],
     )
 
-    feat = TushareFetcher(
-        settings=_settings(), pro=pro, sleep=_no_sleep
-    ).fetch_financials("600000.SH")
+    feat = TushareFetcher(settings=_settings(), pro=pro, sleep=_no_sleep).fetch_financials("600000.SH")
     dumped = feat.model_dump()
     expected = {
         "ts_code": "600000.SH",
@@ -290,9 +280,7 @@ def test_fetch_financials_end_date_locked_to_income() -> None:
         "fina_indicator_vip",
         [{"ts_code": "600000.SH", "end_date": "20260331", "roe": 12.5}],
     )
-    feat = TushareFetcher(
-        settings=_settings(), pro=pro, sleep=_no_sleep
-    ).fetch_financials("600000.SH")
+    feat = TushareFetcher(settings=_settings(), pro=pro, sleep=_no_sleep).fetch_financials("600000.SH")
     assert feat.end_date == "20260331"
 
 
@@ -312,9 +300,7 @@ def test_fetch_financials_passes_period_param() -> None:
     """period 非空时透传给财务三表/指标（vip 接口按报告期取）。"""
     pro = _FakePro()
     _set_all_empty(pro)
-    TushareFetcher(settings=_settings(), pro=pro, sleep=_no_sleep).fetch_financials(
-        "600000.SH", period="20241231"
-    )
+    TushareFetcher(settings=_settings(), pro=pro, sleep=_no_sleep).fetch_financials("600000.SH", period="20241231")
     by_api = {c["api_name"]: c for c in pro.calls}
     assert by_api["income_vip"]["period"] == "20241231"
     assert by_api["fina_indicator_vip"]["period"] == "20241231"
@@ -324,9 +310,7 @@ def test_fetch_financials_calls_all_4_interfaces() -> None:
     """fetch_financials 必须覆盖 4 个 vip 财务接口。"""
     pro = _FakePro()
     _set_all_empty(pro)
-    TushareFetcher(settings=_settings(), pro=pro, sleep=_no_sleep).fetch_financials(
-        "600000.SH"
-    )
+    TushareFetcher(settings=_settings(), pro=pro, sleep=_no_sleep).fetch_financials("600000.SH")
     names = [c["api_name"] for c in pro.calls]
     assert set(names) == set(_ALL_APIS)
     assert len(names) == 4
@@ -382,9 +366,7 @@ def test_call_no_fields() -> None:
 # ===== _clean_record exclude =====
 def test_clean_record_with_exclude() -> None:
     rec = {"end_date": "20241231", "ts_code": "600000.SH", "revenue": 1.5e10}
-    out = TushareFetcher._clean_record(
-        rec, ("end_date", "ts_code", "revenue"), exclude={"end_date"}
-    )
+    out = TushareFetcher._clean_record(rec, ("end_date", "ts_code", "revenue"), exclude={"end_date"})
     assert "end_date" not in out
     assert out["ts_code"] == "600000.SH"
     assert out["revenue"] == 1.5e10
@@ -397,9 +379,7 @@ def test_clean_record_none_rec() -> None:
 def test_clean_record_nan_in_field() -> None:
     import math
 
-    out = TushareFetcher._clean_record(
-        {"revenue": math.nan, "ts_code": "600000.SH"}, ("ts_code", "revenue")
-    )
+    out = TushareFetcher._clean_record({"revenue": math.nan, "ts_code": "600000.SH"}, ("ts_code", "revenue"))
     assert out["ts_code"] == "600000.SH"
     assert out["revenue"] is None
 
@@ -458,9 +438,7 @@ def test_sw_name_to_category_default() -> None:
 
 # ===== save/load SW cache =====
 def test_save_and_load_sw_cache(tmp_path: Path) -> None:
-    settings = Settings(
-        tushare_token="t", tushare_rate_limit=500, data_dir=str(tmp_path)
-    )
+    settings = Settings(tushare_token="t", tushare_rate_limit=500, data_dir=str(tmp_path))
     fetcher = TushareFetcher(settings=settings, pro=_FakePro(), sleep=_no_sleep)
     import src.data.provider as _mod
 
@@ -495,9 +473,7 @@ def test_load_sw_cache_empty_mapping(tmp_path: Path) -> None:
 def test_load_or_build_sw_cache_no_file(tmp_path: Path) -> None:
     import src.data.provider as _mod
 
-    settings = Settings(
-        tushare_token="t", tushare_rate_limit=500, data_dir=str(tmp_path)
-    )
+    settings = Settings(tushare_token="t", tushare_rate_limit=500, data_dir=str(tmp_path))
     fetcher = TushareFetcher(settings=settings, pro=_FakePro(), sleep=_no_sleep)
 
     save_orig = _mod.TushareFetcher._sw_cache_path
@@ -514,27 +490,19 @@ def test_enrich_with_sw_category_updates_industry(tmp_path: Path) -> None:
     import src.data.provider as _mod
     from src.data.contract import StockInfo
 
-    settings = Settings(
-        tushare_token="t", tushare_rate_limit=500, data_dir=str(tmp_path)
-    )
+    settings = Settings(tushare_token="t", tushare_rate_limit=500, data_dir=str(tmp_path))
     fetcher = TushareFetcher(settings=settings, pro=_FakePro(), sleep=_no_sleep)
 
     # 准备缓存文件
     sw_path = tmp_path / "ref"
     sw_path.mkdir(parents=True)
     cache = sw_path / "sw_industry.csv"
-    cache.write_text(
-        "ts_code,l2_name,category\n600000.SH,银行,证券金融\n", encoding="utf-8-sig"
-    )
+    cache.write_text("ts_code,l2_name,category\n600000.SH,银行,证券金融\n", encoding="utf-8-sig")
 
     save_orig = _mod.TushareFetcher._sw_cache_path
     _mod.TushareFetcher._sw_cache_path = lambda self: cache  # type: ignore[method-assign]
     try:
-        stocks = [
-            StockInfo(
-                ts_code="600000.SH", symbol="600000", name="A", industry="原始行业"
-            )
-        ]
+        stocks = [StockInfo(ts_code="600000.SH", symbol="600000", name="A", industry="原始行业")]
         result = fetcher._enrich_with_sw_category(stocks)
         assert result[0].industry == "证券金融"
     finally:
@@ -546,9 +514,7 @@ def test_enrich_with_sw_category_calls_api_for_missing(tmp_path: Path) -> None:
     import src.data.provider as _mod
     from src.data.contract import StockInfo
 
-    settings = Settings(
-        tushare_token="t", tushare_rate_limit=500, data_dir=str(tmp_path)
-    )
+    settings = Settings(tushare_token="t", tushare_rate_limit=500, data_dir=str(tmp_path))
     pro = _FakePro()
     pro.set_response(
         "index_member_all",
@@ -571,11 +537,7 @@ def test_enrich_with_sw_category_calls_api_for_missing(tmp_path: Path) -> None:
     save_orig = _mod.TushareFetcher._sw_cache_path
     _mod.TushareFetcher._sw_cache_path = lambda self: cache  # type: ignore[method-assign]
     try:
-        stocks = [
-            StockInfo(
-                ts_code="600000.SH", symbol="600000", name="A", industry="原始行业"
-            )
-        ]
+        stocks = [StockInfo(ts_code="600000.SH", symbol="600000", name="A", industry="原始行业")]
         result = fetcher._enrich_with_sw_category(stocks)
         assert result[0].industry == "证券金融"
         # 缓存应已写出
@@ -729,9 +691,7 @@ def test_fetch_financials_explicit_period_merges() -> None:
 def test_rate_limiter_evicts_old() -> None:
     """旧条目滑出窗口后不阻塞。"""
     slept: list[float] = []
-    rl = RateLimiter(
-        limit=2, window=60.0, sleep=slept.append, clock=_clock_seq([10, 20, 80, 80])
-    )
+    rl = RateLimiter(limit=2, window=60.0, sleep=slept.append, clock=_clock_seq([10, 20, 80, 80]))
     rl.acquire()  # t=10, stamps=[10]
     rl.acquire()  # t=20, stamps=[10, 20] → limit reached but not exceeded
     rl.acquire()  # t=80: evict 10 (80-10>=60), stamps=[20] → under limit, no sleep
@@ -802,9 +762,7 @@ def test_fetch_one_sw_category_api_error() -> None:
     """API 调用失败返回未分类。"""
     pro = _FakePro()
     pro.error = RuntimeError("test error")
-    fetcher = TushareFetcher(
-        settings=_settings(), pro=pro, sleep=_no_sleep, max_retries=0
-    )
+    fetcher = TushareFetcher(settings=_settings(), pro=pro, sleep=_no_sleep, max_retries=0)
     cat, l2 = fetcher._fetch_one_sw_category("600000.SH")
     assert cat == "未分类"
     assert l2 == ""
@@ -867,9 +825,7 @@ def test_load_sw_cache_empty_file(tmp_path: Path) -> None:
 def test_save_sw_cache_no_l2_names(tmp_path: Path) -> None:
     import src.data.provider as _mod
 
-    settings = Settings(
-        tushare_token="t", tushare_rate_limit=500, data_dir=str(tmp_path)
-    )
+    settings = Settings(tushare_token="t", tushare_rate_limit=500, data_dir=str(tmp_path))
     fetcher = TushareFetcher(settings=settings, pro=_FakePro(), sleep=_no_sleep)
 
     save_orig = _mod.TushareFetcher._sw_cache_path
@@ -887,9 +843,7 @@ def test_save_sw_cache_no_l2_names(tmp_path: Path) -> None:
 def test_build_sw_cache(tmp_path: Path) -> None:
     import src.data.provider as _mod
 
-    settings = Settings(
-        tushare_token="t", tushare_rate_limit=500, data_dir=str(tmp_path)
-    )
+    settings = Settings(tushare_token="t", tushare_rate_limit=500, data_dir=str(tmp_path))
     pro = _FakePro()
     pro.set_response(
         "stock_basic",

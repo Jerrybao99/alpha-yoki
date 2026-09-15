@@ -47,13 +47,7 @@ def test_record_never_rewrites_existing_lines(tmp_path: Path) -> None:
 def test_concurrent_records_are_all_persisted(tmp_path: Path) -> None:
     tracer = _tracer(tmp_path)
     with ThreadPoolExecutor(max_workers=8) as pool:
-        list(
-            pool.map(
-                lambda i: tracer.record(code=f"{i:06d}", status="success"), range(40)
-            )
-        )
+        list(pool.map(lambda i: tracer.record(code=f"{i:06d}", status="success"), range(40)))
     lines = tracer.path.read_text(encoding="utf-8").splitlines()
     assert len(lines) == 40
-    assert {json.loads(line)["code"] for line in lines} == {
-        f"{i:06d}" for i in range(40)
-    }
+    assert {json.loads(line)["code"] for line in lines} == {f"{i:06d}" for i in range(40)}

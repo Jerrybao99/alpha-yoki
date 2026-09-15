@@ -143,9 +143,7 @@ def test_write_scoring_csv_output(tmp_path: Path) -> None:
 
 def test_write_veto_csv_output(tmp_path: Path) -> None:
     """否决清单 CSV 含 ts_code/name/否决项/原因 列。"""
-    vetoes = [
-        {"ts_code": "000001.SZ", "name": "测试", "否决项": "造假嫌疑", "原因": "test"}
-    ]
+    vetoes = [{"ts_code": "000001.SZ", "name": "测试", "否决项": "造假嫌疑", "原因": "test"}]
     out = tmp_path / "scoring" / "260724-否决.csv"
     _write_veto_csv(out, vetoes)
     assert out.exists()

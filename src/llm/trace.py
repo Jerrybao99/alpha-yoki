@@ -13,9 +13,7 @@ from typing import Any
 
 
 class JsonlReviewTracer:
-    def __init__(
-        self, root: Path, *, today: Callable[[], dt.date] | None = None
-    ) -> None:
+    def __init__(self, root: Path, *, today: Callable[[], dt.date] | None = None) -> None:
         self._root = Path(root)
         self._today = today or dt.date.today
         self._lock = threading.Lock()

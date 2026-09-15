@@ -49,13 +49,9 @@ def build_provider_spec(
 
     configured_model = getattr(resolved_settings, f"{selected}_model")
     configured_base_url = getattr(resolved_settings, f"{selected}_base_url")
-    resolved_key = (api_key or "").strip() or get_stored_api_key(
-        selected, settings=resolved_settings
-    )
+    resolved_key = (api_key or "").strip() or get_stored_api_key(selected, settings=resolved_settings)
     if not resolved_key:
-        raise CredentialError(
-            f"缺少 {selected} API Key；请通过 CLI 交互输入或配置环境变量。"
-        )
+        raise CredentialError(f"缺少 {selected} API Key；请通过 CLI 交互输入或配置环境变量。")
 
     return ProviderSpec(
         name=provider_name,

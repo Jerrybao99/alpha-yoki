@@ -13,9 +13,7 @@ from src.llm.credentials import has_api_key
 
 
 def test_llm_response_dataclass():
-    r = LLMResponse(
-        content="你好", model="deepseek-v4-pro", input_tokens=10, output_tokens=5
-    )
+    r = LLMResponse(content="你好", model="deepseek-v4-pro", input_tokens=10, output_tokens=5)
     assert r.content == "你好"
     assert r.model == "deepseek-v4-pro"
     assert r.input_tokens == 10
@@ -81,9 +79,7 @@ def test_chat_completion_mock(monkeypatch: pytest.MonkeyPatch) -> None:
 
     client = LLMClient(model="test-model", api_key="test-key")
     monkeypatch.setattr(client, "_client", _FakeOpenAI())
-    resp = client.chat_completion(
-        system="你是助手", user="你好", temperature=0.5, max_tokens=128
-    )
+    resp = client.chat_completion(system="你是助手", user="你好", temperature=0.5, max_tokens=128)
     assert resp.content == "mock response"
     assert resp.model == "mock-model"
     assert resp.input_tokens == 5
@@ -129,9 +125,7 @@ def test_chat_completion_reasoning_fallback_is_opt_in(
     """显式 reasoning_fallback=True 才允许回退取 reasoning_content。"""
     client = LLMClient(model="test-model", api_key="test-key")
     monkeypatch.setattr(client, "_client", _reasoning_only_openai())
-    resp = client.chat_completion(
-        system="", user="", max_tokens=64, reasoning_fallback=True
-    )
+    resp = client.chat_completion(system="", user="", max_tokens=64, reasoning_fallback=True)
     assert resp.content == "thinking..."
 
 
@@ -172,11 +166,7 @@ def test_stream_completion_mock(monkeypatch: pytest.MonkeyPatch) -> None:
 
     client = LLMClient(model="test-model", api_key="test-key")
     monkeypatch.setattr(client, "_client", _FakeOpenAI())
-    chunks = list(
-        client.stream_completion(
-            system="你是助手", user="你好", temperature=0.7, max_tokens=512
-        )
-    )
+    chunks = list(client.stream_completion(system="你是助手", user="你好", temperature=0.7, max_tokens=512))
     assert chunks == ["mock"]
     assert last_kw["model"] == "test-model"
     assert last_kw["stream"] is True

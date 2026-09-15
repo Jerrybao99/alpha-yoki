@@ -29,15 +29,11 @@ def main() -> None:
             api_key=api_key,
             settings=settings,
         )
-        fallback_client = build_fallback_client(
-            provider, settings.review_fallback_provider, settings=settings
-        )
+        fallback_client = build_fallback_client(provider, settings.review_fallback_provider, settings=settings)
     except CredentialError as exc:
         raise SystemExit(str(exc)) from exc
 
-    result = build_top20(
-        csv_path, client=client, fallback_client=fallback_client, settings=settings
-    )
+    result = build_top20(csv_path, client=client, fallback_client=fallback_client, settings=settings)
     out_dir = settings.data_path("fin") / "full_report"
     out_path = write_recommend_csv(result, out_dir / f"{csv_path.stem}.csv")
     print(f"荐股 Top20 产出：{out_path}")

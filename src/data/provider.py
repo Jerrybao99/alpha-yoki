@@ -49,12 +49,8 @@ _DOC = "https://tushare.pro/document/2?doc_id="
 # ===== 5000 积分可调用接口注册表（优先 vip）=====
 # key 为业务别名，与 REQUIREMENT_ALIGNMENT.endpoint 对齐。
 TUSHARE_INTERFACES: dict[str, TushareInterface] = {
-    "stock_basic": TushareInterface(
-        "stock_basic", "stock_basic", _DOC + "25", 2000, "股票列表（基础信息）"
-    ),
-    "income": TushareInterface(
-        "income", "income_vip", _DOC + "33", 2000, "利润表（vip 按报告期取全市场）"
-    ),
+    "stock_basic": TushareInterface("stock_basic", "stock_basic", _DOC + "25", 2000, "股票列表（基础信息）"),
+    "income": TushareInterface("income", "income_vip", _DOC + "33", 2000, "利润表（vip 按报告期取全市场）"),
     "balancesheet": TushareInterface(
         "balancesheet",
         "balancesheet_vip",
@@ -83,15 +79,9 @@ TUSHARE_INTERFACES: dict[str, TushareInterface] = {
         2000,
         "每日指标（5000 积分无总量限制）",
     ),
-    "fina_audit": TushareInterface(
-        "fina_audit", "fina_audit", _DOC + "80", 2000, "财务审计意见"
-    ),
-    "pledge_stat": TushareInterface(
-        "pledge_stat", "pledge_stat", _DOC + "110", 2000, "股权质押统计数据"
-    ),
-    "top10_holders": TushareInterface(
-        "top10_holders", "top10_holders", _DOC + "61", 2000, "前十大股东"
-    ),
+    "fina_audit": TushareInterface("fina_audit", "fina_audit", _DOC + "80", 2000, "财务审计意见"),
+    "pledge_stat": TushareInterface("pledge_stat", "pledge_stat", _DOC + "110", 2000, "股权质押统计数据"),
+    "top10_holders": TushareInterface("top10_holders", "top10_holders", _DOC + "61", 2000, "前十大股东"),
     "top10_floatholders": TushareInterface(
         "top10_floatholders", "top10_floatholders", _DOC + "62", 2000, "前十大流通股东"
     ),
@@ -102,9 +92,7 @@ TUSHARE_INTERFACES: dict[str, TushareInterface] = {
         2000,
         "业绩预告（vip 按报告期取全市场）",
     ),
-    "express": TushareInterface(
-        "express", "express_vip", _DOC + "46", 2000, "业绩快报（vip 按报告期取全市场）"
-    ),
+    "express": TushareInterface("express", "express_vip", _DOC + "46", 2000, "业绩快报（vip 按报告期取全市场）"),
     "fina_mainbz": TushareInterface(
         "fina_mainbz",
         "fina_mainbz_vip",
@@ -112,24 +100,12 @@ TUSHARE_INTERFACES: dict[str, TushareInterface] = {
         2000,
         "主营业务构成（vip 按报告期取全市场）",
     ),
-    "disclosure_date": TushareInterface(
-        "disclosure_date", "disclosure_date", _DOC + "162", 2000, "财报披露日期表"
-    ),
-    "trade_cal": TushareInterface(
-        "trade_cal", "trade_cal", _DOC + "26", 2000, "交易日历"
-    ),
-    "stk_holdernumber": TushareInterface(
-        "stk_holdernumber", "stk_holdernumber", _DOC + "166", 600, "股东人数"
-    ),
-    "stk_holdertrade": TushareInterface(
-        "stk_holdertrade", "stk_holdertrade", _DOC + "175", 2000, "股东增减持"
-    ),
-    "share_float": TushareInterface(
-        "share_float", "share_float", _DOC + "160", 120, "限售股解禁"
-    ),
-    "repurchase": TushareInterface(
-        "repurchase", "repurchase", _DOC + "124", 2000, "股票回购"
-    ),
+    "disclosure_date": TushareInterface("disclosure_date", "disclosure_date", _DOC + "162", 2000, "财报披露日期表"),
+    "trade_cal": TushareInterface("trade_cal", "trade_cal", _DOC + "26", 2000, "交易日历"),
+    "stk_holdernumber": TushareInterface("stk_holdernumber", "stk_holdernumber", _DOC + "166", 600, "股东人数"),
+    "stk_holdertrade": TushareInterface("stk_holdertrade", "stk_holdertrade", _DOC + "175", 2000, "股东增减持"),
+    "share_float": TushareInterface("share_float", "share_float", _DOC + "160", 120, "限售股解禁"),
+    "repurchase": TushareInterface("repurchase", "repurchase", _DOC + "124", 2000, "股票回购"),
     "index_member_all": TushareInterface(
         "index_member_all",
         "index_member_all",
@@ -138,25 +114,13 @@ TUSHARE_INTERFACES: dict[str, TushareInterface] = {
         "申万行业成分（分级）",
     ),
     # ===== 公募基金 / ETF（doc_id 见 Tushare ETF 专题）=====
-    "fund_basic": TushareInterface(
-        "fund_basic", "fund_basic", _DOC + "384", 2000, "基金/ETF 列表（基本信息）"
-    ),
-    "fund_daily": TushareInterface(
-        "fund_daily", "fund_daily", _DOC + "127", 5000, "ETF 日线行情（逐股）"
-    ),
-    "fund_nav": TushareInterface(
-        "fund_nav", "fund_nav", _DOC + "119", 2000, "基金净值"
-    ),
-    "fund_share": TushareInterface(
-        "fund_share", "fund_share", _DOC + "384", 2000, "基金份额"
-    ),
-    "fund_portfolio": TushareInterface(
-        "fund_portfolio", "fund_portfolio", _DOC + "121", 2000, "基金持仓"
-    ),
+    "fund_basic": TushareInterface("fund_basic", "fund_basic", _DOC + "384", 2000, "基金/ETF 列表（基本信息）"),
+    "fund_daily": TushareInterface("fund_daily", "fund_daily", _DOC + "127", 5000, "ETF 日线行情（逐股）"),
+    "fund_nav": TushareInterface("fund_nav", "fund_nav", _DOC + "119", 2000, "基金净值"),
+    "fund_share": TushareInterface("fund_share", "fund_share", _DOC + "384", 2000, "基金份额"),
+    "fund_portfolio": TushareInterface("fund_portfolio", "fund_portfolio", _DOC + "121", 2000, "基金持仓"),
     "fund_div": TushareInterface("fund_div", "fund_div", _DOC + "120", 400, "基金分红"),
-    "fund_adj": TushareInterface(
-        "fund_adj", "fund_adj", _DOC + "384", 2000, "ETF 复权因子"
-    ),
+    "fund_adj": TushareInterface("fund_adj", "fund_adj", _DOC + "384", 2000, "ETF 复权因子"),
 }
 
 
@@ -187,9 +151,7 @@ class BaseFetcher(ABC):
         """
 
     @abstractmethod
-    def fetch_financials(
-        self, ts_code: str, period: str | None = None
-    ) -> StockFeatures | None:
+    def fetch_financials(self, ts_code: str, period: str | None = None) -> StockFeatures | None:
         """按需求字段采集单股财务数据。
 
         实现需聚合 income / balancesheet / cashflow / fina_indicator / daily_basic
@@ -279,25 +241,19 @@ class TushareFetcher(BaseFetcher):
         self._max_retries = max(0, max_retries)
         self._sleep = sleep
         self._clock = clock
-        self._limiter = RateLimiter(
-            self.settings.tushare_rate_limit, sleep=sleep, clock=clock
-        )
+        self._limiter = RateLimiter(self.settings.tushare_rate_limit, sleep=sleep, clock=clock)
         # pro 由外部注入（测试）或由 token 初始化（生产）；token 检查仅在真初始化时生效。
         if pro is not None:
             self._pro = pro
         else:
             token = self.settings.tushare_token.strip()
             if not token:
-                raise TushareTokenError(
-                    "未配置 TUSHARE_TOKEN，请在 .env 填入（注册见 https://tushare.pro ）。"
-                )
+                raise TushareTokenError("未配置 TUSHARE_TOKEN，请在 .env 填入（注册见 https://tushare.pro ）。")
             ts.set_token(token)
             self._pro = ts.pro_api()
 
     # ===== 核心调用：限流 + 指数退避重试 =====
-    def _call(
-        self, interface_key: str, fields: tuple[str, ...] | None = None, **params: Any
-    ) -> list[dict]:
+    def _call(self, interface_key: str, fields: tuple[str, ...] | None = None, **params: Any) -> list[dict]:
         """调用某接口，返回记录列表。vip 接口自动取 vip_api_name。
         fields 为空时调取接口全部字段（默认列）。"""
         api_name = get_vip_api_name(interface_key)
@@ -343,9 +299,7 @@ class TushareFetcher(BaseFetcher):
             for r in records
         ]
 
-    def fetch_financials(
-        self, ts_code: str, period: str | None = None
-    ) -> StockFeatures:
+    def fetch_financials(self, ts_code: str, period: str | None = None) -> StockFeatures:
         """聚合单股财务数据，调取各接口全部字段。
 
         period=None 走 _latest 取各接口最新报告期；period 指定时合并该期所有记录
@@ -371,9 +325,7 @@ class TushareFetcher(BaseFetcher):
             if explicit_period:
                 records = self._call(key, **fin_params)
                 for r in records:
-                    self._merge_non_none(
-                        data, self._clean_record(r, exclude=_no_end_date)
-                    )
+                    self._merge_non_none(data, self._clean_record(r, exclude=_no_end_date))
             else:
                 rec = self._latest(self._call(key, **fin_params), "end_date")
                 data.update(self._clean_record(rec, exclude=_no_end_date))
@@ -460,9 +412,7 @@ class TushareFetcher(BaseFetcher):
     def _fetch_one_sw_category(self, ts_code: str) -> tuple[str, str]:
         """查单股申万行业 → (五大类, 原始l2_name)。不传 fields，获取全部默认字段。"""
         try:
-            records = self._call_no_fields(
-                "index_member_all", ts_code=ts_code, is_new="Y"
-            )
+            records = self._call_no_fields("index_member_all", ts_code=ts_code, is_new="Y")
         except TushareApiError:
             return "未分类", ""
         for r in records:
@@ -488,9 +438,7 @@ class TushareFetcher(BaseFetcher):
         self._save_sw_cache(mapping, l2_names=l2_names)
         return mapping
 
-    def _save_sw_cache(
-        self, mapping: dict[str, str], *, l2_names: dict[str, str] | None = None
-    ) -> None:
+    def _save_sw_cache(self, mapping: dict[str, str], *, l2_names: dict[str, str] | None = None) -> None:
         """落盘 sw_industry.csv。l2_names 传入时填写 l2_name 列（便于诊断未分类）。"""
         cache_path = self._sw_cache_path()
         cache_path.parent.mkdir(parents=True, exist_ok=True)
@@ -542,9 +490,7 @@ class TushareFetcher(BaseFetcher):
 
     # ===== 批量采集（O(1) 全市场）=====
 
-    def _call_paginated(
-        self, interface_key: str, page_size: int, **params: Any
-    ) -> list[dict]:
+    def _call_paginated(self, interface_key: str, page_size: int, **params: Any) -> list[dict]:
         """分页 API 调用：按 offset/limit 循环拉取直到无更多数据。每页走限流+退避。
         不传 fields，调取接口全部字段。
         """
@@ -595,9 +541,7 @@ class TushareFetcher(BaseFetcher):
             for r in rows:
                 tc = self._str(r.get("ts_code"))
                 if tc and tc in merged:
-                    self._merge_non_none(
-                        merged[tc], self._clean_record(r, exclude=_no_end)
-                    )
+                    self._merge_non_none(merged[tc], self._clean_record(r, exclude=_no_end))
                     hits += 1
             logger.info("  %s: %d 条记录，命中 %d 只股票", key, len(rows), hits)
 

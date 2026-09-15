@@ -20,9 +20,7 @@ class FileReviewCache:
     def root(self) -> Path:
         return self._root
 
-    def key(
-        self, facts: ReviewFacts, prompt_version: str, provider: str, model: str
-    ) -> str:
+    def key(self, facts: ReviewFacts, prompt_version: str, provider: str, model: str) -> str:
         payload = {
             "facts": facts.to_dict(),
             "prompt_version": prompt_version,
@@ -43,9 +41,7 @@ class FileReviewCache:
             payload: Any = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError):
             return None
-        if not isinstance(payload, dict) or not all(
-            isinstance(payload.get(field), str) for field in REVIEW_FIELDS
-        ):
+        if not isinstance(payload, dict) or not all(isinstance(payload.get(field), str) for field in REVIEW_FIELDS):
             return None
         try:
             status = ReviewStatus(str(payload.get("status", ReviewStatus.SUCCESS)))
@@ -72,6 +68,4 @@ class FileReviewCache:
             "model": result.model,
             "attempts": result.attempts,
         }
-        self._path(key).write_text(
-            json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
-        )
+        self._path(key).write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

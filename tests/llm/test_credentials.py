@@ -62,9 +62,7 @@ def test_environment_key_has_priority() -> None:
 
 def test_keyring_is_used_when_environment_is_empty() -> None:
     backend = _FakeKeyring({(SERVICE_NAME, "glm_api_key"): "stored-glm"})
-    assert (
-        get_stored_api_key("glm", settings=_settings(), backend=backend) == "stored-glm"
-    )
+    assert get_stored_api_key("glm", settings=_settings(), backend=backend) == "stored-glm"
     assert has_api_key("glm", settings=_settings(), backend=backend)
 
 

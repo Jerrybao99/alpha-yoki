@@ -70,6 +70,9 @@ def test_system_prompt_demands_single_sentence_risk_and_comment() -> None:
     assert "一位小数" in system
     assert "合并成一句" in system
     assert "重点盯住" in system
+    assert "空话尾巴" in system
+    assert "末尾最多 4 字点评" not in system
+    assert DEFAULT_PROMPT.version == "review-v3"
 
 
 def test_user_prompt_never_leaks_rule_verdicts() -> None:
@@ -115,16 +118,12 @@ def test_parse_plain_json() -> None:
 
 
 def test_parse_fenced_json_with_surrounding_text() -> None:
-    text = (
-        '好的：\n```json\n{"highlight": "亮", "risk": "险", "comment": "评"}\n```\n完毕'
-    )
+    text = '好的：\n```json\n{"highlight": "亮", "risk": "险", "comment": "评"}\n```\n完毕'
     assert parse_draft(text) == ReviewDraft(highlight="亮", risk="险", comment="评")
 
 
 def test_parse_missing_keys_become_empty_strings() -> None:
-    assert parse_draft('{"highlight": "亮"}') == ReviewDraft(
-        highlight="亮", risk="", comment=""
-    )
+    assert parse_draft('{"highlight": "亮"}') == ReviewDraft(highlight="亮", risk="", comment="")
 
 
 def test_parse_non_string_values_are_stringified_and_stripped() -> None:

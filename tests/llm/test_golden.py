@@ -33,9 +33,7 @@ def _facts_from_dict(payload: dict) -> ReviewFacts:
         stability=payload["stability"],
         return_score=payload["return_score"],
         metrics=tuple(Metric(**metric) for metric in payload["metrics"]),
-        flags=tuple(
-            Flag(FlagCode(flag["code"]), flag["note"]) for flag in payload["flags"]
-        ),
+        flags=tuple(Flag(FlagCode(flag["code"]), flag["note"]) for flag in payload["flags"]),
         watch_variable=payload["watch_variable"],
     )
 

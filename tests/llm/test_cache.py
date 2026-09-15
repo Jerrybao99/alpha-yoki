@@ -55,9 +55,7 @@ def test_key_is_deterministic_sha1_hex(tmp_path: Path) -> None:
 def test_key_changes_with_facts_prompt_version_or_model(tmp_path: Path) -> None:
     cache = FileReviewCache(tmp_path)
     base = cache.key(_facts(), "review-v1", "deepseek", "deepseek-flash")
-    assert base != cache.key(
-        _facts(composite=9.4), "review-v1", "deepseek", "deepseek-flash"
-    )
+    assert base != cache.key(_facts(composite=9.4), "review-v1", "deepseek", "deepseek-flash")
     assert base != cache.key(_facts(), "review-v2", "deepseek", "deepseek-flash")
     assert base != cache.key(_facts(), "review-v1", "glm", "glm-5.3-flash")
 
@@ -93,9 +91,7 @@ def test_corrupt_or_malformed_entries_are_misses(tmp_path: Path) -> None:
     cache = FileReviewCache(tmp_path)
     (tmp_path / "bad.json").write_text("{not json", encoding="utf-8")
     (tmp_path / "list.json").write_text("[1, 2]", encoding="utf-8")
-    (tmp_path / "partial.json").write_text(
-        '{"highlight": "只有一段"}', encoding="utf-8"
-    )
+    (tmp_path / "partial.json").write_text('{"highlight": "只有一段"}', encoding="utf-8")
     assert cache.get("bad") is None
     assert cache.get("list") is None
     assert cache.get("partial") is None

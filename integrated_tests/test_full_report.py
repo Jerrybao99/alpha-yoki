@@ -53,13 +53,9 @@ def test_real_recommend_top20() -> None:
             ("点评", "comment"),
         ):
             assert row[column], f"第 {i} 行{column}为空"
-            assert len(row[column]) <= LIMITS[field][1], (
-                f"第 {i} 行{column}超长: {len(row[column])}字"
-            )
+            assert len(row[column]) <= LIMITS[field][1], f"第 {i} 行{column}超长: {len(row[column])}字"
         assert row["综合分"] and row["评级"] and row["公司类型"] and row["操作建议"]
-        print(
-            f"  [{i}] {row['股票名称']} | {result.statuses[i - 1]} | {row['核心亮点']}"
-        )
+        print(f"  [{i}] {row['股票名称']} | {result.statuses[i - 1]} | {row['核心亮点']}")
 
     fallback_count = result.statuses.count(ReviewStatus.FALLBACK.value)
     assert fallback_count < len(result.rows), "全部落入规则兜底，LLM 链路未生效"

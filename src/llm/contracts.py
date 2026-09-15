@@ -49,9 +49,7 @@ class Metric:
     highlightable: bool = True
 
     def render(self, digits: int = 1) -> str:
-        number = (
-            f"{self.value:+.{digits}f}" if self.signed else f"{self.value:.{digits}f}"
-        )
+        number = f"{self.value:+.{digits}f}" if self.signed else f"{self.value:.{digits}f}"
         separator = " " if self.label and self.label[-1].isascii() else ""
         return f"{self.label}{separator}{number}{self.unit}"
 
@@ -79,16 +77,8 @@ class ReviewFacts:
         """输出中允许出现的数字：指标与评分在 0/1/2 位小数下的取整值（取绝对值）。"""
         values: list[float] = [metric.value for metric in self.metrics]
         values.append(self.composite)
-        values.extend(
-            float(score)
-            for score in (self.growth, self.stability, self.return_score)
-            if score is not None
-        )
-        allowed = {
-            float(f"{abs(value):.{digits}f}")
-            for value in values
-            for digits in _ROUNDINGS
-        }
+        values.extend(float(score) for score in (self.growth, self.stability, self.return_score) if score is not None)
+        allowed = {float(f"{abs(value):.{digits}f}") for value in values for digits in _ROUNDINGS}
         if self.code.isdigit():
             allowed.add(float(self.code))
         return frozenset(allowed)

@@ -40,9 +40,7 @@ class Settings(BaseSettings):
     glm_base_url: str = "https://open.bigmodel.cn/api/paas/v4/"
 
     # ===== 锐评子系统（src/llm/review.py）=====
-    review_fallback_provider: str = (
-        "auto"  # auto=另一家 Provider；与主 Provider 相同则不切换
-    )
+    review_fallback_provider: str = "auto"  # auto=另一家 Provider；与主 Provider 相同则不切换
     review_max_retries: int = 1  # 主 Provider 校验失败后的重试次数
     review_max_tokens: int = 600  # 三段 JSON 的输出预算；思考链已关闭
     review_temperature: float = 0.3

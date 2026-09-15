@@ -158,17 +158,13 @@ def test_weak_dimension_flag_boundary_and_note() -> None:
 
 
 def test_weak_dimension_ignores_missing_scores() -> None:
-    flags = derive_flags(
-        _features(industry=CAT_TECH), growth=None, stability=None, return_score=None
-    )
+    flags = derive_flags(_features(industry=CAT_TECH), growth=None, stability=None, return_score=None)
     assert FlagCode.WEAK_DIMENSION not in _codes(flags)
 
 
 def test_cyclical_flag_only_for_cyclical_industry() -> None:
     cyclical = derive_flags(_features(), growth=8, stability=8, return_score=8)
-    tech = derive_flags(
-        _features(industry=CAT_TECH), growth=8, stability=8, return_score=8
-    )
+    tech = derive_flags(_features(industry=CAT_TECH), growth=8, stability=8, return_score=8)
     assert FlagCode.CYCLICAL in _codes(cyclical)
     assert FlagCode.CYCLICAL not in _codes(tech)
 

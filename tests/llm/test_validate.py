@@ -73,9 +73,7 @@ def test_extract_numbers_empty() -> None:
 
 # ===== 语言 =====
 def test_latin_leak_is_violation_with_token_in_message() -> None:
-    violations = validate_draft(
-        _draft(risk="All indicators look strong，盈利随铝价波动"), _facts()
-    )
+    violations = validate_draft(_draft(risk="All indicators look strong，盈利随铝价波动"), _facts())
     latin = [v for v in violations if v.code == "latin"]
     assert latin and latin[0].field == "risk"
     assert "All" in latin[0].message
@@ -101,9 +99,7 @@ def test_rounded_numbers_are_accepted() -> None:
 
 def test_derived_multiples_are_rejected() -> None:
     draft = _draft(highlight="归母净利同比增近3倍，营收同比+20.3%，景气爆发")
-    assert _codes(validate_draft(draft, _facts()), "highlight") == {
-        "number_not_in_facts"
-    }
+    assert _codes(validate_draft(draft, _facts()), "highlight") == {"number_not_in_facts"}
 
 
 # ===== 长度边界 =====

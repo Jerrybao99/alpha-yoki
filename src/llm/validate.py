@@ -56,37 +56,21 @@ def _jaccard(left: set[str], right: set[str]) -> float:
     return len(left & right) / len(left | right)
 
 
-def _validate_field(
-    field: str, text: str, facts: ReviewFacts, allowed: frozenset[float]
-) -> list[Violation]:
+def _validate_field(field: str, text: str, facts: ReviewFacts, allowed: frozenset[float]) -> list[Violation]:
     violations: list[Violation] = []
     minimum, maximum = LIMITS[field]
     if not text:
         return [Violation("empty", field, f"{field} 为空")]
     if len(text) < minimum:
-        violations.append(
-            Violation(
-                "too_short", field, f"{field} 仅 {len(text)} 字，少于 {minimum} 字"
-            )
-        )
+        violations.append(Violation("too_short", field, f"{field} 仅 {len(text)} 字，少于 {minimum} 字"))
     if len(text) > maximum:
-        violations.append(
-            Violation(
-                "too_long", field, f"{field} 共 {len(text)} 字，超过 {maximum} 字上限"
-            )
-        )
+        violations.append(Violation("too_long", field, f"{field} 共 {len(text)} 字，超过 {maximum} 字上限"))
 
-    latin = [
-        token for token in _LATIN.findall(text) if token.upper() not in LATIN_WHITELIST
-    ]
+    latin = [token for token in _LATIN.findall(text) if token.upper() not in LATIN_WHITELIST]
     if latin:
-        violations.append(
-            Violation("latin", field, f"{field} 含英文：{'、'.join(latin)}")
-        )
+        violations.append(Violation("latin", field, f"{field} 含英文：{'、'.join(latin)}"))
 
-    strangers = [
-        token for token in _NUMBER.findall(text) if float(token) not in allowed
-    ]
+    strangers = [token for token in _NUMBER.findall(text) if float(token) not in allowed]
     if strangers:
         violations.append(
             Violation(
@@ -98,15 +82,9 @@ def _validate_field(
 
     hits = [phrase for phrase in FORBIDDEN_PHRASES if phrase in text]
     if hits:
-        violations.append(
-            Violation("forbidden_phrase", field, f"{field} 含禁用词：{'、'.join(hits)}")
-        )
+        violations.append(Violation("forbidden_phrase", field, f"{field} 含禁用词：{'、'.join(hits)}"))
 
-    echoes = [
-        verdict
-        for verdict in (facts.rating, facts.advice, facts.position)
-        if verdict and verdict in text
-    ]
+    echoes = [verdict for verdict in (facts.rating, facts.advice, facts.position) if verdict and verdict in text]
     if echoes:
         violations.append(
             Violation(
@@ -132,9 +110,7 @@ def validate_draft(draft: ReviewDraft, facts: ReviewFacts) -> list[Violation]:
         text = texts[field]
         if not text:
             continue
-        repeated = sorted(
-            {number for number in extract_numbers(text) if number in seen_numbers}
-        )
+        repeated = sorted({number for number in extract_numbers(text) if number in seen_numbers})
         if repeated:
             violations.append(
                 Violation(
@@ -149,8 +125,6 @@ def validate_draft(draft: ReviewDraft, facts: ReviewFacts) -> list[Violation]:
         grams = _ngrams(text)
         for other, other_grams in seen_ngrams.items():
             if _jaccard(grams, other_grams) >= OVERLAP_THRESHOLD:
-                violations.append(
-                    Violation("overlap", field, f"{field} 与 {other} 内容大量重复")
-                )
+                violations.append(Violation("overlap", field, f"{field} 与 {other} 内容大量重复"))
         seen_ngrams[field] = grams
     return violations

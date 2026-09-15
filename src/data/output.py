@@ -624,9 +624,7 @@ def write_features_csv(features: list[StockFeatures], out_path: Path) -> Path:
         tmp = Path(tempfile.mktemp(suffix=".csv", prefix=out_path.stem + "_"))
         tmp.write_text(content, encoding="utf-8-sig")
         shutil.copy(tmp, out_path.with_suffix(".csv.tmp"))
-        print(
-            f"\u26a0 目标文件被占用，已写到临时文件: {out_path.with_suffix('.csv.tmp')}"
-        )
+        print(f"\u26a0 目标文件被占用，已写到临时文件: {out_path.with_suffix('.csv.tmp')}")
     return out_path
 
 

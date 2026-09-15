@@ -29,11 +29,7 @@ class _Completions:
     def create(self, **kwargs):
         self.calls.append(kwargs)
         if kwargs["stream"]:
-            return [
-                SimpleNamespace(
-                    choices=[SimpleNamespace(delta=SimpleNamespace(content="chunk"))]
-                )
-            ]
+            return [SimpleNamespace(choices=[SimpleNamespace(delta=SimpleNamespace(content="chunk"))])]
         return SimpleNamespace(
             choices=[SimpleNamespace(message=SimpleNamespace(content="response"))],
             model=kwargs["model"],

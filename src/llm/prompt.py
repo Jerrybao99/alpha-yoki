@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from src.llm.contracts import REVIEW_FIELDS, ReviewDraft, ReviewFacts, Violation
 from src.llm.validate import LIMITS
 
-PROMPT_VERSION = "review-v2"
+PROMPT_VERSION = "review-v3"
 
 # 给模型的字数目标比校验上限收紧 6 字：实测模型计数常偏多 3-5 字，留足余量才能一次通过。
 TARGET_CHARS: dict[str, tuple[int, int]] = {
@@ -34,13 +34,13 @@ SYSTEM_PROMPT = (
     f"risk {TARGET_CHARS['risk'][0]}-{TARGET_CHARS['risk'][1]} 字，"
     f"comment {TARGET_CHARS['comment'][0]}-{TARGET_CHARS['comment'][1]} 字。\n"
     "段落要求：\n"
-    "- highlight：一句话，按景气度 > 盈利质量 > 股东回报的优先级只选 2 个指标，末尾最多 4 字点评。\n"
+    "- highlight：一句话，按景气度 > 盈利质量 > 股东回报只写 2 个指标，用逗号连接；不要加「景气高企」「量利齐升」这类空话尾巴。\n"
     f"- risk：一句话，把【风险提示】合并成一句，只保留关键数字；没有风险提示时原样写“{_NO_RISK_SENTENCE}”。\n"
     "- comment：一句话，格式固定为「行业+公司类型，重点盯住+【盯住变量】」，不加其他内容。"
 )
 
 _EXAMPLE_JSON = (
-    '{"highlight": "营收同比+…%，ROE …%，量利齐升", '
+    '{"highlight": "营收同比+…%，ROE …%", '
     '"risk": "净利同比+…%含低基数效应，负债率…%偏高", '
     '"comment": "大消费护城河，重点盯住毛利率与品牌溢价能否维持"}'
 )
@@ -53,9 +53,7 @@ def render_user_prompt(
     feedback: Sequence[Violation] = (),
     previous: ReviewDraft | None = None,
 ) -> str:
-    numbers = (
-        "；".join(metric.render(_NUMBER_DIGITS) for metric in facts.metrics) or "无"
-    )
+    numbers = "；".join(metric.render(_NUMBER_DIGITS) for metric in facts.metrics) or "无"
     lines = [
         f"【标的】{facts.name}（{facts.code}）｜{facts.industry}｜{facts.company_type}",
         f"【可用数字】{numbers}",
@@ -97,10 +95,7 @@ def parse_draft(text: str) -> ReviewDraft | None:
         return None
     if not isinstance(payload, dict):
         return None
-    values = {
-        field: "" if payload.get(field) is None else str(payload.get(field)).strip()
-        for field in REVIEW_FIELDS
-    }
+    values = {field: "" if payload.get(field) is None else str(payload.get(field)).strip() for field in REVIEW_FIELDS}
     return ReviewDraft(**values)
 
 

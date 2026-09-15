@@ -61,11 +61,7 @@ def test_highlight_skips_negative_growth_and_leverage_metrics() -> None:
 
 
 def test_highlight_avoids_numbers_already_used_in_risk() -> None:
-    facts = _facts(
-        flags=(
-            Flag(FlagCode.LOW_BASE, "归母净利同比+177.6%含低基数效应，不可线性外推"),
-        )
-    )
+    facts = _facts(flags=(Flag(FlagCode.LOW_BASE, "归母净利同比+177.6%含低基数效应，不可线性外推"),))
     draft = render_fallback(facts)
     assert "177.6" in draft.risk
     assert draft.highlight == "营收同比+20.3%，毛利率31.8%"
@@ -106,9 +102,7 @@ def test_no_metrics_falls_back_to_composite_sentence() -> None:
                 Metric("roe", "ROE", 80.02, "%"),
             ),
             "flags": (
-                Flag(
-                    FlagCode.LOW_BASE, "归母净利同比+71528.7%含低基数效应，不可线性外推"
-                ),
+                Flag(FlagCode.LOW_BASE, "归母净利同比+71528.7%含低基数效应，不可线性外推"),
                 Flag(FlagCode.EXTREME_ROE, "ROE 80.0%处于极端高位，持续性存疑"),
             ),
             "industry": "科技/制造",

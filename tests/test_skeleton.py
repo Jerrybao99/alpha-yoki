@@ -43,9 +43,7 @@ def test_settings_defaults() -> None:
     assert s.review_cache_enabled is True
 
 
-def test_data_path_creates_subdir(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_data_path_creates_subdir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """data_path() 返回子目录并自动创建，子目录名覆盖 DATA_SUBDIRS 全部键。"""
     s = Settings()
     monkeypatch.setattr(s, "data_dir", str(tmp_path))

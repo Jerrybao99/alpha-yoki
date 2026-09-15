@@ -53,9 +53,7 @@ class CompanyTypeResult:
         return 0.40
 
 
-def classify_company_type(
-    f: StockFeatures, industry: str | None = None
-) -> CompanyTypeResult:
+def classify_company_type(f: StockFeatures, industry: str | None = None) -> CompanyTypeResult:
     """按 brd.md 公司类型 / 行业分类表判断公司类型。行业优先，辅以财务指标微调。
 
     Args:
@@ -74,41 +72,25 @@ def classify_company_type(
 
     # 科技/制造行业的 千里马 若无高增长可降为 现金牛
     if default == TYPE_QIANLIMA and or_yoy is not None and or_yoy < 15.0:
-        return CompanyTypeResult(
-            TYPE_XIANJINNIU, f"营收增速 {or_yoy:.1f}% 低于 15%，从千里马转为现金牛"
-        )
+        return CompanyTypeResult(TYPE_XIANJINNIU, f"营收增速 {or_yoy:.1f}% 低于 15%，从千里马转为现金牛")
     # 周期资源景气爆发 → 千里马
     if ind == CAT_CYCLICAL and or_yoy is not None and or_yoy > 30.0:
-        return CompanyTypeResult(
-            TYPE_QIANLIMA, f"营收增速 {or_yoy:.1f}% >30%，景气爆发期视为千里马"
-        )
+        return CompanyTypeResult(TYPE_QIANLIMA, f"营收增速 {or_yoy:.1f}% >30%，景气爆发期视为千里马")
     # 消费/金融行业 若有 千里马 特质 → 千里马
     if default == TYPE_HUCHENGHE and or_yoy is not None and or_yoy > 15.0:
-        return CompanyTypeResult(
-            TYPE_QIANLIMA, f"营收增速 {or_yoy:.1f}% >15%，视为千里马"
-        )
+        return CompanyTypeResult(TYPE_QIANLIMA, f"营收增速 {or_yoy:.1f}% >15%，视为千里马")
     # 公用事业扩张期 → 千里马
     if ind == CAT_UTILITY and or_yoy is not None and or_yoy > 20.0:
-        return CompanyTypeResult(
-            TYPE_QIANLIMA, f"营收增速 {or_yoy:.1f}% >20%，扩张期视为千里马"
-        )
+        return CompanyTypeResult(TYPE_QIANLIMA, f"营收增速 {or_yoy:.1f}% >20%，扩张期视为千里马")
     # 护城河需验证品牌溢价（高毛利）；缺指标时保留默认分类
     if default == TYPE_HUCHENGHE:
         if gross_margin is not None and gross_margin > 50.0:
-            return CompanyTypeResult(
-                TYPE_HUCHENGHE, f"毛利率 {gross_margin:.1f}% >50%，品牌溢价显著"
-            )
+            return CompanyTypeResult(TYPE_HUCHENGHE, f"毛利率 {gross_margin:.1f}% >50%，品牌溢价显著")
         if roe is not None and roe > 25.0:
-            return CompanyTypeResult(
-                TYPE_HUCHENGHE, f"ROE {roe:.1f}% >25%，抗通胀能力强"
-            )
+            return CompanyTypeResult(TYPE_HUCHENGHE, f"ROE {roe:.1f}% >25%，抗通胀能力强")
         if gross_margin is not None and roe is not None:
-            return CompanyTypeResult(
-                TYPE_XIANJINNIU, "毛利与ROE未达护城河标准，转为现金牛"
-            )
-        return CompanyTypeResult(
-            TYPE_HUCHENGHE, f"行业 {ind} 默认分类（指标缺失暂保留）"
-        )
+            return CompanyTypeResult(TYPE_XIANJINNIU, "毛利与ROE未达护城河标准，转为现金牛")
+        return CompanyTypeResult(TYPE_HUCHENGHE, f"行业 {ind} 默认分类（指标缺失暂保留）")
 
     return CompanyTypeResult(default, f"行业 {ind} 默认分类")
 

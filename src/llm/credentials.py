@@ -58,9 +58,7 @@ def get_stored_api_key(
 
     keyring_backend = backend or keyring
     try:
-        stored = keyring_backend.get_password(
-            SERVICE_NAME, _keyring_username(normalized)
-        )
+        stored = keyring_backend.get_password(SERVICE_NAME, _keyring_username(normalized))
     except KeyringError:
         return None
     if stored is None:
@@ -99,9 +97,7 @@ def resolve_api_key(
     keyring_backend = backend or keyring
     keyring_available = True
     try:
-        stored = keyring_backend.get_password(
-            SERVICE_NAME, _keyring_username(normalized)
-        )
+        stored = keyring_backend.get_password(SERVICE_NAME, _keyring_username(normalized))
     except KeyringError:
         stored = None
         keyring_available = False
@@ -111,10 +107,7 @@ def resolve_api_key(
     is_interactive = sys.stdin.isatty() if interactive is None else interactive
     if not is_interactive:
         env_name = _SETTINGS_KEY_ATTR[normalized].upper()
-        raise CredentialError(
-            f"缺少 {normalized} API Key。请设置 {env_name}，"
-            "或在交互终端运行命令以保存到系统钥匙串。"
-        )
+        raise CredentialError(f"缺少 {normalized} API Key。请设置 {env_name}，或在交互终端运行命令以保存到系统钥匙串。")
 
     ask_secret = secret_prompt or getpass.getpass
     api_key = ask_secret(f"请输入 {normalized} API Key（输入隐藏）: ").strip()
@@ -133,9 +126,7 @@ def resolve_api_key(
         answer = "n"
     if answer in {"", "y", "yes", "是"}:
         try:
-            keyring_backend.set_password(
-                SERVICE_NAME, _keyring_username(normalized), api_key
-            )
+            keyring_backend.set_password(SERVICE_NAME, _keyring_username(normalized), api_key)
         except KeyringError:
             print("系统钥匙串保存失败，API Key 仅用于本次运行。", file=stream)
         else:
