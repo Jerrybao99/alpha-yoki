@@ -145,6 +145,11 @@ def test_subcommand_help_documents_flags() -> None:
     wechat = _subparser(parser, "wechat").format_help()
     for action in ("login", "serve", "push", "status"):
         assert action in wechat
+    models = _subparser(parser, "models").format_help()
+    assert "use" in models
+    use = _subparser(_subparser(parser, "models"), "use").format_help()
+    assert "PROVIDER" in use
+    assert "--model" in use
 
 
 def test_main_json_emits_single_envelope(

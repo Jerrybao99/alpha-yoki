@@ -1,4 +1,4 @@
-"""report / models：荐股 Top20 与模型目录。"""
+"""report：荐股 Top20。"""
 
 from __future__ import annotations
 
@@ -8,13 +8,7 @@ from typing import Any
 
 from src.config import Settings, get_settings
 from src.data.readers import find_latest_csv
-from src.llm.catalog import (
-    MODEL_CATALOG_UPDATED,
-    PROVIDER_API_URLS,
-    PROVIDER_DISPLAY_NAMES,
-    PROVIDER_DOCS_URLS,
-    list_models,
-)
+from src.llm.catalog import PROVIDER_DISPLAY_NAMES, list_models
 from src.llm.client import LLMClient
 from src.llm.credentials import (
     SUPPORTED_PROVIDERS,
@@ -26,7 +20,7 @@ from src.llm.preferences import load_preferences, preferences_path, save_prefere
 from src.llm.review import build_fallback_client
 from src.reports.generator import build_top20
 from src.reports.reporting import write_recommend_csv
-from src.tools import EXIT_CONFIG, EXIT_DATA, EXIT_OK, EXIT_UPSTREAM, envelope
+from src.tools import EXIT_CONFIG, EXIT_DATA, EXIT_OK, EXIT_UPSTREAM
 
 
 def select_provider() -> str:
@@ -98,52 +92,6 @@ def _fallback_label(fallback_client: object | None) -> str:
 def _say(quiet: bool, *args: object, **kwargs: Any) -> None:
     if not quiet:
         print(*args, **kwargs)
-
-
-def run_models(provider: str | None, *, settings: Settings | None = None, quiet: bool = False) -> int:
-    """打印模型目录、实际配置端点和默认型号。"""
-    resolved_settings = settings or get_settings()
-    providers = (normalize_provider(provider),) if provider else SUPPORTED_PROVIDERS
-    _say(quiet, f"模型目录核验日期：{MODEL_CATALOG_UPDATED}")
-    for selected in providers:
-        display_name = PROVIDER_DISPLAY_NAMES[selected]
-        base_url = getattr(resolved_settings, f"{selected}_base_url")
-        default_model = getattr(resolved_settings, f"{selected}_model")
-        _say(quiet, f"\n{display_name}")
-        _say(quiet, f"  当前 OpenAI Chat Base URL: {base_url}")
-        for protocol, url in PROVIDER_API_URLS[selected].items():
-            _say(quiet, f"  {protocol}: {url}")
-        _say(quiet, f"  默认模型: {default_model}")
-        _say(quiet, f"  官方文档: {PROVIDER_DOCS_URLS[selected]}")
-        for model in list_models(selected):
-            context = _format_token_limit(model.context_window)
-            max_output = _format_token_limit(model.max_output_tokens)
-            modalities = "/".join(model.input_modalities)
-            thinking = "强制" if model.thinking_required else "可选"
-            efforts = "/".join(model.reasoning_efforts) or "模型自动"
-            _say(quiet, f"  - {model.model_id}: {model.summary}")
-            _say(
-                quiet,
-                f"    上下文: {context} | 最大输出: {max_output} | "
-                f"输入: {modalities} | 思考: {thinking} | 推理强度: {efforts}",
-            )
-    return EXIT_OK
-
-
-def models_payload(provider: str | None, settings: Settings | None = None) -> dict[str, Any]:
-    resolved = settings or get_settings()
-    providers = (normalize_provider(provider),) if provider else SUPPORTED_PROVIDERS
-    catalog = []
-    for selected in providers:
-        catalog.append(
-            {
-                "provider": selected,
-                "base_url": getattr(resolved, f"{selected}_base_url"),
-                "default_model": getattr(resolved, f"{selected}_model"),
-                "models": [model.model_id for model in list_models(selected)],
-            }
-        )
-    return envelope(ok=True, command="models", data={"updated": MODEL_CATALOG_UPDATED, "providers": catalog})
 
 
 def run_report(
@@ -258,7 +206,3 @@ def register(subparsers: argparse._SubParsersAction) -> None:
     report.add_argument("--model", default=None, help="模型 ID，缺省走偏好或 .env")
     report.add_argument("--no-save", dest="save", action="store_false", help="本次不覆盖已记忆的模型选择")
     report.set_defaults(handler="report", save=True)
-
-    models = subparsers.add_parser("models", help="查看已核验的模型与 API 端点")
-    models.add_argument("--provider", choices=SUPPORTED_PROVIDERS, default=None, help="只列出指定 Provider")
-    models.set_defaults(handler="models")

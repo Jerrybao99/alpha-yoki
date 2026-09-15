@@ -11,10 +11,12 @@ from src.llm.preferences import load_preferences, preferences_path, save_prefere
 from src.tools import EXIT_CONFIG, EXIT_DATA, EXIT_OK, EXIT_UPSTREAM, ToolError, emit, envelope
 from src.tools import holdings as holdings_tool
 from src.tools import market as market_tool
+from src.tools import models as models_tool
 from src.tools import report as report_tool
 from src.tools import status as status_tool
 from src.tools import wechat as wechat_tool
-from src.tools.report import run_models, run_report, select_model, select_provider
+from src.tools.models import run_models
+from src.tools.report import run_report, select_model, select_provider
 
 __all__ = [
     "EXIT_CONFIG",
@@ -41,7 +43,10 @@ _HELP_EPILOG = """\
   alpha-jerry collect --update
   alpha-jerry collect --codes 600519.SH
   alpha-jerry scores
-  alpha-jerry report --provider glm --model glm-5-turbo
+  alpha-jerry models
+  alpha-jerry models use glm
+  alpha-jerry models use deepseek --model deepseek-flash
+  alpha-jerry report
   alpha-jerry wechat login
 
 退出码：0 成功 · 2 配置 · 3 上游 · 4 数据缺失/过期
@@ -63,6 +68,7 @@ def build_parser() -> argparse.ArgumentParser:
     market_tool.register(subparsers)
     holdings_tool.register(subparsers)
     report_tool.register(subparsers)
+    models_tool.register(subparsers)
     wechat_tool.register(subparsers)
     return parser
 
@@ -108,8 +114,11 @@ def dispatch(args: argparse.Namespace) -> tuple[int, dict]:
             settings,
         )
     if handler == "models":
+        if getattr(args, "models_action", "list") == "use":
+            explicit = args.use_model_flag if args.use_model_flag is not None else args.use_model
+            return models_tool.run_models_use(args.use_provider, explicit, settings=settings)
         if _json_mode(args):
-            return EXIT_OK, report_tool.models_payload(args.provider, settings)
+            return EXIT_OK, models_tool.models_payload(args.provider, settings)
         return run_models(args.provider, settings=settings), envelope(ok=True, command="models")
     if handler == "report":
         code = run_report(args.provider, args.model, settings=settings, save=args.save, quiet=_json_mode(args))

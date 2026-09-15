@@ -6,6 +6,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- `models use`：终端切换并记住 DeepSeek / GLM 及具体型号，不必先跑 `report`
+
 ## [1.0.0] - 2026-09-15
 
 ### Added

@@ -20,8 +20,14 @@ uv run alpha-jerry --help               # 查看全部命令
 uv run python scripts/sw_industry.py    # 首次约 11 分钟
 uv run alpha-jerry collect
 uv run alpha-jerry scores
-uv run alpha-jerry report --provider deepseek
+uv run alpha-jerry models                 # 查看目录与当前偏好
+uv run alpha-jerry models use glm         # 切到 GLM（.env 默认型号）
+uv run alpha-jerry models use deepseek    # 切到 DeepSeek
+uv run alpha-jerry models use glm glm-5-turbo
+uv run alpha-jerry report                 # 使用刚才记住的选择
 ```
+
+`models use <deepseek|glm> [型号]` 只改本地偏好，不跑锐评。不写型号时用 `.env` 里该 Provider 的默认模型。`report --provider` / `--model` 仍可单次覆盖。
 
 产物在 `data/fin/`。
 
