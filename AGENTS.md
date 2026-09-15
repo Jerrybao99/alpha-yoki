@@ -64,7 +64,7 @@ alpha-jerry
 
 ## 常用命令
 
-- 依赖与运行：`uv sync` · `uv run python -m src.cli`（或 `alpha-jerry`）
+- 依赖与运行：`python3 scripts/uv_sync.py`（或 `uv sync`） · `uv run python -m src.cli`（或 `alpha-jerry`）
 - 质量检查：`uv run ruff check .` · `uv run ruff format .` · `uv run pytest -m "not network" --cov=src --cov-fail-under=80`
 - 业务流水线：`uv run python scripts/full_collect.py` · `scripts/full_scores.py` · `scripts/full_report.py`
 - 修改验证：1. `ruff check .` 无警告；2. `pytest` not network 覆盖率 ≥80%；3. `python -c "from src.config import Settings; Settings()"` 可加载

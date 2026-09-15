@@ -6,13 +6,13 @@
 
 ## 快速开始
 
-需要 [Tushare](https://tushare.pro) VIP（5000 积分）和 DeepSeek 或 GLM 的 API Key。Windows / macOS，`uv sync` 会装好 Python 3.12。
+需要 [Tushare](https://tushare.pro) VIP（5000 积分）和 DeepSeek 或 GLM 的 API Key。Windows / macOS，用下面的脚本装依赖（自动选最快 PyPI：官方或清华/阿里云）。
 
 先进入本仓库目录。入口是 `uv run alpha-jerry`，换目录会找不到命令。
 
 ```bash
 cd /path/to/alpha-jerry
-uv sync
+python3 scripts/uv_sync.py              # Windows 可用 py -3 scripts/uv_sync.py
 cp .env.example .env
 # 填写 TUSHARE_TOKEN，以及 DEEPSEEK_API_KEY 或 GLM_API_KEY
 

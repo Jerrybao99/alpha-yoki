@@ -9,6 +9,7 @@
 ### Added
 
 - `models use`：终端切换并记住 DeepSeek / GLM 及具体型号，不必先跑 `report`
+- `scripts/uv_sync.py`：按探测耗时选择官方 PyPI 或国内镜像后再 `uv sync`
 
 ## [1.0.0] - 2026-09-15
 
