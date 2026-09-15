@@ -41,6 +41,7 @@ _HELP_EPILOG = """\
 常用：
   alpha-jerry status --check
   alpha-jerry collect --update
+  alpha-jerry collect --resume
   alpha-jerry collect --codes 600519.SH
   alpha-jerry scores
   alpha-jerry models
@@ -89,6 +90,7 @@ def dispatch(args: argparse.Namespace) -> tuple[int, dict]:
             market_tool.CollectParams(
                 update=bool(args.update),
                 force=bool(args.force),
+                resume=bool(args.resume),
                 codes=list(args.codes or []),
                 period=args.period,
             ),

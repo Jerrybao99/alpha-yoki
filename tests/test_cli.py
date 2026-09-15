@@ -137,6 +137,7 @@ def test_subcommand_help_documents_flags() -> None:
     assert "--update" in collect
     assert "--force" in collect
     assert "--codes" in collect
+    assert "--resume" in collect
     status = _subparser(parser, "status").format_help()
     assert "--check" in status
     report = _subparser(parser, "report").format_help()

@@ -28,9 +28,10 @@ class _FakePipe:
         return result
 
     def run(self, period=None, codes=None):
-        self.calls.append(f"run:{period}:{codes}")
-        result = CollectionResult(total=1)
-        result.successes.append(StockFeatures(ts_code=codes[0], name="茅台", end_date=period, revenue=2.0))
+        self.calls.append(f"run:{period}:{list(codes or [])}")
+        result = CollectionResult(total=len(codes or []))
+        for code in codes or []:
+            result.successes.append(StockFeatures(ts_code=code, name="续", end_date=period, revenue=2.0))
         return result
 
     def close(self) -> None:
@@ -90,6 +91,67 @@ def test_collect_codes_writes_single_stock_csv(tmp_path: Path, monkeypatch) -> N
     assert code == EXIT_OK
     assert Path(payload["data"]["path"]).name == "260915-单股.csv"
     assert "run:" in pipe.calls[0]
+
+
+def test_collect_resume_skips_existing_and_merges(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    from src.data.contract import StockInfo
+
+    settings = _settings(tmp_path)
+    today = _dt.date(2026, 9, 15)
+    collect = settings.data_path("fin") / "full_collect"
+    collect.mkdir(parents=True)
+    (collect / "260915.csv").write_text("股票代码,股票名称\n600000.SH,浦发\n", encoding="utf-8-sig")
+    write_raw_csv(
+        [{"ts_code": "600000.SH", "name": "浦发", "end_date": "20260630", "revenue": 1.0}],
+        raw_path(collect, "260915"),
+        ("ts_code", "name", "end_date", "revenue"),
+    )
+
+    class _Fetcher:
+        def fetch_stock_list(self):
+            return [
+                StockInfo(ts_code="600000.SH", name="浦发"),
+                StockInfo(ts_code="600519.SH", name="茅台"),
+            ]
+
+    monkeypatch.setattr("src.tools.market.TushareFetcher", lambda _settings: _Fetcher())
+    pipe = _FakePipe()
+    code, payload = run_collect(
+        CollectParams(resume=True),
+        settings,
+        pipeline_factory=lambda *_a, **_k: pipe,
+        today=today,
+    )
+    assert code == EXIT_OK
+    assert payload["data"]["skipped"] is False
+    assert pipe.calls == [f"run:{expected_latest_period(today)}:['600519.SH']"]
+    merged = (collect / "260915-raw.csv").read_text(encoding="utf-8")
+    assert "600000.SH" in merged
+    assert "600519.SH" in merged
+
+
+def test_collect_resume_without_file_is_data_error(tmp_path: Path, monkeypatch) -> None:
+    settings = _settings(tmp_path)
+    monkeypatch.setattr("src.tools.market.TushareFetcher", lambda _settings: object())
+    pipe = _FakePipe()
+    from src.tools import EXIT_DATA, ToolError
+
+    try:
+        run_collect(
+            CollectParams(resume=True),
+            settings,
+            pipeline_factory=lambda *_a, **_k: pipe,
+            today=_dt.date(2026, 9, 15),
+        )
+    except ToolError as exc:
+        assert exc.code == EXIT_DATA
+        assert "可续" in str(exc)
+    else:
+        raise AssertionError("expected ToolError")
+    assert pipe.calls == []
 
 
 def test_scores_reads_raw_and_writes_scores(tmp_path: Path) -> None:

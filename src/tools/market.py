@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import argparse
+import csv
 import datetime as _dt
 from collections.abc import Callable
+from pathlib import Path
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict
@@ -27,6 +29,7 @@ class CollectParams(BaseModel):
 
     update: bool = False
     force: bool = False
+    resume: bool = False
     codes: list[str] = []
     period: str | None = None
 
@@ -49,6 +52,18 @@ def _stamp(today: _dt.date | None = None) -> str:
     return (today or _dt.date.today()).strftime("%y%m%d")
 
 
+def _existing_ts_codes(path: Path) -> set[str]:
+    if not path.exists():
+        return set()
+    text = path.read_text(encoding="utf-8").lstrip("\ufeff")
+    found: set[str] = set()
+    for row in csv.DictReader(text.splitlines()):
+        code = str(row.get("ts_code") or row.get("股票代码") or "").strip()
+        if code:
+            found.add(code)
+    return found
+
+
 def _codes(raw: list[str]) -> list[str]:
     out: list[str] = []
     for item in raw:
@@ -66,7 +81,7 @@ def run_collect(
     resolved = settings or get_settings()
     day = today or _dt.date.today()
     codes = _codes(params.codes)
-    if params.update and not params.force and not codes:
+    if params.update and not params.force and not codes and not params.resume:
         info = freshness(Kind.COLLECT, day, settings=resolved)
         if not info.is_stale:
             return EXIT_OK, envelope(
@@ -80,6 +95,18 @@ def run_collect(
     except TushareTokenError as exc:
         raise ToolError(str(exc), EXIT_CONFIG) from exc
     factory = pipeline_factory or CollectionPipeline
+    out_dir = resolved.data_path("fin") / "full_collect"
+    stamp = _stamp(day)
+    if params.resume:
+        return _collect_resume(
+            resolved,
+            fetcher,
+            factory,
+            period,
+            codes,
+            out_dir,
+            stamp,
+        )
     pipe = factory(fetcher, settings=resolved)
     try:
         if codes:
@@ -88,8 +115,6 @@ def run_collect(
             result = pipe.run_batch(period=period)
     finally:
         pipe.close()
-    out_dir = resolved.data_path("fin") / "full_collect"
-    stamp = _stamp(day)
     human_name = f"{stamp}-单股.csv" if codes else f"{stamp}.csv"
     human = out_dir / human_name
     write_features_csv(result.successes, human)
@@ -107,6 +132,63 @@ def run_collect(
         "failure_count": result.failure_count,
     }
     return EXIT_OK, envelope(ok=True, command="collect", data=data)
+
+
+def _collect_resume(
+    settings: Settings,
+    fetcher: Any,
+    factory: PipelineFactory,
+    period: str,
+    codes: list[str],
+    out_dir: Path,
+    stamp: str,
+) -> tuple[int, dict[str, Any]]:
+    human = out_dir / f"{stamp}.csv"
+    raw = raw_path(out_dir, stamp)
+    existing = _existing_ts_codes(raw) or _existing_ts_codes(human)
+    if not existing:
+        raise ToolError("没有可续的采集文件，请先 collect", EXIT_DATA)
+    if codes:
+        remaining = [code for code in codes if code not in existing]
+    else:
+        remaining = [item.ts_code for item in fetcher.fetch_stock_list() if item.ts_code not in existing]
+    kept = load_features_prefer_raw(human) if human.exists() or raw.exists() else []
+    if not remaining:
+        return EXIT_OK, envelope(
+            ok=True,
+            command="collect",
+            data={
+                "skipped": True,
+                "reason": "resume_complete",
+                "period": period,
+                "path": str(human),
+                "success_count": len(kept),
+                "failure_count": 0,
+            },
+        )
+    pipe = factory(fetcher, settings=settings)
+    try:
+        result = pipe.run(period=period, codes=remaining)
+    finally:
+        pipe.close()
+    merged = {feat.ts_code: feat for feat in kept}
+    merged.update({feat.ts_code: feat for feat in result.successes})
+    rows = list(merged.values())
+    write_features_csv(rows, human)
+    write_raw_csv([feat.model_dump() for feat in rows], raw, ALL_OUTPUT_COLUMNS)
+    return EXIT_OK, envelope(
+        ok=True,
+        command="collect",
+        data={
+            "skipped": False,
+            "period": period,
+            "path": str(human),
+            "success_count": len(rows),
+            "failure_count": result.failure_count,
+            "resumed": len(result.successes),
+            "skipped_existing": len(existing),
+        },
+    )
 
 
 def run_market_scores(params: ScoresParams, settings: Settings | None = None) -> tuple[int, dict[str, Any]]:
@@ -156,6 +238,7 @@ def register(subparsers: argparse._SubParsersAction) -> None:
     collect = subparsers.add_parser("collect", help="采集财务特征（含股东户数）")
     collect.add_argument("--update", action="store_true", help="仅在过期或缺失时采集")
     collect.add_argument("--force", action="store_true", help="忽略新鲜度强制采集")
+    collect.add_argument("--resume", action="store_true", help="断点续采：跳过当日已有股票，只采剩余")
     collect.add_argument("--codes", nargs="+", default=[], metavar="TS_CODE", help="只采指定 ts_code")
     collect.add_argument("--period", default=None, metavar="YYYYMMDD", help="报告期，默认按披露日推算")
     collect.set_defaults(handler="collect")
