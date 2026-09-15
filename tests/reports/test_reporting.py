@@ -8,12 +8,15 @@ from src.data.contract import StockFeatures
 from src.reports.reporting import (
     OUTPUT_HEADERS_CN,
     SCORING_KEYS,
+    TOP_N,
     Top20Result,
     clean_ts_code,
     load_scoring_rows,
     make_features,
     parse_back,
+    render_top20_markdown,
     write_recommend_csv,
+    write_recommend_markdown,
 )
 
 
@@ -167,6 +170,50 @@ def test_write_recommend_csv(tmp_path: Path):
     assert '"001309"' in content
     assert '"德明利"' in content
     assert '"利润高增"' in content
+    md = out.with_suffix(".md")
+    assert md.exists()
+    assert md.read_text(encoding="utf-8").startswith(f"# 荐股 Top{TOP_N} · 260728")
+
+
+def test_recommend_limit_is_fifty() -> None:
+    assert TOP_N == 50
+
+
+def test_render_top20_markdown_keeps_top_n_full_rows() -> None:
+    rows = [
+        {
+            "股票代码": f"{index:06d}",
+            "股票名称": f"公司{index}",
+            "公司类型": "现金牛",
+            "行业分类": "大消费",
+            "核心亮点": f"亮点{index}",
+            "成长性": "8",
+            "稳健性": "9",
+            "回报性": "10",
+            "综合分": "8.5",
+            "评级": "皇冠明珠",
+            "操作建议": "重仓买入（10-20%）",
+            "风险提示": f"风险{index}",
+            "点评": f"点评{index}",
+        }
+        for index in range(1, TOP_N + 6)
+    ]
+    text = render_top20_markdown(rows, stamp="260915")
+    assert text.startswith(f"# 荐股 Top{TOP_N} · 260915")
+    assert "## 1. 公司1（000001）" in text
+    assert f"## {TOP_N}. 公司{TOP_N}（{TOP_N:06d}）" in text
+    assert f"公司{TOP_N + 1}" not in text
+    assert "- 核心亮点：亮点1" in text
+    assert f"- 点评：点评{TOP_N}" in text
+
+
+def test_write_recommend_markdown(tmp_path: Path) -> None:
+    path = write_recommend_markdown(
+        [{"股票代码": "000807", "股票名称": "云铝股份", "核心亮点": "营收同比+20.3%"}],
+        tmp_path / "260915.md",
+        stamp="260915",
+    )
+    assert path.read_text(encoding="utf-8").startswith(f"# 荐股 Top{TOP_N} · 260915")
 
 
 # ===== 常量校验 =====

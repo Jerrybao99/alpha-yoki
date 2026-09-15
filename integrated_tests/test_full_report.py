@@ -1,4 +1,4 @@
-"""荐股 Top20 集成测试：真实评分数据 + 真实 LLM，校验 13 列完整、三列锐评满足白名单上限
+"""荐股 TopN 集成测试：真实评分数据 + 真实 LLM，校验 13 列完整、三列锐评满足白名单上限
 （亮点≤30 字、风险≤40 字、点评≤50 字）且数字均可在事实中验证。CI 通过 ``-m 'not network'`` 跳过。
 """
 
@@ -15,14 +15,14 @@ from src.llm.credentials import has_api_key
 from src.llm.review import review
 from src.llm.validate import LIMITS, validate_draft
 from src.reports.generator import select_top
-from src.reports.reporting import OUTPUT_HEADERS_CN, write_recommend_csv
+from src.reports.reporting import OUTPUT_HEADERS_CN, TOP_N, write_recommend_csv
 
 # ===== network 测试 =====
 
 
 @pytest.mark.network
 def test_real_recommend_top20() -> None:
-    """真实评分数据 + LLM 调用，生成荐股 Top20 CSV。
+    """真实评分数据 + LLM 调用，生成荐股 TopN CSV。
 
     ``uv run pytest -m network integrated_tests/test_full_report.py::test_real_recommend_top20``
     """
@@ -41,7 +41,7 @@ def test_real_recommend_top20() -> None:
     client = LLMClient(provider="deepseek", settings=settings)
     result = build_top20(csv_path, client=client, settings=settings)
 
-    assert 0 < len(result.rows) <= 20, "荐股 Top20 为空或超限"
+    assert 0 < len(result.rows) <= TOP_N, f"荐股 Top{TOP_N} 为空或超限"
     assert len(result.statuses) == len(result.rows)
 
     for i, row in enumerate(result.rows, start=1):
@@ -63,7 +63,7 @@ def test_real_recommend_top20() -> None:
     out_dir = settings.data_root / "test" / "full_report"
     out_dir.mkdir(parents=True, exist_ok=True)
     out_path = write_recommend_csv(result, out_dir / f"{csv_path.stem}.csv")
-    print(f"荐股 Top20 产出：{out_path}")
+    print(f"荐股 Top{TOP_N} 产出：{out_path}")
 
 
 @pytest.mark.network

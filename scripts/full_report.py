@@ -1,4 +1,4 @@
-"""荐股 Top20 兼容脚本；交互入口优先使用 ``alpha-jerry report``。"""
+"""荐股 TopN 兼容脚本；交互入口优先使用 ``alpha-jerry report``。"""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from src.llm.client import LLMClient
 from src.llm.credentials import CredentialError, resolve_api_key
 from src.llm.review import build_fallback_client
 from src.reports.generator import build_top20
-from src.reports.reporting import write_recommend_csv
+from src.reports.reporting import TOP_N, write_recommend_csv
 
 __all__ = ["build_top20", "main"]
 
@@ -36,7 +36,7 @@ def main() -> None:
     result = build_top20(csv_path, client=client, fallback_client=fallback_client, settings=settings)
     out_dir = settings.data_path("fin") / "full_report"
     out_path = write_recommend_csv(result, out_dir / f"{csv_path.stem}.csv")
-    print(f"荐股 Top20 产出：{out_path}")
+    print(f"荐股 Top{TOP_N} 产出：{out_path}")
 
 
 if __name__ == "__main__":

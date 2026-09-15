@@ -1,4 +1,4 @@
-"""Top20 荐股报告编排：评分 CSV → 规则结论 → ReviewFacts → review() → 13 列。Provider 无关。
+"""荐股报告编排：评分 CSV → 规则结论 → ReviewFacts → review() → 13 列。Provider 无关。
 数字与评级由规则层给定，模型只改写文字；任何 Provider 状态下三列锐评都不为空。
 """
 
@@ -25,13 +25,13 @@ from src.llm.trace import JsonlReviewTracer
 from src.reports.evaluation import classify_company_type, get_advice
 from src.reports.facts import build_review_facts
 from src.reports.reporting import (
+    TOP_N,
     Top20Result,
     clean_ts_code,
     load_score_rows_prefer_raw,
     make_features,
 )
 
-TOP_N = 20
 _MAX_WORKERS = 6
 _REVIEW_COLUMNS: dict[str, str] = {
     "highlight": "核心亮点",
@@ -121,7 +121,7 @@ def build_top20(
     cache: ReviewCache | None = None,
     tracer: ReviewTracer | None = None,
 ) -> Top20Result:
-    """读取评分 CSV，选取综合分 Top20，经锐评子系统生成三列文案。"""
+    """读取评分 CSV，选取综合分 TopN，经锐评子系统生成三列文案。"""
     resolved_settings = settings or get_settings()
     primary: ChatClient = client or LLMClient(settings=resolved_settings)
     options = ReviewOptions.from_settings(resolved_settings)

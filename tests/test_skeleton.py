@@ -43,6 +43,7 @@ def test_settings_defaults() -> None:
     assert s.review_cache_enabled is True
     assert s.wechat_base_url == "https://ilinkai.weixin.qq.com"
     assert s.wechat_digest_times == "09:00,17:00"
+    assert s.wechat_confirm_ttl_seconds == 120
     assert s.wechat_trust_env is False
 
 

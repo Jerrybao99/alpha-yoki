@@ -11,7 +11,7 @@
 
 ## 项目概述
 
-面向 A 股基本面分析的本地命令行工具：Tushare 采集（含股东人数）→ 一票否决 → 三维评分 → 行业加权评级 → LLM 锐评（DeepSeek/GLM 双 Provider）→ 荐股 Top20（13 列）。
+面向 A 股基本面分析的本地命令行工具：Tushare 采集（含股东人数）→ 一票否决 → 三维评分 → 行业加权评级 → LLM 锐评（DeepSeek/GLM 双 Provider）→ 荐股 Top50（13 列）。
 
 ### 关键决策
 

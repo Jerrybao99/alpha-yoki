@@ -12,6 +12,7 @@ from src.tools.holdings import HoldingsParams, run_holdings
 from src.tools.status import StatusParams, run_status
 from src.wechat.ilink import SessionExpired
 from src.wechat.notify import append_trace, push_text
+from src.wechat.pending import MemoryPending
 from src.wechat.router import Incoming, default_tools, handle_incoming, split_message
 from src.wechat.session import SessionStore
 
@@ -39,6 +40,7 @@ class WechatBot:
         now_fn: Callable[[], _dt.datetime] | None = None,
         digest_builder: Callable[[], str] | None = None,
         tools: dict[str, Callable[..., str]] | None = None,
+        pending: MemoryPending | None = None,
     ) -> None:
         self.client = client
         self.store = store
@@ -46,6 +48,7 @@ class WechatBot:
         self.now_fn = now_fn or _dt.datetime.now
         self.digest_builder = digest_builder or (lambda: self._default_digest())
         self.tools = tools
+        self.pending = pending or MemoryPending(ttl=settings.wechat_confirm_ttl_seconds)
         self._stopped = False
 
     def stop(self) -> None:
@@ -105,6 +108,7 @@ class WechatBot:
             self.settings,
             owner_id=owner_id,
             tools=self.tools or default_tools(self.settings),
+            pending=self.pending,
         )
         if reply is None:
             return

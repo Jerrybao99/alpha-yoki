@@ -67,6 +67,7 @@ class Settings(BaseSettings):
     wechat_allowed_users: str = ""  # 空=仅扫码授权者；逗号分隔 ilink_user_id
     wechat_digest_times: str = "09:00,17:00"
     wechat_max_message_chars: int = 1800
+    wechat_confirm_ttl_seconds: int = 120  # 改数据 / 锐评待确认的有效期
     wechat_trust_env: bool = False
 
     @property

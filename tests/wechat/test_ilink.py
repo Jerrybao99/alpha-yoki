@@ -72,9 +72,7 @@ def test_uin_is_random_per_request() -> None:
 def test_extract_login_qr_separates_poll_token_and_image_url() -> None:
     from src.wechat.ilink import extract_login_qr
 
-    token, image = extract_login_qr(
-        {"qrcode": "qrc_token", "qrcode_img_content": "https://weixin.qq.com/x/abc"}
-    )
+    token, image = extract_login_qr({"qrcode": "qrc_token", "qrcode_img_content": "https://weixin.qq.com/x/abc"})
     assert token == "qrc_token"
     assert image == "https://weixin.qq.com/x/abc"
 

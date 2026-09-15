@@ -1,4 +1,4 @@
-"""荐股报告纯逻辑：常量、评分 CSV 解析与反序列化、13 列 CSV 写盘。不触网络。
+"""荐股报告纯逻辑：常量、评分 CSV 解析、13 列 CSV / Markdown 写盘。不触网络。
 锐评文案的生成、校验与兜底见 src/llm/，编排见 src/reports/generator.py。
 """
 
@@ -35,6 +35,8 @@ OUTPUT_HEADERS_CN = [
     "风险提示",
     "点评",
 ]
+
+TOP_N = 50
 
 
 @dataclass
@@ -86,12 +88,43 @@ def clean_ts_code(ts_code: str) -> str:
     return raw.zfill(6)
 
 
+def _cell(row: dict[str, Any], key: str) -> str:
+    return str(row.get(key) or "").strip()
+
+
+def render_top20_markdown(rows: list[dict[str, Any]], *, stamp: str = "") -> str:
+    """把荐股 13 列全文转成 Markdown，最多 TOP_N 条。"""
+    title = f"# 荐股 Top{TOP_N}" + (f" · {stamp}" if stamp else "")
+    blocks = [title]
+    for index, row in enumerate(rows[:TOP_N], start=1):
+        name = _cell(row, "股票名称") or _cell(row, "name")
+        code = _cell(row, "股票代码") or _cell(row, "ts_code")
+        blocks.append(f"## {index}. {name}（{code}）")
+        for header in OUTPUT_HEADERS_CN[2:]:
+            blocks.append(f"- {header}：{_cell(row, header)}")
+    return "\n".join(blocks) + "\n"
+
+
+def write_recommend_markdown(
+    rows: list[dict[str, Any]],
+    out_path: Path,
+    *,
+    stamp: str | None = None,
+) -> Path:
+    """UTF-8 Markdown，与同名 CSV 并列落在 full_report/。"""
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    text = render_top20_markdown(rows, stamp=stamp if stamp is not None else out_path.stem)
+    out_path.write_text(text, encoding="utf-8")
+    return out_path
+
+
 def write_recommend_csv(result: Top20Result, out_path: Path) -> Path:
-    """写荐股 Top20 CSV。所有字段加引号以兼容 Excel 前导零。"""
+    """写荐股 TopN CSV，并并列写同名 Markdown。"""
     out_path.parent.mkdir(parents=True, exist_ok=True)
     with out_path.open("w", newline="", encoding="utf-8-sig") as fh:
         writer = csv.writer(fh, lineterminator="\n", quoting=csv.QUOTE_ALL)
         writer.writerow(OUTPUT_HEADERS_CN)
         for row in result.rows:
             writer.writerow([row.get(h, "") for h in OUTPUT_HEADERS_CN])
+    write_recommend_markdown(result.rows, out_path.with_suffix(".md"), stamp=out_path.stem)
     return out_path

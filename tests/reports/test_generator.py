@@ -11,7 +11,7 @@ from src.llm.client import LLMResponse
 from src.llm.contracts import ReviewStatus
 from src.llm.validate import LIMITS
 from src.reports.generator import build_top20, select_top
-from src.reports.reporting import OUTPUT_HEADERS_CN, write_recommend_csv
+from src.reports.reporting import OUTPUT_HEADERS_CN, TOP_N, write_recommend_csv
 
 _HEADER = (
     "股票代码,股票名称,行业分类,成长性,稳健性,资金回报,综合分,评级,"
@@ -66,6 +66,18 @@ def test_select_top_orders_by_composite_and_skips_unscored(tmp_path: Path) -> No
     top = select_top(csv_path)
     assert [c.features.name for c in top] == ["贵州茅台", "浦发银行"]
     assert top[0].composite == 8.0
+
+
+def test_select_top_default_limit_is_top_n(tmp_path: Path) -> None:
+    extras = [
+        f"{index:06d}.SZ,股{index},大消费,8,8,8,{10.0 - index * 0.01:.2f},⭐ 优秀白马,"
+        "20.00%,18.00%,90.00%,20.00%,3.00倍,18.00%\n"
+        for index in range(1, TOP_N + 6)
+    ]
+    top = select_top(_scoring_csv(tmp_path, *extras))
+    assert len(top) == TOP_N
+    assert top[0].features.name == "股1"
+    assert top[-1].features.name == f"股{TOP_N}"
 
 
 def test_select_top_prefers_raw_over_human(tmp_path: Path) -> None:

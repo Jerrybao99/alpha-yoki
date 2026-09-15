@@ -1,4 +1,4 @@
-"""report：荐股 Top20。"""
+"""report：荐股 TopN。"""
 
 from __future__ import annotations
 
@@ -19,7 +19,7 @@ from src.llm.credentials import (
 from src.llm.preferences import load_preferences, preferences_path, save_preferences
 from src.llm.review import build_fallback_client
 from src.reports.generator import build_top20
-from src.reports.reporting import write_recommend_csv
+from src.reports.reporting import TOP_N, write_recommend_csv
 from src.tools import EXIT_CONFIG, EXIT_DATA, EXIT_OK, EXIT_UPSTREAM
 
 
@@ -196,12 +196,12 @@ def run_report(
     except OSError as exc:
         _say(quiet, f"报告写盘失败：{exc}", file=sys.stderr)
         return EXIT_DATA
-    _say(quiet, f"荐股 Top20 产出：{out_path}")
+    _say(quiet, f"荐股 Top{TOP_N} 产出：{out_path}")
     return EXIT_OK
 
 
 def register(subparsers: argparse._SubParsersAction) -> None:
-    report = subparsers.add_parser("report", help="生成荐股 Top20 报告")
+    report = subparsers.add_parser("report", help=f"生成荐股 Top{TOP_N} 报告")
     report.add_argument("--provider", choices=SUPPORTED_PROVIDERS, default=None, help="deepseek 或 glm")
     report.add_argument("--model", default=None, help="模型 ID，缺省走偏好或 .env")
     report.add_argument("--no-save", dest="save", action="store_false", help="本次不覆盖已记忆的模型选择")

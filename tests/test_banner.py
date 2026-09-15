@@ -26,6 +26,41 @@ def test_render_ascii_only_is_ascii() -> None:
     assert "alpha-jerry" in text.lower() or "ALPHA-JERRY" in text or "#" in text
 
 
+def test_render_color_shows_chinese_name_and_gold_accent() -> None:
+    text = render(width=80, color=True, ascii_only=False)
+    assert "阿尔法杰瑞" in text
+    assert "\x1b[38;2;217;165;58m" in text
+
+
+def test_render_plain_shows_chinese_name_without_escape() -> None:
+    text = render(width=80, color=False, ascii_only=False)
+    assert "阿尔法杰瑞" in text
+    assert "\x1b[" not in text
+
+
+def test_render_wide_lays_rabbit_beside_wordmark() -> None:
+    lines = render(width=80, color=False, ascii_only=False).splitlines()
+    assert any("│" in line and "█" in line for line in lines)
+
+
+def test_render_medium_stacks_rabbit_above_wordmark() -> None:
+    text = render(width=50, color=False, ascii_only=False)
+    assert text.index("╰─────────╯") < text.index("█")
+    assert not any("│" in line and "█" in line for line in text.splitlines())
+
+
+def test_render_narrow_shows_chinese_name() -> None:
+    text = render(width=30, color=False, ascii_only=False)
+    assert "阿尔法杰瑞" in text
+    assert "alpha-jerry" in text
+
+
+def test_render_ascii_subtitle_is_latin() -> None:
+    text = render(width=80, color=False, ascii_only=True)
+    assert text.isascii()
+    assert f"alpha-jerry v{VERSION}" in text
+
+
 def test_detect_mode_no_color_and_dumb_term() -> None:
     assert detect_mode({"NO_COLOR": "1"}, isatty=True, encoding="utf-8", platform="linux") == "plain"
     assert detect_mode({"TERM": "dumb"}, isatty=True, encoding="utf-8", platform="linux") == "plain"
