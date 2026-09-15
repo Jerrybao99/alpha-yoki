@@ -82,7 +82,7 @@ alpha-jerry
 ## 工作流程与验证清单
 
 1. **对齐需求**：对照 `ROADMAP.md` 明确归属需求（1/2/3），查阅相关代码与单测。
-2. **纯逻辑先测后改**：纯函数写边界单测；I/O 与多步骤写 mock/集成测试。
+2. **单测 → 业务对齐 → 集成测试**：功能类先写/补单元测试并跑通，再改业务代码满足测试，多功能/跨模块最后用集成测试锁。
 3. **验证门禁**：
    - [ ] `uv run ruff check .` 与 `uv run ruff format --check .` 均通过
    - [ ] `uv run pytest -m "not network" --cov=src --cov-fail-under=80` 覆盖率达标
@@ -93,10 +93,10 @@ alpha-jerry
 
 ## 常见任务
 
-- **新增评分规则**：确认 `brd.md`（RIGID）→ `scores.py` 实现纯函数 → `test_scores.py` 覆盖阈值。
-- **新增字段/接口**：`provider.py` 注册接口 → `contract.py` 增补字段与中文映射 → 补 mock/network 测试。
-- **新增 CLI 子命令**：`src/tools/` 定义入参模型与 JSON 出参 → `src/cli.py` 注册子命令与退出码。
-- **更新锐评模型/Prompt**：`src/llm/` 调整并在 `Settings` 配置双 Provider → 黄金样本回归进 CI。
+- **新增评分规则**：确认 `brd.md`（RIGID）→ `test_scores.py` 写阈值边界单测并跑通 → `scores.py` 实现纯函数对齐测试 → 跨步骤用集成测试锁。
+- **新增字段/接口**：先写/补 `tests/data/` 单测（字段、映射、契约）并跑通 → `contract.py` / `provider.py` 对齐实现 → mock/network 集成测试锁跨模块。
+- **新增 CLI 子命令**：先写/补单测锁入参、JSON 出参与退出码并跑通 → `src/tools/` + `src/cli.py` 对齐实现 → 集成测试锁端到端。
+- **更新锐评模型/Prompt**：先写/补单元测试与黄金样本并跑通 → `src/llm/` 与 `Settings` 对齐双 Provider → CI / 集成测试做回归。
 
 ## 安全与运行约束
 

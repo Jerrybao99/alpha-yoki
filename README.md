@@ -25,8 +25,6 @@ uv run pytest -m "not network"                       # mock 测试（CI 同款�
 uv run ruff check . && uv run ruff format --check .  # lint + 格式
 ```
 
-`alpha-jerry report` 已落地；`status / collect / scores / screen / holdings` 与 `--json` 仍属路线图需求 1。
-
 ### API Key 本地存储
 
 - 环境变量或 `.env` 中的 `DEEPSEEK_API_KEY` / `GLM_API_KEY` 优先。
@@ -58,32 +56,51 @@ Python 3.12 · uv · pydantic-settings · Tushare Pro · DeepSeek / GLM（OpenAI
 
 规划：完整 argparse CLI · OpenClaw 作为对话 / 微信 / 定时外壳（Skill / MCP）
 
+## 核心功能
+
+当前 MVP 四段：采集 → 评分 → 规则结论 → LLM 锐评出 Top20。
+
+- 采集：Tushare VIP 拉全市场财务特征，见 `src/data/`
+- 评分：一票否决 + 三维分 + 行业加权评级，见 `src/scoring/scores.py`
+- 规则结论：公司类型与操作建议，见 `src/reports/evaluation.py`
+- 锐评报告：DeepSeek / GLM 写亮点 / 风险 / 点评，出 13 列 Top20，见 `src/llm/` 与 `src/reports/generator.py`
+
 ## 项目结构
 
 ```
 src/
-├── cli.py           # alpha-jerry report 入口
-├── config.py        # Settings 全局配置
-├── data/            # 采集：contract / provider / collect / output
-├── scoring/         # 评分：scores（纯函数）
-├── reports/         # 报告：evaluation / reporting（纯函数）
-├── llm/             # 双 Provider 客户端 + 系统钥匙串凭据
-└── agents/          # 旧 LLM 导入路径兼容层
-scripts/             # I/O 编排：full_collect / full_scores / full_report / smoke_collect / sw_industry
-tests/               # 单元测试，镜像 src/
-integrated_tests/    # 集成测试（mock + network）
-data/                # 运行期数据，不入库（fin / ref / cache / test）
-docs/                # brd（业务 + RIGID 规则）
+├── cli.py                 # report / models 入口
+├── config.py              # Settings
+├── data/                  # 采集
+│   ├── contract.py        # StockFeatures、~460 列
+│   ├── provider.py        # Tushare 适配（VIP 批量）
+│   ├── collect.py         # 采集流水线
+│   ├── output.py          # 人读 CSV 落盘
+│   └── readers.py         # CSV 读回
+├── scoring/scores.py      # 否决、三维分、综合分、评级
+├── reports/               # 荐股
+│   ├── evaluation.py      # 公司类型、操作建议
+│   ├── facts.py           # 锐评输入子集
+│   ├── generator.py       # Top20 编排
+│   └── reporting.py       # 13 列写盘
+└── llm/                   # 双 Provider 锐评（client / review / validate）
+scripts/                   # full_collect / full_scores / full_report / sw_industry
+tests/  integrated_tests/  # 单测镜像 src / 集成测试
+data/                      # 运行期产物，不入库
+docs/                      # brd（业务 + RIGID 规则）
 ```
 
 规划新增：其余 CLI 子命令 · `src/tools/` · `src/banner.py` · `assets/icon/`。
 
-## 核心流程
+## 数据流
 
-```
-stock_basic → 4 个 VIP 接口批量采集（~460 字段）→ check_veto() 一票否决
-→ 三维评分 → score_composite() 行业加权 → score_rating() 四级评级
-→ 公司类型 + 操作建议 → LLM 亮点 / 风险 / 点评 → 荐股 Top20（13 列）
+```mermaid
+flowchart LR
+  A[Tushare + SW 缓存] -->|stock_basic + 4 VIP| B[采集 src/data]
+  B -->|StockFeatures CSV<br/>data/fin/full_collect/| C[评分 src/scoring]
+  C -->|评分 CSV<br/>data/fin/full_scores/| D[荐股 src/reports + src/llm]
+  C -->|否决 CSV| X[剔除]
+  D -->|13 列 Top20 CSV<br/>data/fin/full_report/| E[荐股报告]
 ```
 
 ## 定位
