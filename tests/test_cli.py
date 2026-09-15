@@ -2,12 +2,22 @@
 
 from __future__ import annotations
 
+import argparse
 from pathlib import Path
 
 import pytest
 
 import src.cli as cli
 from src.config import Settings
+
+COMMANDS = ("status", "collect", "scores", "screen", "holdings", "report", "models", "wechat")
+
+
+def _subparser(root: argparse.ArgumentParser, name: str) -> argparse.ArgumentParser:
+    for action in root._actions:
+        if isinstance(action, argparse._SubParsersAction):
+            return action.choices[name]
+    raise AssertionError(f"missing subcommand: {name}")
 
 
 def settings_for(tmp_path: Path) -> Settings:
@@ -92,7 +102,7 @@ def test_models_command_lists_endpoints_and_models(
 
 def test_parser_registers_all_subcommands() -> None:
     parser = cli.build_parser()
-    for command in ("status", "collect", "scores", "screen", "holdings", "report", "models", "wechat"):
+    for command in COMMANDS:
         extra = []
         if command == "holdings":
             extra = ["list"]
@@ -100,6 +110,41 @@ def test_parser_registers_all_subcommands() -> None:
             extra = ["status"]
         args = parser.parse_args([command, *extra])
         assert args.command == command
+
+
+def test_root_help_is_command_guide() -> None:
+    text = cli.build_parser().format_help()
+    assert "-h, --help" in text
+    assert "--json" in text
+    for command in COMMANDS:
+        assert command in text
+    assert "alpha-jerry <命令> --help" in text
+    assert "退出码" in text
+
+
+def test_main_help_exits_zero(capsys: pytest.CaptureFixture[str]) -> None:
+    with pytest.raises(SystemExit) as exc:
+        cli.main(["--help"])
+    assert exc.value.code == 0
+    output = capsys.readouterr().out
+    assert "collect" in output
+    assert "wechat" in output
+
+
+def test_subcommand_help_documents_flags() -> None:
+    parser = cli.build_parser()
+    collect = _subparser(parser, "collect").format_help()
+    assert "--update" in collect
+    assert "--force" in collect
+    assert "--codes" in collect
+    status = _subparser(parser, "status").format_help()
+    assert "--check" in status
+    report = _subparser(parser, "report").format_help()
+    assert "--provider" in report
+    assert "--model" in report
+    wechat = _subparser(parser, "wechat").format_help()
+    for action in ("login", "serve", "push", "status"):
+        assert action in wechat
 
 
 def test_main_json_emits_single_envelope(

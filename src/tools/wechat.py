@@ -146,6 +146,6 @@ def register(subparsers: argparse._SubParsersAction) -> None:
     action.add_parser("login", help="扫码登录并保存会话")
     action.add_parser("serve", help="长轮询收消息并回复")
     push = action.add_parser("push", help="向最近会话主动推送文本")
-    push.add_argument("--text", required=True)
+    push.add_argument("--text", required=True, help="推送正文")
     action.add_parser("status", help="查看登录与 context_token 状态")
     parser.set_defaults(handler="wechat")

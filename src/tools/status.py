@@ -50,5 +50,5 @@ def run_status(
 
 def register(subparsers: argparse._SubParsersAction) -> None:
     parser = subparsers.add_parser("status", help="检查采集/评分/报告新鲜度")
-    parser.add_argument("--check", action="store_true", help="过期或缺失时以退出码 4 结束")
+    parser.add_argument("--check", action="store_true", help="过期或缺失时以退出码 4 结束（供定时任务）")
     parser.set_defaults(handler="status")

@@ -33,10 +33,32 @@ __all__ = [
 ]
 
 
+_HELP_EPILOG = """\
+更多帮助：alpha-jerry <命令> --help
+
+常用：
+  alpha-jerry status --check
+  alpha-jerry collect --update
+  alpha-jerry collect --codes 600519.SH
+  alpha-jerry scores
+  alpha-jerry report --provider glm --model glm-5-turbo
+  alpha-jerry wechat login
+
+退出码：0 成功 · 2 配置 · 3 上游 · 4 数据缺失/过期
+"""
+
+
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="alpha-jerry", description="A 股基本面分析本地命令行工具")
-    parser.add_argument("--json", action="store_true", help="只输出一份 JSON 信封")
-    subparsers = parser.add_subparsers(dest="command")
+    parser = argparse.ArgumentParser(
+        prog="alpha-jerry",
+        description="A 股基本面分析本地命令行工具。-h / --help 查看本指南。",
+        epilog=_HELP_EPILOG,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        add_help=False,
+    )
+    parser.add_argument("-h", "--help", action="help", help="打印命令指南并退出")
+    parser.add_argument("--json", action="store_true", help="只输出一份 JSON 信封 {ok,command,data,error}")
+    subparsers = parser.add_subparsers(dest="command", metavar="<命令>")
     status_tool.register(subparsers)
     market_tool.register(subparsers)
     holdings_tool.register(subparsers)

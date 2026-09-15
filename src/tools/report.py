@@ -254,11 +254,11 @@ def run_report(
 
 def register(subparsers: argparse._SubParsersAction) -> None:
     report = subparsers.add_parser("report", help="生成荐股 Top20 报告")
-    report.add_argument("--provider", choices=SUPPORTED_PROVIDERS, default=None)
-    report.add_argument("--model", default=None)
-    report.add_argument("--no-save", dest="save", action="store_false")
+    report.add_argument("--provider", choices=SUPPORTED_PROVIDERS, default=None, help="deepseek 或 glm")
+    report.add_argument("--model", default=None, help="模型 ID，缺省走偏好或 .env")
+    report.add_argument("--no-save", dest="save", action="store_false", help="本次不覆盖已记忆的模型选择")
     report.set_defaults(handler="report", save=True)
 
     models = subparsers.add_parser("models", help="查看已核验的模型与 API 端点")
-    models.add_argument("--provider", choices=SUPPORTED_PROVIDERS, default=None)
+    models.add_argument("--provider", choices=SUPPORTED_PROVIDERS, default=None, help="只列出指定 Provider")
     models.set_defaults(handler="models")
