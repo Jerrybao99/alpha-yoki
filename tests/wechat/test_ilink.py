@@ -23,7 +23,7 @@ def _client(handler, uin: str = "uin-fixed") -> ILinkClient:
     return ILinkClient(
         base_url="https://ilinkai.weixin.qq.com",
         channel_version="2.4.8",
-        bot_agent="alpha-jerry/test",
+        bot_agent="alpha-yoki/test",
         timeout_ms=1000,
         trust_env=False,
         transport=httpx.MockTransport(handler),
@@ -58,7 +58,7 @@ def test_uin_is_random_per_request() -> None:
     client = ILinkClient(
         base_url="https://ilinkai.weixin.qq.com",
         channel_version="2.4.8",
-        bot_agent="alpha-jerry/test",
+        bot_agent="alpha-yoki/test",
         timeout_ms=1000,
         trust_env=False,
         transport=httpx.MockTransport(handler),
@@ -99,7 +99,7 @@ def test_get_updates_passes_cursor_and_bearer() -> None:
     body = json.loads(request.content)
     assert body["get_updates_buf"] == "cursor-1"
     assert body["base_info"]["channel_version"] == "2.4.8"
-    assert body["base_info"]["bot_agent"] == "alpha-jerry/test"
+    assert body["base_info"]["bot_agent"] == "alpha-yoki/test"
 
 
 @pytest.mark.parametrize("payload", [{"ret": -14}, {"errcode": -14}])
@@ -126,7 +126,7 @@ def test_send_text_body_contract() -> None:
     assert msg["context_token"] == "ctx-9"
     assert msg["to_user_id"] == "user-1"
     assert msg["item_list"][0]["text_item"]["text"] == "你好"
-    assert msg["client_id"].startswith("alpha-jerry:")
+    assert msg["client_id"].startswith("alpha-yoki:")
     assert result["client_id"] == msg["client_id"]
     assert body["base_info"]["channel_version"] == "2.4.8"
 

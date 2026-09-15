@@ -12,7 +12,7 @@ from keyring.errors import KeyringError
 
 from src.config import Settings, get_settings
 
-SERVICE_NAME = "alpha-jerry"
+SERVICE_NAME = "alpha-yoki"
 SUPPORTED_PROVIDERS: tuple[str, ...] = ("deepseek", "glm")
 
 _SETTINGS_KEY_ATTR = {

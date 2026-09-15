@@ -1,4 +1,4 @@
-"""alpha-jerry CLI：参数解析、交互选择与模型目录单测。"""
+"""alpha-yoki CLI：参数解析、交互选择与模型目录单测。"""
 
 from __future__ import annotations
 
@@ -118,7 +118,7 @@ def test_root_help_is_command_guide() -> None:
     assert "--json" in text
     for command in COMMANDS:
         assert command in text
-    assert "alpha-jerry <命令> --help" in text
+    assert "alpha-yoki <命令> --help" in text
     assert "退出码" in text
 
 
@@ -181,4 +181,4 @@ def test_main_non_tty_has_no_banner(
     cli.main(["status"])
     output = capsys.readouterr().out
     assert "🐰" not in output
-    assert "alpha-jerry v" not in output
+    assert "alpha-yoki v" not in output

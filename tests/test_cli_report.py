@@ -1,4 +1,4 @@
-"""alpha-jerry report 子命令：退出码、密钥与 fallback 接驳单测。"""
+"""alpha-yoki report 子命令：退出码、密钥与 fallback 接驳单测。"""
 
 from __future__ import annotations
 

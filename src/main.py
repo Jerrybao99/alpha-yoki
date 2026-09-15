@@ -1,5 +1,5 @@
-"""alpha-jerry 运行入口：加载配置并打印状态，验证工程基线可用。
-CLI（alpha-jerry）落地前的最小入口。
+"""alpha-yoki 运行入口：加载配置并打印状态，验证工程基线可用。
+CLI（alpha-yoki）落地前的最小入口。
 """
 
 from __future__ import annotations
@@ -10,7 +10,7 @@ from src.llm.credentials import has_api_key
 
 def main() -> None:
     settings = get_settings()
-    print("alpha-jerry")
+    print("alpha-yoki")
     print(f"  数据目录      : {settings.data_dir}")
     print(f"  默认 LLM      : {settings.llm_provider}")
     print(f"  DeepSeek 模型 : {settings.deepseek_model}")

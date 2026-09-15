@@ -1,6 +1,6 @@
 # Changelog
 
-本文件记录 alpha-jerry 的所有显著变更。
+本文件记录 alpha-yoki 的所有显著变更。
 
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，版本号遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
 
@@ -72,10 +72,10 @@
 - DeepSeek / GLM 双 Provider 锐评子系统：白名单校验、重试、跨模型切换、规则兜底、缓存与追踪
 - `report` / `models` 交互选择与偏好记忆
 
-[unreleased]: https://github.com/Jerrybao99/alpha-jerry/compare/v1.0.0...HEAD
-[1.0.0]: https://github.com/Jerrybao99/alpha-jerry/compare/v0.8.0...v1.0.0
-[0.8.0]: https://github.com/Jerrybao99/alpha-jerry/compare/v0.7.0...v0.8.0
-[0.7.0]: https://github.com/Jerrybao99/alpha-jerry/compare/v0.6.0...v0.7.0
-[0.6.0]: https://github.com/Jerrybao99/alpha-jerry/compare/v0.5.0...v0.6.0
-[0.5.0]: https://github.com/Jerrybao99/alpha-jerry/compare/v0.4.0...v0.5.0
-[0.4.0]: https://github.com/Jerrybao99/alpha-jerry/releases/tag/v0.4.0
+[unreleased]: https://github.com/Jerrybao99/alpha-yoki/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/Jerrybao99/alpha-yoki/compare/v0.8.0...v1.0.0
+[0.8.0]: https://github.com/Jerrybao99/alpha-yoki/compare/v0.7.0...v0.8.0
+[0.7.0]: https://github.com/Jerrybao99/alpha-yoki/compare/v0.6.0...v0.7.0
+[0.6.0]: https://github.com/Jerrybao99/alpha-yoki/compare/v0.5.0...v0.6.0
+[0.5.0]: https://github.com/Jerrybao99/alpha-yoki/compare/v0.4.0...v0.5.0
+[0.4.0]: https://github.com/Jerrybao99/alpha-yoki/releases/tag/v0.4.0

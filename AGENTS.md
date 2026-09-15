@@ -1,6 +1,6 @@
 # AGENTS.md - Agent 工作指南
 
-- alpha-jerry 项目级 AI 刚性规范与上下文入口；冲突时本指南优先；业务规则以 `docs/brd.md` 表格为准（RIGID）。
+- alpha-yoki 项目级 AI 刚性规范与上下文入口；冲突时本指南优先；业务规则以 `docs/brd.md` 表格为准（RIGID）。
 - 个人单人开发，Windows / macOS 双端对齐，直推 `main`。交付形态为纯本地 CLI 工具集，不自研套壳 Agent。
 
 ## 相关文档
@@ -36,7 +36,7 @@
 ## 项目目录
 
 ```
-alpha-jerry
+alpha-yoki
 ├── src/
 │   ├── config.py            # Settings 单例 + data 子目录映射
 │   ├── data/                # 采集层：contract / provider / collect / output / store
@@ -64,7 +64,7 @@ alpha-jerry
 
 ## 常用命令
 
-- 依赖与运行：`python3 scripts/uv_sync.py`（或 `uv sync`） · `uv run python -m src.cli`（或 `alpha-jerry`）
+- 依赖与运行：`python3 scripts/uv_sync.py`（或 `uv sync`） · `uv run python -m src.cli`（或 `alpha-yoki`）
 - 质量检查：`uv run ruff check .` · `uv run ruff format .` · `uv run pytest -m "not network" --cov=src --cov-fail-under=80`
 - 业务流水线：`uv run python scripts/full_collect.py` · `scripts/full_scores.py` · `scripts/full_report.py`
 - 修改验证：1. `ruff check .` 无警告；2. `pytest` not network 覆盖率 ≥80%；3. `python -c "from src.config import Settings; Settings()"` 可加载

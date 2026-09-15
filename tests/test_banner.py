@@ -7,7 +7,7 @@ from src.banner import VERSION, detect_mode, render
 
 def test_render_wide_color_contains_wordmark_and_version() -> None:
     text = render(width=80, color=True, ascii_only=False)
-    assert "alpha-jerry" in text.lower() or "ALPHA" in text or "▀" in text or "█" in text
+    assert "alpha-yoki" in text.lower() or "ALPHA" in text or "▀" in text or "█" in text
     assert VERSION in text
     assert "\x1b[" in text
 
@@ -16,26 +16,32 @@ def test_render_narrow_is_single_line() -> None:
     text = render(width=30, color=False, ascii_only=False)
     assert text.count("\n") == 0
     assert "🐰" in text
-    assert "alpha-jerry" in text
+    assert "alpha-yoki" in text
     assert VERSION in text
 
 
 def test_render_ascii_only_is_ascii() -> None:
     text = render(width=80, color=False, ascii_only=True)
     assert text.isascii()
-    assert "alpha-jerry" in text.lower() or "ALPHA-JERRY" in text or "#" in text
+    assert "#" in text
 
 
-def test_render_color_shows_chinese_name_and_gold_accent() -> None:
+def test_render_color_uses_chocolate_and_gold() -> None:
     text = render(width=80, color=True, ascii_only=False)
-    assert "阿尔法杰瑞" in text
+    assert "\x1b[38;2;122;74;43m" in text
     assert "\x1b[38;2;217;165;58m" in text
 
 
-def test_render_plain_shows_chinese_name_without_escape() -> None:
+def test_render_plain_has_no_escape() -> None:
     text = render(width=80, color=False, ascii_only=False)
-    assert "阿尔法杰瑞" in text
     assert "\x1b[" not in text
+
+
+def test_render_rabbit_has_dwarf_details() -> None:
+    text = render(width=80, color=False, ascii_only=False)
+    assert "●" in text
+    assert "‿ω‿" in text
+    assert "▄" in text
 
 
 def test_render_wide_lays_rabbit_beside_wordmark() -> None:
@@ -49,16 +55,10 @@ def test_render_medium_stacks_rabbit_above_wordmark() -> None:
     assert not any("│" in line and "█" in line for line in text.splitlines())
 
 
-def test_render_narrow_shows_chinese_name() -> None:
-    text = render(width=30, color=False, ascii_only=False)
-    assert "阿尔法杰瑞" in text
-    assert "alpha-jerry" in text
-
-
-def test_render_ascii_subtitle_is_latin() -> None:
+def test_render_ascii_subtitle_is_latin_version() -> None:
     text = render(width=80, color=False, ascii_only=True)
     assert text.isascii()
-    assert f"alpha-jerry v{VERSION}" in text
+    assert f"v{VERSION}" in text
 
 
 def test_detect_mode_no_color_and_dumb_term() -> None:
@@ -87,7 +87,7 @@ def test_bare_cli_prints_banner_and_help(monkeypatch, capsys) -> None:
     monkeypatch.setattr("src.banner.enable_windows_vt", lambda: False)
     assert cli.main([]) == cli.EXIT_OK
     output = capsys.readouterr().out
-    assert "alpha-jerry" in output.lower()
+    assert "alpha-yoki" in output.lower()
     assert "usage:" in output.lower() or "status" in output
 
 

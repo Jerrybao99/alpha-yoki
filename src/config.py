@@ -62,7 +62,7 @@ class Settings(BaseSettings):
     # ===== 微信 iLink =====
     wechat_base_url: str = "https://ilinkai.weixin.qq.com"
     wechat_channel_version: str = "2.4.8"
-    wechat_bot_agent: str = "alpha-jerry/1.0.0"
+    wechat_bot_agent: str = "alpha-yoki/1.0.0"
     wechat_poll_timeout_ms: int = 35000
     wechat_allowed_users: str = ""  # 空=仅扫码授权者；逗号分隔 ilink_user_id
     wechat_digest_times: str = "09:00,17:00"

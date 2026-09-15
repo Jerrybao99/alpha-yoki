@@ -1,4 +1,4 @@
-"""alpha-jerry 命令行入口：UTF-8、JSON 信封、退出码 0/2/3/4。"""
+"""alpha-yoki 命令行入口：UTF-8、JSON 信封、退出码 0/2/3/4。"""
 
 from __future__ import annotations
 
@@ -36,19 +36,19 @@ __all__ = [
 
 
 _HELP_EPILOG = """\
-更多帮助：alpha-jerry <命令> --help
+更多帮助：alpha-yoki <命令> --help
 
 常用：
-  alpha-jerry status --check
-  alpha-jerry collect --update
-  alpha-jerry collect --resume
-  alpha-jerry collect --codes 600519.SH
-  alpha-jerry scores
-  alpha-jerry models
-  alpha-jerry models use glm
-  alpha-jerry models use deepseek --model deepseek-flash
-  alpha-jerry report
-  alpha-jerry wechat login
+  alpha-yoki status --check
+  alpha-yoki collect --update
+  alpha-yoki collect --resume
+  alpha-yoki collect --codes 600519.SH
+  alpha-yoki scores
+  alpha-yoki models
+  alpha-yoki models use glm
+  alpha-yoki models use deepseek --model deepseek-flash
+  alpha-yoki report
+  alpha-yoki wechat login
 
 退出码：0 成功 · 2 配置 · 3 上游 · 4 数据缺失/过期
 """
@@ -56,7 +56,7 @@ _HELP_EPILOG = """\
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="alpha-jerry",
+        prog="alpha-yoki",
         description="A 股基本面分析本地命令行工具。-h / --help 查看本指南。",
         epilog=_HELP_EPILOG,
         formatter_class=argparse.RawDescriptionHelpFormatter,

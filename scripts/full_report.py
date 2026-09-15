@@ -1,4 +1,4 @@
-"""荐股 TopN 兼容脚本；交互入口优先使用 ``alpha-jerry report``。"""
+"""荐股 TopN 兼容脚本；交互入口优先使用 ``alpha-yoki report``。"""
 
 from __future__ import annotations
 

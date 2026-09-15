@@ -27,7 +27,7 @@ def default_tools(settings: Settings) -> ToolMap:
     def _report() -> str:
         path = latest(Kind.REPORT, settings=settings)
         if path is None:
-            return "无报告，请先在本机运行 alpha-jerry report"
+            return "无报告，请先在本机运行 alpha-yoki report"
         rows = load_scoring_rows(path)[:TOP_N]
         if not rows:
             return f"报告已生成：{path.name}"

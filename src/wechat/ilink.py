@@ -146,7 +146,7 @@ class ILinkClient:
         return response.json()
 
     def send_text(self, token: str, to_user: str, context_token: str, text: str) -> dict[str, Any]:
-        client_id = f"alpha-jerry:{uuid.uuid4()}"
+        client_id = f"alpha-yoki:{uuid.uuid4()}"
         body = {
             "msg": {
                 "from_user_id": "",

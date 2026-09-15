@@ -6,28 +6,35 @@ import os
 import sys
 from importlib import metadata
 
-CHOCOLATE = "\x1b[38;2;138;82;38m"
+CHOCOLATE = "\x1b[38;2;122;74;43m"
 GOLD = "\x1b[38;2;217;165;58m"
 DIM = "\x1b[90m"
 RESET = "\x1b[0m"
 NARROW_WIDTH = 48
 WIDE_WIDTH = 68
 
+# 荷兰侏儒兔：短立耳、耳内绒、圆脸发腮、腮绒与鼻嘴。
 _LINE_RABBIT = (
-    "╭──╮   ╭──╮",
-    "│  │   │  │",
-    "│  ╰───╯  │",
-    "│  ●   ●  │",
-    "│    ω    │",
-    "╰─────────╯",
+    "  ╭──╮   ╭──╮  ",
+    "  │ ▄│   │▄ │  ",
+    "  │  ╰───╯  │  ",
+    "  │         │  ",
+    " ╭╯  ●   ●  ╰╮ ",
+    " │ ▄   ▽   ▄ │ ",
+    " │    ‿ω‿    │ ",
+    " ╰╮         ╭╯ ",
+    "  ╰─────────╯  ",
 )
 _ASCII_RABBIT = (
-    " /\\   /\\",
-    "| |   | |",
-    "|  \\_/  |",
-    "| o   o |",
-    "|   w   |",
-    " \\_____/",
+    "  /\\   /\\  ",
+    " | |   | | ",
+    " |  \\_/  | ",
+    " |       | ",
+    "/|  o o  |\\",
+    "| .  v  . |",
+    "|    w    |",
+    " \\       / ",
+    "  \\_____/  ",
 )
 
 # 5 行位图，OpenCode 风格块状字母；仅覆盖 wordmark 用到的字形。
@@ -36,10 +43,10 @@ _GLYPHS: dict[str, tuple[str, ...]] = {
     "L": ("█   ", "█   ", "█   ", "█   ", "▀▀▀▀"),
     "P": ("█▀▀▄", "█  █", "█▀▀ ", "█   ", "▀   "),
     "H": ("█  █", "█  █", "█▀▀█", "█  █", "▀  ▀"),
-    "J": ("   █", "   █", "   █", "█  █", " ▀▀ "),
-    "E": ("█▀▀▀", "█   ", "█▀▀ ", "█   ", "▀▀▀▀"),
-    "R": ("█▀▀▄", "█  █", "█▀▀▄", "█  █", "▀  ▀"),
     "Y": ("█  █", "█  █", " ▀█▀", "  █ ", "  ▀ "),
+    "O": ("▄▀▀▄", "█  █", "█  █", "█  █", "▀▄▄▀"),
+    "K": ("█  █", "█ ▄▀", "█▀▄ ", "█ ▀▄", "▀  ▀"),
+    "I": ("▀▀▀▀", " ██ ", " ██ ", " ██ ", "▀▀▀▀"),
     "-": ("    ", "    ", " ▀▀ ", "    ", "    "),
     " ": ("  ", "  ", "  ", "  ", "  "),
 }
@@ -48,10 +55,10 @@ _ASCII_GLYPHS: dict[str, tuple[str, ...]] = {
     "L": ("#   ", "#   ", "#   ", "#   ", "####"),
     "P": ("### ", "#  #", "### ", "#   ", "#   "),
     "H": ("#  #", "#  #", "####", "#  #", "#  #"),
-    "J": ("  ##", "   #", "   #", "#  #", " ## "),
-    "E": ("####", "#   ", "### ", "#   ", "####"),
-    "R": ("### ", "#  #", "### ", "#  #", "#  #"),
     "Y": ("#  #", "#  #", " ## ", "  # ", "  # "),
+    "O": (" ## ", "#  #", "#  #", "#  #", " ## "),
+    "K": ("#  #", "# # ", "##  ", "# # ", "#  #"),
+    "I": ("####", " ## ", " ## ", " ## ", "####"),
     "-": ("    ", "    ", " ## ", "    ", "    "),
     " ": ("  ", "  ", "  ", "  ", "  "),
 }
@@ -59,7 +66,7 @@ _ASCII_GLYPHS: dict[str, tuple[str, ...]] = {
 
 def _package_version() -> str:
     try:
-        return metadata.version("alpha-jerry")
+        return metadata.version("alpha-yoki")
     except metadata.PackageNotFoundError:
         return "1.0.0"
 
@@ -70,7 +77,7 @@ VERSION = _package_version()
 def _wordmark(ascii_only: bool) -> list[str]:
     table = _ASCII_GLYPHS if ascii_only else _GLYPHS
     rows = [""] * 5
-    for char in "ALPHA-JERRY":
+    for char in "ALPHA-YOKI":
         glyph = table.get(char, table[" "])
         for index, piece in enumerate(glyph):
             rows[index] += piece + " "
@@ -84,40 +91,41 @@ def _paint(text: str, colorful: bool) -> str:
 
 
 def _paint_rabbit(row: str, colorful: bool) -> str:
-    """眼鼻用金币金点缀，呼应品牌 Logo 配色。"""
+    """耳内绒、腮绒、鼻嘴用金币金点缀，呼应品牌 Logo 配色。"""
     if not colorful:
         return row
-    accented = row.replace("●", f"{GOLD}●{CHOCOLATE}").replace("ω", f"{GOLD}ω{CHOCOLATE}")
+    accented = (
+        row.replace("▄", f"{GOLD}▄{CHOCOLATE}").replace("▽", f"{GOLD}▽{CHOCOLATE}").replace("ω", f"{GOLD}ω{CHOCOLATE}")
+    )
     return f"{CHOCOLATE}{accented}{RESET}"
 
 
-def _subtitle(ascii_only: bool, colorful: bool) -> str:
-    if ascii_only:
-        return f"alpha-jerry v{VERSION}"
+def _subtitle(colorful: bool) -> str:
     if not colorful:
-        return f"阿尔法杰瑞 · v{VERSION}"
-    return f"{GOLD}阿尔法杰瑞{RESET} {DIM}· v{VERSION}{RESET}"
+        return f"v{VERSION}"
+    return f"{DIM}v{VERSION}{RESET}"
 
 
 def render(width: int, color: bool, ascii_only: bool) -> str:
     """宽屏左兔右标，中屏上下堆叠，窄屏单行；ascii_only 保证 .isascii()。"""
     if width < NARROW_WIDTH:
         if ascii_only:
-            return f"alpha-jerry v{VERSION}"
-        return f"🐰 阿尔法杰瑞 · alpha-jerry v{VERSION}"
+            return f"alpha-yoki v{VERSION}"
+        return f"🐰 alpha-yoki v{VERSION}"
     colorful = color and not ascii_only
     raw_rabbit = _ASCII_RABBIT if ascii_only else _LINE_RABBIT
     side_by_side = width >= WIDE_WIDTH
     cell = max(len(row) for row in raw_rabbit) + 3 if side_by_side else 0
     rabbit = [_paint_rabbit(row.ljust(cell), colorful) for row in raw_rabbit]
     right = [_paint(row, colorful) for row in _wordmark(ascii_only)]
-    right.append(_subtitle(ascii_only, colorful))
+    right.append(_subtitle(colorful))
     if not side_by_side:
         return "\n".join(rabbit + [""] + right)
+    right_block = ["", *right]
     lines = []
-    for index in range(max(len(rabbit), len(right))):
+    for index in range(max(len(rabbit), len(right_block))):
         left = rabbit[index] if index < len(rabbit) else " " * cell
-        lines.append(left + (right[index] if index < len(right) else ""))
+        lines.append(left + (right_block[index] if index < len(right_block) else ""))
     return "\n".join(lines)
 
 

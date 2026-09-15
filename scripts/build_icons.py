@@ -9,7 +9,7 @@ from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
 ICON_DIR = ROOT / "assets" / "icon"
-SOURCE = ICON_DIR / "alpha-jerry.png"
+SOURCE = ICON_DIR / "alpha-yoki.png"
 ICO_SIZES = (16, 24, 32, 48, 64, 128, 256)
 
 
@@ -24,12 +24,12 @@ def build(source: Path = SOURCE) -> dict[str, Path]:
     if not source.exists():
         raise SystemExit(f"缺少源图：{source}")
     image = _load_square(source)
-    png_path = ICON_DIR / "alpha-jerry.png"
+    png_path = ICON_DIR / "alpha-yoki.png"
     ICON_DIR.mkdir(parents=True, exist_ok=True)
     image.save(png_path, format="PNG")
-    ico_path = ICON_DIR / "alpha-jerry.ico"
+    ico_path = ICON_DIR / "alpha-yoki.ico"
     image.save(ico_path, format="ICO", sizes=[(size, size) for size in ICO_SIZES])
-    icns_path = ICON_DIR / "alpha-jerry.icns"
+    icns_path = ICON_DIR / "alpha-yoki.icns"
     try:
         image.save(icns_path, format="ICNS")
     except (ValueError, OSError, KeyError):
@@ -47,7 +47,7 @@ def _write_icns_via_iconutil(image: Image.Image, dest: Path) -> Path:
         print("Pillow 无法写 icns 且找不到 iconutil，已跳过", file=sys.stderr)
         return dest
     with tempfile.TemporaryDirectory() as tmp:
-        iconset = Path(tmp) / "alpha-jerry.iconset"
+        iconset = Path(tmp) / "alpha-yoki.iconset"
         iconset.mkdir()
         for size in (16, 32, 64, 128, 256, 512, 1024):
             resized = image.resize((size, size), Image.Resampling.LANCZOS)

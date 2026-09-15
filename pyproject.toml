@@ -1,5 +1,5 @@
 [project]
-name = "alpha-jerry"
+name = "alpha-yoki"
 version = "1.0.0"
 description = "A 股基本面分析本地命令行工具：Tushare 采集 → 一票否决 → 三维评分 → 行业加权评级 → LLM 锐评（本地优先）"
 readme = "README.md"
@@ -17,7 +17,7 @@ dependencies = [
 ]
 
 [project.scripts]
-alpha-jerry = "src.cli:main"
+alpha-yoki = "src.cli:main"
 
 [dependency-groups]
 dev = [
