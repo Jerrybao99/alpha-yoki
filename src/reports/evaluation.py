@@ -1,5 +1,5 @@
-"""公司类型分类与操作建议规则引擎：classify_company_type 按 §8.7/§8.8 判断
-千里马/现金牛/护城河，get_advice 按 §8.9 映射评级→操作建议与仓位。纯函数，不调 LLM。
+"""公司类型分类与操作建议规则引擎：classify_company_type 按 brd.md 公司类型 / 行业分类表判断
+千里马/现金牛/护城河，get_advice 按 brd.md 操作建议表映射评级→操作建议与仓位。纯函数，不调 LLM。
 """
 
 from __future__ import annotations
@@ -56,7 +56,7 @@ class CompanyTypeResult:
 def classify_company_type(
     f: StockFeatures, industry: str | None = None
 ) -> CompanyTypeResult:
-    """按 §8.7/§8.8 判断公司类型。行业优先，辅以财务指标微调。
+    """按 brd.md 公司类型 / 行业分类表判断公司类型。行业优先，辅以财务指标微调。
 
     Args:
         f: 单股特征数据。
@@ -129,7 +129,7 @@ _RATINGS_ADVICE: dict[str, AdviceResult] = {
 
 
 def get_advice(rating: str) -> AdviceResult:
-    """评级 → 操作建议与仓位建议（§8.9）。纯函数，直接查表映射。"""
+    """评级 → 操作建议与仓位建议（brd.md 操作建议表）。纯函数，直接查表映射。"""
     if rating in _RATINGS_ADVICE:
         return _RATINGS_ADVICE[rating]
     return AdviceResult("谨慎观望", "<5%", "hold")

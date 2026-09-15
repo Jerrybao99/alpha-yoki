@@ -29,10 +29,9 @@ Thumbs.db
 # 运行期数据（不上传云端，保护用户隐私）；锚定根目录，避免误伤嵌套 data/
 /data/
 
-# 密钥与本地配置
+# 密钥与本地配置（.python-version 入库：Win/Mac/CI 统一 Python 版本）
 .env
 .env.local
-.python-version
 
 # IDE（团队共享配置除外）
 .idea/
@@ -40,3 +39,6 @@ Thumbs.db
 
 # 日志
 *.log
+
+# 路线图本地私有，不入库（任意目录下的 ROADMAP.md）
+ROADMAP.md

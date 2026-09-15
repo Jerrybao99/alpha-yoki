@@ -1,4 +1,4 @@
-"""全量 A 股批量采集脚本（ROADMAP Step 1-5）。
+"""全量 A 股批量采集脚本。
 
 用法：
   uv run python scripts/full_collect.py                         # 默认批量模式，最新报告期

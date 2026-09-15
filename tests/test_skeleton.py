@@ -1,7 +1,5 @@
-"""M0 工程骨架测试（ROADMAP Step 0.4）。
-
-目的：让 CI 有东西可跑，验证工程基线（配置入口可导入、单例可构造、数据目录可创建）。
-后续里程碑的纯逻辑单测另起文件，不堆在这里。
+"""工程骨架测试：验证配置入口可导入、单例可构造、数据目录可创建。
+业务纯逻辑单测另起文件，不堆在这里。
 """
 
 from __future__ import annotations
@@ -14,7 +12,7 @@ from src.config import DATA_SUBDIRS, Settings, get_settings
 
 
 def test_settings_importable() -> None:
-    """ROADMAP 给出的最小骨架用例：Settings 可导入。"""
+    """最小骨架用例：Settings 可导入。"""
     assert Settings is not None
 
 
@@ -26,15 +24,23 @@ def test_get_settings_singleton() -> None:
 
 
 def test_settings_defaults() -> None:
-    """默认值对齐 dev-guide §10.2 / .env.example。"""
-    s = Settings()
-    assert s.deepseek_model == "deepseek-v4-pro"
+    """默认值对齐 .env.example。"""
+    s = Settings(_env_file=None)
+    assert s.llm_provider == "deepseek"
+    assert s.deepseek_model == "deepseek-flash"
     assert s.deepseek_base_url == "https://api.deepseek.com"
+    assert s.glm_model == "glm-5.3-flash"
+    assert s.glm_base_url == "https://open.bigmodel.cn/api/paas/v4/"
     assert s.data_dir == "data"
     assert s.concurrency == 4
     assert s.tushare_rate_limit == 500
     assert s.cache_ttl_hours == 24
-    assert s.wechat_push_enabled is False
+    assert s.vip_page_size == 5000
+    assert s.review_fallback_provider == "auto"
+    assert s.review_max_retries == 1
+    assert s.review_max_tokens == 600
+    assert s.review_temperature == 0.3
+    assert s.review_cache_enabled is True
 
 
 def test_data_path_creates_subdir(
@@ -50,16 +56,8 @@ def test_data_path_creates_subdir(
 
 
 def test_data_subdirs_mapping_complete() -> None:
-    """data 子目录映射与 dev-guide §0 约定一致。"""
-    assert set(DATA_SUBDIRS) == {
-        "fin",
-        "full_report",
-        "hold",
-        "hot",
-        "monitor",
-        "feedback",
-        "rag",
-    }
+    """data 子目录映射与 AGENTS.md 项目目录约定一致。"""
+    assert set(DATA_SUBDIRS) == {"fin", "ref", "cache", "hold", "monitor", "test"}
 
 
 def test_main_entry_importable() -> None:

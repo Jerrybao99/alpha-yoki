@@ -7,6 +7,7 @@ from __future__ import annotations
 import pytest
 
 from src.agents.llm_adapter import LLMClient, LLMResponse
+from src.llm.credentials import has_api_key
 
 # ===== mock 测试 =====
 
@@ -29,13 +30,15 @@ def test_llm_response_is_frozen():
 
 
 def test_llm_client_importable():
-    client = LLMClient(model="test-model")
+    client = LLMClient(model="test-model", api_key="test-key")
     assert client._model == "test-model"
 
 
 def test_llm_client_default_model():
-    client = LLMClient()
-    assert client._model == "deepseek-v4-pro"
+    from src.config import Settings
+
+    client = LLMClient(api_key="test-key", settings=Settings(_env_file=None))
+    assert client._model == "deepseek-flash"
 
 
 def test_chat_completion_mock(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -76,7 +79,7 @@ def test_chat_completion_mock(monkeypatch: pytest.MonkeyPatch) -> None:
         def __init__(self):
             self.chat = _FakeChat()
 
-    client = LLMClient(model="test-model")
+    client = LLMClient(model="test-model", api_key="test-key")
     monkeypatch.setattr(client, "_client", _FakeOpenAI())
     resp = client.chat_completion(
         system="你是助手", user="你好", temperature=0.5, max_tokens=128
@@ -95,48 +98,41 @@ def test_chat_completion_mock(monkeypatch: pytest.MonkeyPatch) -> None:
     assert last_kw["stream"] is False
 
 
-def test_chat_completion_fallback_to_reasoning(monkeypatch: pytest.MonkeyPatch) -> None:
-    """content 为空时回退取 reasoning_content。"""
+def _reasoning_only_openai():
+    """构造 content 为空、仅有 reasoning_content 的假客户端。"""
+    from types import SimpleNamespace
 
-    class _FakeChoice:
-        class _Msg:
-            content = ""
-            reasoning_content = "thinking..."
+    message = SimpleNamespace(content="", reasoning_content="thinking...")
+    response = SimpleNamespace(
+        choices=[SimpleNamespace(message=message, index=0)],
+        model="mock-model",
+        usage=SimpleNamespace(prompt_tokens=3, completion_tokens=8, total_tokens=11),
+    )
+    completions = SimpleNamespace(create=lambda **kw: response)
+    return SimpleNamespace(chat=SimpleNamespace(completions=completions))
 
-        def __init__(self):
-            self.message = self._Msg()
-            self.index = 0
 
-    class _FakeUsage:
-        prompt_tokens = 3
-        completion_tokens = 8
-        total_tokens = 11
-
-    class _FakeCompletions:
-        def create(self, **kw):
-            return type(
-                "_F",
-                (),
-                {
-                    "choices": [_FakeChoice()],
-                    "model": "mock-model",
-                    "usage": _FakeUsage(),
-                },
-            )()
-
-    class _FakeChat:
-        def __init__(self):
-            self.completions = _FakeCompletions()
-
-    class _FakeOpenAI:
-        def __init__(self):
-            self.chat = _FakeChat()
-
-    client = LLMClient(model="test-model")
-    monkeypatch.setattr(client, "_client", _FakeOpenAI())
+def test_chat_completion_never_uses_reasoning_as_content_by_default(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """content 为空时默认返回空串，思考链绝不冒充正文。"""
+    client = LLMClient(model="test-model", api_key="test-key")
+    monkeypatch.setattr(client, "_client", _reasoning_only_openai())
     resp = client.chat_completion(system="", user="", max_tokens=64)
-    assert resp.content == "thinking..."
+    assert resp.content == ""
     assert resp.input_tokens == 3
+
+
+def test_chat_completion_reasoning_fallback_is_opt_in(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """显式 reasoning_fallback=True 才允许回退取 reasoning_content。"""
+    client = LLMClient(model="test-model", api_key="test-key")
+    monkeypatch.setattr(client, "_client", _reasoning_only_openai())
+    resp = client.chat_completion(
+        system="", user="", max_tokens=64, reasoning_fallback=True
+    )
+    assert resp.content == "thinking..."
 
 
 def test_stream_completion_mock(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -174,16 +170,27 @@ def test_stream_completion_mock(monkeypatch: pytest.MonkeyPatch) -> None:
         def __init__(self):
             self.chat = _FakeChat()
 
-    client = LLMClient(model="test-model")
+    client = LLMClient(model="test-model", api_key="test-key")
     monkeypatch.setattr(client, "_client", _FakeOpenAI())
     chunks = list(
         client.stream_completion(
             system="你是助手", user="你好", temperature=0.7, max_tokens=512
         )
     )
-    assert chunks == ["mock", "think"]
+    assert chunks == ["mock"]
     assert last_kw["model"] == "test-model"
     assert last_kw["stream"] is True
+
+    with_reasoning = list(
+        client.stream_completion(
+            system="你是助手",
+            user="你好",
+            temperature=0.7,
+            max_tokens=512,
+            reasoning_fallback=True,
+        )
+    )
+    assert with_reasoning == ["mock", "think"]
 
 
 # ===== network 测试 =====
@@ -198,10 +205,10 @@ def test_real_chat_completion() -> None:
     from src.config import get_settings
 
     settings = get_settings()
-    if not settings.deepseek_api_key.strip():
+    if not has_api_key("deepseek", settings=settings):
         pytest.skip("未配置 DEEPSEEK_API_KEY")
 
-    client = LLMClient()
+    client = LLMClient(provider="deepseek", settings=settings)
     resp = client.chat_completion(
         system="你是一个股票分析助手，用简短中文回答。",
         user="一句话介绍贵州茅台。",
@@ -223,10 +230,10 @@ def test_real_stream_completion() -> None:
     from src.config import get_settings
 
     settings = get_settings()
-    if not settings.deepseek_api_key.strip():
+    if not has_api_key("deepseek", settings=settings):
         pytest.skip("未配置 DEEPSEEK_API_KEY")
 
-    client = LLMClient()
+    client = LLMClient(provider="deepseek", settings=settings)
     chunks: list[str] = []
     for chunk in client.stream_completion(
         system="你是一个股票分析助手，用简短中文回答。",
@@ -246,10 +253,10 @@ def test_chat_completion_with_low_temperature() -> None:
     from src.config import get_settings
 
     settings = get_settings()
-    if not settings.deepseek_api_key.strip():
+    if not has_api_key("deepseek", settings=settings):
         pytest.skip("未配置 DEEPSEEK_API_KEY")
 
-    client = LLMClient()
+    client = LLMClient(provider="deepseek", settings=settings)
     resp1 = client.chat_completion(
         system="你是数学助手，只输出数字。",
         user="1+1等于几？",

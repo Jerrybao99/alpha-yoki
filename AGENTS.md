@@ -1,138 +1,106 @@
----
-tags: [dev-guide, AGENTS]
-date: 2026-07-28
----
+# AGENTS.md - Agent 工作指南
 
-# `AGENTS.md` 规范
+- alpha-jerry 项目级 AI 刚性规范与上下文入口；冲突时本指南优先；业务规则以 `docs/brd.md` 表格为准（RIGID）。
+- 个人单人开发，Windows / macOS 双端对齐，直推 `main`。交付形态为纯本地 CLI 工具集，不自研套壳 Agent。
 
-- alpha-jerry 项目级 AI 行为规范配置文件，是为项目上下文入口
-- 只放影响 AI 行为的指令，缺了就会做错或必须遵守的刚性规则
-- `AGENTS.md` 冲突时以项目级优先（就近原则）；业务规则以 `docs/dev-guide.md` §8 为准
+## 相关文档
 
-## 业务意图
+- `README.md` — 项目说明与快速开始 | `CHANGELOG.md` — 变更日志（SemVer）
+- `docs/brd.md` — 业务需求基线 + 否决/评分/评级/建议 RIGID 规则表
+- `ROADMAP.md` — 3 大需求路线图（CLI 接驳与数据升级 / 侏儒兔 banner 与微信中转 / 多模型锐评子系统）
 
-alpha-jerry 是一套面向 A 股基本面分析的 AI Native 工具集，覆盖"数据采集 → 个股评分 → 个股评级 → 报告输出 → 持仓监控 → 热点追踪 → 推送"完整业务闭环。帮助个人投资者识别优质公司并持续监控持仓风险。
+## 项目概述
 
-核心流程：全 A 股清单 → Tushare 采集财务数据(4 个 VIP 接口，~460 字段) → 一票否决剔除 → 三维评分(成长性/稳健性/资金回报) → 行业权重加权求综合分 → 四级评级(皇冠明珠/优秀白马/鸡肋·观察/垃圾) → 荐股 Top20 报告。
+面向 A 股基本面分析的本地命令行工具：Tushare 采集（含股东人数）→ 一票否决 → 三维评分 → 行业加权评级 → LLM 锐评（DeepSeek/GLM 双 Provider）→ 荐股 Top20（13 列）。
 
-当前阶段：M2 评分评级已完成(290 项单测，覆盖率 99.4%)，M3 报告输出进行中(Step 3-1 公司类型+操作建议已完成)。
+### 关键决策
 
-## 关键决策
+1. **本地优先与纯文件存储**：数据本地存储不上云，`data/` 不入库；全量双落盘（人读 CSV + 机读 raw CSV），无外部数据库。
+2. **规则可审计**：否决/评分/评级为纯函数 + 全阈值边界单测；业务规则改代码不修 `docs/brd.md`。
+3. **步骤解耦与无损传递**：步骤间只传内存对象或读 raw CSV，彻底废除 `format_value → _parse_value` 精度损耗式往返。
+4. **CLI 契约化，不自研 Agent**：本项目只做内核 + LLM 子系统 + `src/tools/` 工具封装；交互 UI、定时监控与微信收发交给 OpenClaw。
+5. **LLM 输出不可信**：结构化 JSON → 白名单校验（字数/禁词/数字一致性）→ 重试 → 跨模型切换 → 规则兜底 → 缓存 → 追踪。
+6. **配置集约**：路径/超时/密钥/模型参数全走 `Settings`，严禁硬编码；`.env` 不入库，新增配置同步 `.env.example`。
+7. **数据源单一真源**：Tushare VIP 接口优先，不传 `fields` 取全量；以 `expected_latest_period()` 支持披露日增量更新。
+8. **双端一致与防乱码**：Python 3.12，LF 换行，文件读写显式 `encoding="utf-8"`，路径全 `pathlib.Path`。
+9. **依赖先行与 Fail-Fast**：新增库先入 `pyproject.toml` 并锁定 `uv.lock`；核心依赖缺失直接阻断，严禁静默吞异常。
+10. **状态与日志规整**：状态字段使用英文枚举字符串（如 `'pending'/'success'/'fallback'`），严禁神秘数字；追踪日志只追加不更新。
 
-1. **本地优先**：数据本地存储，不上传云端，仅 LLM 推理外联(NFR-01)。`data/` 目录不入库(`.gitignore` 已配置 `/data/`)。
-2. **规则可审计**：评分/评级走纯函数 + 单测，一票否决可追溯。`docs/dev-guide.md` §8 全部 RIGID 规则不可漂移，冲突时改代码不修规则。
-3. **数据源单一真源**：Tushare Pro 为唯一数据源，通过 `BaseFetcher` 抽象隔离业务代码(FR-DATA-01)。VIP 接口优先，不传 `fields` 取全量字段。
-4. **纯逻辑与 I/O 分层**：`src/scoring/scores.py` 仅含纯函数，可离线单测；`src/data/` 含网络/文件 I/O，走集成测试。
-5. **配置抽离**：路径/超时/模型/API Key/阈值全走 `pydantic-settings` 的 `Settings` 单例，禁止硬编码。新增配置项须同步 `.env.example`。
-6. **能批量不逐股**：全量采集用 `run_batch()` 调用 VIP 接口 O(1) 拿全市场；逐股模式仅用于增量更新/冒烟测试。
-7. **申万行业分类→五大类**：`ts_code → index_member_all → l2_name → sw_l2_to_category() → 五大类`，缓存落 `data/ref/sw_industry.csv`。
-8. **报告期以 income 为准**：`end_date` 锁定 income 报告期，其余接口 end_date 不覆盖；`expected_latest_period()` 按法定披露截止日推算。
+### 技术栈
 
-## 管道逻辑
+- Runtime: Python 3.12 · uv 0.10 · hatchling · 标准库 `argparse`（零重型 CLI 依赖）
+- Data & Config: Tushare Pro 1.4（VIP 接口需 5000 积分）· pandas 3.x · pydantic-settings 2.x
+- LLM: DeepSeek + 智谱 GLM（OpenAI 兼容协议，支持 SOCKS 代理）
+- Quality: pytest 9 + pytest-cov (≥80%) · ruff 0.15
+
+## 项目目录
 
 ```
-stock_basic(全 A 股清单)
-  → income_vip / balancesheet_vip / cashflow_vip / fina_indicator_vip (4 个 VIP 接口按 period 批量)
-  → StockFeatures (pydantic extra=allow, ~460 字段)
-  → check_veto() 一票否决
-  → score_growth() / score_stability() / score_return() 三维评分
-  → score_composite() 按行业权重加权 (五大类权重: 周期资源 25/35/40, 大消费 30/30/40, 证券金融 30/30/40, 科技/制造 50/20/30, 公用事业/基建 20/40/40)
-  → score_rating() 四级评级 (8.5/7.0/5.5 三临界)
-  → 输出 data/fin/full_scores/YYMMDD.csv + -否决.csv
+alpha-jerry
+├── src/
+│   ├── config.py            # Settings 单例 + data 子目录映射
+│   ├── data/                # 采集层：contract / provider / collect / output / store
+│   ├── scoring/             # 评分层：scores（纯函数，阈值全单测）
+│   ├── reports/             # 报告层：evaluation / reporting（纯函数）
+│   ├── llm/                 # 锐评子系统：client / review / fallback / cache / trace
+│   ├── tools/               # 工具层：market / holdings / status（CLI 契约）
+│   ├── cli.py               # CLI 入口（argparse，统一 UTF-8 与退出码 0/2/3/4）
+│   └── banner.py            # 侏儒兔 er banner（ANSI / 🐰 / ASCII 三档降级）
+├── scripts/                 # 批处理薄包装：full_collect / full_scores / full_report / sw_industry
+├── tests/ & integrated_tests/ # 单元测试（镜像 src）与集成测试（mock + network）
+├── manifests/               # 部署清单（OpenClaw Skill 契约样例）
+├── assets/icon/             # 品牌资产：巧克力色侏儒兔源图 png / ico / icns
+└── data/                    # 运行期本地数据（不入库）：fin / cache / hold / monitor / ref
 ```
 
-数据目录映射：`fin`(财务) / `full_report`(荐股) / `hold`(持股) / `hot`(热点) / `monitor`(监控) / `feedback`(反馈) / `rag`(知识库) / `ref`(参考数据) / `test`(测试产物)。
+### 关键文件
 
-## Commands
+- `src/config.py` — 配置单例与路径/密钥/模型集中管理
+- `src/data/contract.py` — `StockFeatures`、~460 输出列映射、股东人数 `holder_num`
+- `src/data/provider.py` + `collect.py` — Tushare 适配器（限流重试）与披露期感知采集流水线
+- `src/scoring/scores.py` — 三维评分、一票否决、行业权重综合分与评级映射
+- `src/cli.py` + `src/tools/` — 命令行总入口与确定性数据工具契约
 
-- dependencies: `uv sync`
-- test: `uv run pytest -m "not network"`
-- lint: `uv run ruff check .`
-- format: `uv run ruff format .`
-- run: `uv run python src/main.py`
-- full-collect: `uv run python scripts/full_collect.py`
-- smoke-collect: `uv run python scripts/smoke_collect.py --sample 5`
-- full-scores: `uv run python scripts/full_scores.py`
-- full-report: `uv run python scripts/full_report.py`
-- sw-cache: `uv run python scripts/sw_industry.py`
+## 常用命令
 
-## Stack
+- 依赖与运行：`uv sync` · `uv run python -m src.cli`（或 `alpha-jerry`）
+- 质量检查：`uv run ruff check .` · `uv run ruff format .` · `uv run pytest -m "not network" --cov=src --cov-fail-under=80`
+- 业务流水线：`uv run python scripts/full_collect.py` · `scripts/full_scores.py` · `scripts/full_report.py`
+- 修改验证：1. `ruff check .` 无警告；2. `pytest` not network 覆盖率 ≥80%；3. `python -c "from src.config import Settings; Settings()"` 可加载
 
-- Runtime: Python 3.12+
-- Package Manager: uv
-- Language: Python
-- LLM: DeepSeek V4 Pro
-- Data: Tushare Pro (vip 接口需 5000 积分: income_vip/balancesheet_vip/cashflow_vip/fina_indicator_vip)
-- Agent Framework: LangGraph 0.2+
-- RAG: ChromaDB + bge-small-zh (local)
-- Backend API: FastAPI 0.110+
-- Desktop: Electron + React + Vite
-- Config: pydantic-settings + `.env`
-- Test: pytest 8+ (mock + network 两组); Lint/Format: ruff
+## 核心原则与硬约束
 
-## Key Files
+- **最小干预**：只改用户明确指令范围；发现其他问题报告而不顺手修。
+- **测试驱动实现**：新功能先写/补单元测试并自动跑通，再改业务代码去满足测试；跨模块行为最后用集成测试锁，禁止先堆实现再补测、禁止改测试去迁就实现。
+- **包边界显式**：`src/` 与 `tests/` 所有子目录必须包含 `__init__.py`，禁止隐式命名空间包。
+- **单文件 ≤ 300 行**：逻辑清晰单一（`contract.py` 字段定义除外），模块膨胀及时拆分。
+- **命名对齐**：源码 `src/a/b.py` ↔ 测试 `tests/a/test_b.py` ↔ 产物 `data/fin/YYMMDD.csv`。
+- **导入三段式**：顶部标准库 → 第三方库 → 本地模块；禁止循环引用与随意懒加载。
+- **无叙述型注释**：代码抬头 3 行内 docstring；不写“定义函数/返回结果”等废话注释，仅说明设计意图与边界。
+- **原子提交**：单提交单功能（≤ 20 文件），提交前必跑修改验证，直推 `main`。
 
-- `docs/dev-guide.md` — 单一事实来源(Single Source of Truth)，§8 为不可漂移的业务规则(RIGID)
-- `docs/ROADMAP.md` — 工程路线图(M0-M7，每步标注实现 BR/FR 需求编号)
-- `docs/brd.md` — 业务需求基线(BRD)，需求字段 55 项
-- `src/config.py` — 全局配置入口(`get_settings()` 单例)，路径/超时/模型/密钥集中管理
-- `pyproject.toml` — 依赖、工具配置、pytest/ruff 设置(行宽 120，引号样式 double)
-- `src/data/contract.py` — 字段模型(StockFeatures + StockInfo)、53 需求对齐表、~460 输出列、FIELD_CN/FIELD_UNIT 全量字段映射
-- `src/data/provider.py` — Tushare 适配器(20 接口注册表)、RateLimiter 限流、指数退避重试、SW 行业 5 大类映射(~130 行业)
-- `src/data/collect.py` — 采集编排(Cache TTL + CollectionPipeline + run/run_batch)、报告期推算
-- `src/scoring/scores.py` — 三维评分纯函数 + 综合分 + 一票否决 + 评级映射
-- `src/reports/reporting.py` — 荐股报告纯逻辑（CSV 解析/LLM 上下文/输出清洗）
-- `scripts/full_report.py` — LLM 荐股 Top20 生成（核心亮点/风险/点评）
-- `.env.example` — 配置样板(新增配置项必须同步)
+## 工作流程与验证清单
 
-## Constraints
+1. **对齐需求**：对照 `ROADMAP.md` 明确归属需求（1/2/3），查阅相关代码与单测。
+2. **纯逻辑先测后改**：纯函数写边界单测；I/O 与多步骤写 mock/集成测试。
+3. **验证门禁**：
+   - [ ] `uv run ruff check .` 与 `uv run ruff format --check .` 均通过
+   - [ ] `uv run pytest -m "not network" --cov=src --cov-fail-under=80` 覆盖率达标
+   - [ ] 关键阈值边界（8.5 / 7.0 / 5.5）均有测试用例
+   - [ ] 新增字段与配置已同步 `contract.py` 与 `.env.example`，无硬编码
+   - [ ] 文件读写显式 `encoding="utf-8"`，路径全 `pathlib.Path`
+4. **提交推送**：规范 commit message 说明目的、摘要与验证，推送到 `origin main`。
 
-### 设计
+## 常见任务
 
-- 单文件尽可能 300 行内，越少越好；`contract.py`(~2009 行)因全量字段映射为合理例外
-- 不自造轮子，优先用项目中已有的工具库和代码
-- 不可偏移 `docs/dev-guide.md`，与代码冲突时改代码不修规则
-- 纯逻辑(评分/评级/权重)与 I/O(爬取/写盘)分层：纯逻辑单独单测，I/O 走集成测试
-- 模块膨胀到 3+ 文件再升格为包，否则保持单文件扁平结构
-- 单 PR 单功能，≤ 20 文件；每步提交后直接 `git push origin main`(不开分支、不开 PR)
+- **新增评分规则**：确认 `brd.md`（RIGID）→ `scores.py` 实现纯函数 → `test_scores.py` 覆盖阈值。
+- **新增字段/接口**：`provider.py` 注册接口 → `contract.py` 增补字段与中文映射 → 补 mock/network 测试。
+- **新增 CLI 子命令**：`src/tools/` 定义入参模型与 JSON 出参 → `src/cli.py` 注册子命令与退出码。
+- **更新锐评模型/Prompt**：`src/llm/` 调整并在 `Settings` 配置双 Provider → 黄金样本回归进 CI。
 
-### 安全
+## 安全与运行约束
 
-- 不阅读 `dev-log.md`、`.env`，需要配置值时通过 `Settings` 读取(如 `get_settings().tushare_token`)，仅查看长度/是否为空等非敏感属性，禁止 read/cat/print 其内容
-- `.env` 不入库(NFR-08)，密钥不明文日志
-- 数据本地存储，不上传云端(NFR-01)
-
-### 代码
-
-- 代码文件抬头三行注释简要写明该代码功能(参见 `src/config.py`、`src/data/contract.py` 等现有文件格式)
-- 配置抽离：路径/超时/模型/API Key 全走 `Settings`，禁止硬编码
-- 代码-测试-脚本-产物命名对齐统一，示例如下
-
-| 层级 | 文件 |
-|------|------|
-| 源码 | `src/data/collect.py` |
-| 测试 | `tests/data/test_collect.py` |
-| 脚本 | `scripts/full_collect.py` |
-| 产物 | `data/fin/full_collect/YYMMDD.csv` |
-
-### 测试
-
-- 编辑无论大小，立即运行 `uv run pytest -m "not network"`
-- 只针对失败写修复，不提前假设
-- 按功能/文件区逐个测试，产出物通过才能进行下一个开发
-- 单元测试覆盖全部阈值边界(8.5/7.0/5.5 等)
-- 单元测试行覆盖率 ≥ 80%(`--cov-fail-under=80`)，CI 门禁阻断
-- 不允许对 `ROADMAP.md` 自动打勾，需人工打勾
-
-## Verification
-
-修改代码后必须运行：
-
-1. `uv run ruff check .` — 无新警告
-2. `uv run pytest -m "not network" --cov=src --cov-fail-under=80` — 测试通过，覆盖率 ≥ 80%
-3. `uv run python -c "from src.config import Settings; print(Settings())"` — 配置可加载
-
-`integrated_tests` 内文件必须运行：
-
-1. `uv run ruff check .` — 无新警告
-2. `uv run pytest -m network` — 联网测试检查产出物(需配置 TUSHARE_TOKEN)
+- **敏感信息零暴露**：不读取 `.env` 内容，仅经 `get_settings()` 检查属性；密钥绝对不进日志、trace 与终端。
+- **数据与模型隔离**：数据本地存储；LLM 上下文仅传必要特征子集，严禁全量 460 字段裸传。
+- **Windows / macOS 双端适配**：终端入口统一 `sys.stdout.reconfigure(encoding="utf-8")`；无 ANSI 支持环境退化纯 ASCII。
+- **路线图保护**：严禁擅自修改或打勾 `ROADMAP.md`，需求变更与进度确认权在用户。

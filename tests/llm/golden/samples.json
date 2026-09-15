@@ -1,0 +1,1710 @@
+[
+ {
+  "facts": {
+   "code": "000807",
+   "name": "云铝股份",
+   "industry": "周期资源",
+   "company_type": "现金牛",
+   "rating": "皇冠明珠",
+   "advice": "重仓买入",
+   "position": "10-20%",
+   "composite": 9.5,
+   "growth": 8,
+   "stability": 10,
+   "return_score": 10,
+   "metrics": [
+    {
+     "key": "or_yoy",
+     "label": "营收同比",
+     "value": 20.3,
+     "unit": "%",
+     "signed": true,
+     "highlightable": true
+    },
+    {
+     "key": "netprofit_yoy",
+     "label": "归母净利同比",
+     "value": 177.61,
+     "unit": "%",
+     "signed": true,
+     "highlightable": true
+    },
+    {
+     "key": "grossprofit_margin",
+     "label": "毛利率",
+     "value": 31.84,
+     "unit": "%",
+     "signed": false,
+     "highlightable": true
+    },
+    {
+     "key": "roe",
+     "label": "ROE",
+     "value": 21.89,
+     "unit": "%",
+     "signed": false,
+     "highlightable": true
+    },
+    {
+     "key": "debt_to_assets",
+     "label": "资产负债率",
+     "value": 15.8,
+     "unit": "%",
+     "signed": false,
+     "highlightable": false
+    },
+    {
+     "key": "current_ratio",
+     "label": "流动比率",
+     "value": 4.01,
+     "unit": "倍",
+     "signed": false,
+     "highlightable": false
+    },
+    {
+     "key": "eps",
+     "label": "每股收益",
+     "value": 2.22,
+     "unit": "元",
+     "signed": false,
+     "highlightable": true
+    }
+   ],
+   "flags": [
+    {
+     "code": "cyclical",
+     "note": "周期资源行业，盈利随产品价格波动"
+    }
+   ],
+   "watch_variable": "产品价格周期与盈利弹性"
+  },
+  "draft": {
+   "highlight": "归母净利同比+177.6%，营收同比+20.3%，量利齐升",
+   "risk": "周期资源行业，盈利随铝价波动，负债率15.8%的低杠杆是缓冲",
+   "comment": "周期资源现金牛，重点盯住铝价周期与盈利弹性"
+  }
+ },
+ {
+  "facts": {
+   "code": "688331",
+   "name": "荣昌生物",
+   "industry": "大消费",
+   "company_type": "千里马",
+   "rating": "皇冠明珠",
+   "advice": "重仓买入",
+   "position": "10-20%",
+   "composite": 9.4,
+   "growth": 8,
+   "stability": 10,
+   "return_score": 10,
+   "metrics": [
+    {
+     "key": "or_yoy",
+     "label": "营收同比",
+     "value": 433.11,
+     "unit": "%",
+     "signed": true,
+     "highlightable": true
+    },
+    {
+     "key": "netprofit_yoy",
+     "label": "归母净利同比",
+     "value": 1137.06,
+     "unit": "%",
+     "signed": true,
+     "highlightable": true
+    },
+    {
+     "key": "grossprofit_margin",
+     "label": "毛利率",
+     "value": 95.71,
+     "unit": "%",
+     "signed": false,
+     "highlightable": true
+    },
+    {
+     "key": "roe",
+     "label": "ROE",
+     "value": 78.21,
+     "unit": "%",
+     "signed": false,
+     "highlightable": true
+    },
+    {
+     "key": "debt_to_assets",
+     "label": "资产负债率",
+     "value": 15.57,
+     "unit": "%",
+     "signed": false,
+     "highlightable": false
+    },
+    {
+     "key": "current_ratio",
+     "label": "流动比率",
+     "value": 4.86,
+     "unit": "倍",
+     "signed": false,
+     "highlightable": false
+    },
+    {
+     "key": "eps",
+     "label": "每股收益",
+     "value": 8.32,
+     "unit": "元",
+     "signed": false,
+     "highlightable": true
+    }
+   ],
+   "flags": [
+    {
+     "code": "low_base",
+     "note": "归母净利同比+1137.1%含低基数效应，不可线性外推"
+    },
+    {
+     "code": "extreme_roe",
+     "note": "ROE 78.2%处于极端高位，持续性存疑"
+    }
+   ],
+   "watch_variable": "增速能否延续"
+  },
+  "draft": {
+   "highlight": "营收同比+433.1%，毛利率95.7%，创新药放量兑现",
+   "risk": "净利同比+1137.1%含低基数效应，ROE 78.2%难以持续",
+   "comment": "大消费赛道创新药千里马，重点盯住放量后增速能否延续"
+  }
+ },
+ {
+  "facts": {
+   "code": "000408",
+   "name": "藏格矿业",
+   "industry": "周期资源",
+   "company_type": "现金牛",
+   "rating": "皇冠明珠",
+   "advice": "重仓买入",
+   "position": "10-20%",
+   "composite": 9.0,
+   "growth": 6,
+   "stability": 10,
+   "return_score": 10,
+   "metrics": [
+    {
+     "key": "or_yoy",
+     "label": "营收同比",
+     "value": 23.05,
+     "unit": "%",
+     "signed": true,
+     "highlightable": true
+    },
+    {
+     "key": "netprofit_yoy",
+     "label": "归母净利同比",
+     "value": 102.09,
+     "unit": "%",
+     "signed": true,
+     "highlightable": true
+    },
+    {
+     "key": "grossprofit_margin",
+     "label": "毛利率",
+     "value": 66.69,
+     "unit": "%",
+     "signed": false,
+     "highlightable": true
+    },
+    {
+     "key": "roe",
+     "label": "ROE",
+     "value": 21.76,
+     "unit": "%",
+     "signed": false,
+     "highlightable": true
+    },
+    {
+     "key": "debt_to_assets",
+     "label": "资产负债率",
+     "value": 7.77,
+     "unit": "%",
+     "signed": false,
+     "highlightable": false
+    },
+    {
+     "key": "current_ratio",
+     "label": "流动比率",
+     "value": 3.63,
+     "unit": "倍",
+     "signed": false,
+     "highlightable": false
+    },
+    {
+     "key": "eps",
+     "label": "每股收益",
+     "value": 2.32,
+     "unit": "元",
+     "signed": false,
+     "highlightable": true
+    }
+   ],
+   "flags": [
+    {
+     "code": "weak_dimension",
+     "note": "成长性评分6分为短板"
+    },
+    {
+     "code": "cyclical",
+     "note": "周期资源行业，盈利随产品价格波动"
+    }
+   ],
+   "watch_variable": "产品价格周期与盈利弹性"
+  },
+  "draft": {
+   "highlight": "归母净利同比+102.1%，毛利率66.7%，盈利厚度突出",
+   "risk": "成长性评分6分为短板；周期资源行业，盈利随钾锂价格波动",
+   "comment": "周期资源现金牛，重点盯住钾锂价格周期与盈利弹性"
+  }
+ },
+ {
+  "facts": {
+   "code": "688498",
+   "name": "源杰科技",
+   "industry": "科技/制造",
+   "company_type": "千里马",
+   "rating": "皇冠明珠",
+   "advice": "重仓买入",
+   "position": "10-20%",
+   "composite": 9.0,
+   "growth": 8,
+   "stability": 10,
+   "return_score": 10,
+   "metrics": [
+    {
+     "key": "or_yoy",
+     "label": "营收同比",
+     "value": 351.4,
+     "unit": "%",
+     "signed": true,
+     "highlightable": true
+    },
+    {
+     "key": "netprofit_yoy",
+     "label": "归母净利同比",
+     "value": 1212.2,
+     "unit": "%",
+     "signed": true,
+     "highlightable": true
+    },
+    {
+     "key": "grossprofit_margin",
+     "label": "毛利率",
+     "value": 80.42,
+     "unit": "%",
+     "signed": false,
+     "highlightable": true
+    },
+    {
+     "key": "roe",
+     "label": "ROE",
+     "value": 22.18,
+     "unit": "%",
+     "signed": false,
+     "highlightable": true
+    },
+    {
+     "key": "debt_to_assets",
+     "label": "资产负债率",
+     "value": 20.06,
+     "unit": "%",
+     "signed": false,
+     "highlightable": false
+    },
+    {
+     "key": "current_ratio",
+     "label": "流动比率",
+     "value": 2.87,
+     "unit": "倍",
+     "signed": false,
+     "highlightable": false
+    },
+    {
+     "key": "eps",
+     "label": "每股收益",
+     "value": 4.89,
+     "unit": "元",
+     "signed": false,
+     "highlightable": true
+    }
+   ],
+   "flags": [
+    {
+     "code": "low_base",
+     "note": "归母净利同比+1212.2%含低基数效应，不可线性外推"
+    }
+   ],
+   "watch_variable": "增速能否延续"
+  },
+  "draft": {
+   "highlight": "营收同比+351.4%，毛利率80.4%，光芯片放量壁垒高",
+   "risk": "净利同比+1212.2%含低基数效应，不可线性外推",
+   "comment": "科技制造光芯片千里马，重点盯住高增速能否延续"
+  }
+ },
+ {
+  "facts": {
+   "code": "688808",
+   "name": "联讯仪器",
+   "industry": "科技/制造",
+   "company_type": "千里马",
+   "rating": "皇冠明珠",
+   "advice": "重仓买入",
+   "position": "10-20%",
+   "composite": 9.0,
+   "growth": 8,
+   "stability": 10,
+   "return_score": 10,
+   "metrics": [
+    {
+     "key": "or_yoy",
+     "label": "营收同比",
+     "value": 208.71,
+     "unit": "%",
+     "signed": true,
+     "highlightable": true
+    },
+    {
+     "key": "netprofit_yoy",
+     "label": "归母净利同比",
+     "value": 903.0,
+     "unit": "%",
+     "signed": true,
+     "highlightable": true
+    },
+    {
+     "key": "grossprofit_margin",
+     "label": "毛利率",
+     "value": 70.79,
+     "unit": "%",
+     "signed": false,
+     "highlightable": true
+    },
+    {
+     "key": "roe",
+     "label": "ROE",
+     "value": 26.47,
+     "unit": "%",
+     "signed": false,
+     "highlightable": true
+    },
+    {
+     "key": "debt_to_assets",
+     "label": "资产负债率",
+     "value": 38.77,
+     "unit": "%",
+     "signed": false,
+     "highlightable": false
+    },
+    {
+     "key": "current_ratio",
+     "label": "流动比率",
+     "value": 2.6,
+     "unit": "倍",
+     "signed": false,
+     "highlightable": false
+    },
+    {
+     "key": "eps",
+     "label": "每股收益",
+     "value": 6.63,
+     "unit": "元",
+     "signed": false,
+     "highlightable": true
+    }
+   ],
+   "flags": [
+    {
+     "code": "low_base",
+     "note": "归母净利同比+903.0%含低基数效应，不可线性外推"
+    }
+   ],
+   "watch_variable": "增速能否延续"
+  },
+  "draft": {
+   "highlight": "营收同比+208.7%，ROE 26.5%，高端仪器放量",
+   "risk": "净利同比+903.0%含低基数效应，高增速不可线性外推",
+   "comment": "科技制造仪器千里马，重点盯住订单增速能否延续"
+  }
+ },
+ {
+  "facts": {
+   "code": "688002",
+   "name": "睿创微纳",
+   "industry": "科技/制造",
+   "company_type": "千里马",
+   "rating": "皇冠明珠",
+   "advice": "重仓买入",
+   "position": "10-20%",
+   "composite": 8.9,
+   "growth": 9,
+   "stability": 10,
+   "return_score": 8,
+   "metrics": [
+    {
+     "key": "or_yoy",
+     "label": "营收同比",
+     "value": 72.84,
+     "unit": "%",
+     "signed": true,
+     "highlightable": true
+    },
+    {
+     "key": "netprofit_yoy",
+     "label": "归母净利同比",
+     "value": 258.78,
+     "unit": "%",
+     "signed": true,
+     "highlightable": true
+    },
+    {
+     "key": "grossprofit_margin",
+     "label": "毛利率",
+     "value": 57.76,
+     "unit": "%",
+     "signed": false,
+     "highlightable": true
+    },
+    {
+     "key": "roe",
+     "label": "ROE",
+     "value": 17.07,
+     "unit": "%",
+     "signed": false,
+     "highlightable": true
+    },
+    {
+     "key": "debt_to_assets",
+     "label": "资产负债率",
+     "value": 34.5,
+     "unit": "%",
+     "signed": false,
+     "highlightable": false
+    },
+    {
+     "key": "current_ratio",
+     "label": "流动比率",
+     "value": 2.89,
+     "unit": "倍",
+     "signed": false,
+     "highlightable": false
+    },
+    {
+     "key": "eps",
+     "label": "每股收益",
+     "value": 2.72,
+     "unit": "元",
+     "signed": false,
+     "highlightable": true
+    }
+   ],
+   "flags": [],
+   "watch_variable": "增速能否延续"
+  },
+  "draft": {
+   "highlight": "归母净利同比+258.8%，营收同比+72.8%，红外景气",
+   "risk": "当前财务指标未发现重大风险信号",
+   "comment": "科技制造红外芯片千里马，重点盯住增速能否延续"
+  }
+ },
+ {
+  "facts": {
+   "code": "000426",
+   "name": "兴业银锡",
+   "industry": "周期资源",
+   "company_type": "千里马",
+   "rating": "皇冠明珠",
+   "advice": "重仓买入",
+   "position": "10-20%",
+   "composite": 8.8,
+   "growth": 8,
+   "stability": 8,
+   "return_score": 10,
+   "metrics": [
+    {
+     "key": "or_yoy",
+     "label": "营收同比",
+     "value": 73.13,
+     "unit": "%",
+     "signed": true,
+     "highlightable": true
+    },
+    {
+     "key": "netprofit_yoy",
+     "label": "归母净利同比",
+     "value": 184.42,
+     "unit": "%",
+     "signed": true,
+     "highlightable": true
+    },
+    {
+     "key": "grossprofit_margin",
+     "label": "毛利率",
+     "value": 68.75,
+     "unit": "%",
+     "signed": false,
+     "highlightable": true
+    },
+    {
+     "key": "roe",
+     "label": "ROE",
+     "value": 21.52,
+     "unit": "%",
+     "signed": false,
+     "highlightable": true
+    },
+    {
+     "key": "debt_to_assets",
+     "label": "资产负债率",
+     "value": 38.02,
+     "unit": "%",
+     "signed": false,
+     "highlightable": false
+    },
+    {
+     "key": "current_ratio",
+     "label": "流动比率",
+     "value": 1.18,
+     "unit": "倍",
+     "signed": false,
+     "highlightable": false
+    },
+    {
+     "key": "eps",
+     "label": "每股收益",
+     "value": 1.27,
+     "unit": "元",
+     "signed": false,
+     "highlightable": true
+    }
+   ],
+   "flags": [
+    {
+     "code": "cyclical",
+     "note": "周期资源行业，盈利随产品价格波动"
+    }
+   ],
+   "watch_variable": "产品价格周期与盈利弹性"
+  },
+  "draft": {
+   "highlight": "归母净利同比+184.4%，毛利率68.75%，量价齐升",
+   "risk": "周期资源行业，盈利随银锡价格波动；流动比率1.18倍偏紧",
+   "comment": "周期资源银锡千里马，重点盯住金属价格周期与盈利弹性"
+  }
+ },
+ {
+  "facts": {
+   "code": "000567",
+   "name": "海德股份",
+   "industry": "证券金融",
+   "company_type": "千里马",
+   "rating": "皇冠明珠",
+   "advice": "重仓买入",
+   "position": "10-20%",
+   "composite": 8.8,
+   "growth": 8,
+   "stability": 8,
+   "return_score": 10,
+   "metrics": [
+    {
+     "key": "or_yoy",
+     "label": "营收同比",
+     "value": 452.34,
+     "unit": "%",
+     "signed": true,
+     "highlightable": true
+    },
+    {
+     "key": "netprofit_yoy",
+     "label": "归母净利同比",
+     "value": 815.77,
+     "unit": "%",
+     "signed": true,
+     "highlightable": true
+    },
+    {
+     "key": "grossprofit_margin",
+     "label": "毛利率",
+     "value": 90.19,
+     "unit": "%",
+     "signed": false,
+     "highlightable": true
+    },
+    {
+     "key": "roe",
+     "label": "ROE",
+     "value": 21.45,
+     "unit": "%",
+     "signed": false,
+     "highlightable": true
+    },
+    {
+     "key": "debt_to_assets",
+     "label": "资产负债率",
+     "value": 32.9,
+     "unit": "%",
+     "signed": false,
+     "highlightable": false
+    },
+    {
+     "key": "current_ratio",
+     "label": "流动比率",
+     "value": 1.98,
+     "unit": "倍",
+     "signed": false,
+     "highlightable": false
+    },
+    {
+     "key": "eps",
+     "label": "每股收益",
+     "value": 0.69,
+     "unit": "元",
+     "signed": false,
+     "highlightable": true
+    }
+   ],
+   "flags": [
+    {
+     "code": "low_base",
+     "note": "归母净利同比+815.8%含低基数效应，不可线性外推"
+    }
+   ],
+   "watch_variable": "增速能否延续"
+  },
+  "draft": {
+   "highlight": "营收同比+452.3%，毛利率90.2%，不良资产处置放量",
+   "risk": "净利同比+815.8%含低基数效应，不可线性外推",
+   "comment": "证券金融不良资产千里马，重点盯住处置收入增速能否延续"
+  }
+ },
+ {
+  "facts": {
+   "code": "002192",
+   "name": "融捷股份",
+   "industry": "周期资源",
+   "company_type": "千里马",
+   "rating": "皇冠明珠",
+   "advice": "重仓买入",
+   "position": "10-20%",
+   "composite": 8.8,
+   "growth": 8,
+   "stability": 8,
+   "return_score": 10,
+   "metrics": [
+    {
+     "key": "or_yoy",
+     "label": "营收同比",
+     "value": 402.35,
+     "unit": "%",
+     "signed": true,
+     "highlightable": true
+    },
+    {
+     "key": "netprofit_yoy",
+     "label": "归母净利同比",
+     "value": 1076.14,
+     "unit": "%",
+     "signed": true,
+     "highlightable": true
+    },
+    {
+     "key": "grossprofit_margin",
+     "label": "毛利率",
+     "value": 76.36,
+     "unit": "%",
+     "signed": false,
+     "highlightable": true
+    },
+    {
+     "key": "roe",
+     "label": "ROE",
+     "value": 24.8,
+     "unit": "%",
+     "signed": false,
+     "highlightable": true
+    },
+    {
+     "key": "debt_to_assets",
+     "label": "资产负债率",
+     "value": 24.87,
+     "unit": "%",
+     "signed": false,
+     "highlightable": false
+    },
+    {
+     "key": "current_ratio",
+     "label": "流动比率",
+     "value": 2.46,
+     "unit": "倍",
+     "signed": false,
+     "highlightable": false
+    },
+    {
+     "key": "eps",
+     "label": "每股收益",
+     "value": 3.86,
+     "unit": "元",
+     "signed": false,
+     "highlightable": true
+    }
+   ],
+   "flags": [
+    {
+     "code": "low_base",
+     "note": "归母净利同比+1076.1%含低基数效应，不可线性外推"
+    },
+    {
+     "code": "cyclical",
+     "note": "周期资源行业，盈利随产品价格波动"
+    }
+   ],
+   "watch_variable": "产品价格周期与盈利弹性"
+  },
+  "draft": {
+   "highlight": "营收同比+402%，毛利率76.4%，锂盐量价齐升",
+   "risk": "净利同比+1076.1%含低基数效应；周期资源行业，盈利随锂价波动",
+   "comment": "周期资源锂业千里马，重点盯住锂价周期与盈利弹性"
+  }
+ },
+ {
+  "facts": {
+   "code": "300765",
+   "name": "石药创新",
+   "industry": "大消费",
+   "company_type": "千里马",
+   "rating": "皇冠明珠",
+   "advice": "重仓买入",
+   "position": "10-20%",
+   "composite": 8.8,
+   "growth": 10,
+   "stability": 6,
+   "return_score": 10,
+   "metrics": [
+    {
+     "key": "or_yoy",
+     "label": "营收同比",
+     "value": 208.72,
+     "unit": "%",
+     "signed": true,
+     "highlightable": true
+    },
+    {
+     "key": "netprofit_yoy",
+     "label": "归母净利同比",
+     "value": 46025.71,
+     "unit": "%",
+     "signed": true,
+     "highlightable": true
+    },
+    {
+     "key": "grossprofit_margin",
+     "label": "毛利率",
+     "value": 76.74,
+     "unit": "%",
+     "signed": false,
+     "highlightable": true
+    },
+    {
+     "key": "roe",
+     "label": "ROE",
+     "value": 38.2,
+     "unit": "%",
+     "signed": false,
+     "highlightable": true
+    },
+    {
+     "key": "debt_to_assets",
+     "label": "资产负债率",
+     "value": 49.96,
+     "unit": "%",
+     "signed": false,
+     "highlightable": false
+    },
+    {
+     "key": "current_ratio",
+     "label": "流动比率",
+     "value": 1.41,
+     "unit": "倍",
+     "signed": false,
+     "highlightable": false
+    },
+    {
+     "key": "eps",
+     "label": "每股收益",
+     "value": 0.91,
+     "unit": "元",
+     "signed": false,
+     "highlightable": true
+    }
+   ],
+   "flags": [
+    {
+     "code": "low_base",
+     "note": "归母净利同比+46025.7%含低基数效应，不可线性外推"
+    },
+    {
+     "code": "weak_dimension",
+     "note": "稳健性评分6分为短板"
+    }
+   ],
+   "watch_variable": "增速能否延续"
+  },
+  "draft": {
+   "highlight": "营收同比+208.7%，ROE 38.2%，创新药兑现期",
+   "risk": "净利同比+46025.7%属低基数效应；稳健性评分6分为短板",
+   "comment": "大消费创新药千里马，重点盯住放量后增速能否延续"
+  }
+ },
+ {
+  "facts": {
+   "code": "600961",
+   "name": "株冶集团",
+   "industry": "周期资源",
+   "company_type": "千里马",
+   "rating": "皇冠明珠",
+   "advice": "重仓买入",
+   "position": "10-20%",
+   "composite": 8.8,
+   "growth": 8,
+   "stability": 8,
+   "return_score": 10,
+   "metrics": [
+    {
+     "key": "or_yoy",
+     "label": "营收同比",
+     "value": 35.91,
+     "unit": "%",
+     "signed": true,
+     "highlightable": true
+    },
+    {
+     "key": "netprofit_yoy",
+     "label": "归母净利同比",
+     "value": 232.75,
+     "unit": "%",
+     "signed": true,
+     "highlightable": true
+    },
+    {
+     "key": "grossprofit_margin",
+     "label": "毛利率",
+     "value": 20.07,
+     "unit": "%",
+     "signed": false,
+     "highlightable": true
+    },
+    {
+     "key": "roe",
+     "label": "ROE",
+     "value": 36.84,
+     "unit": "%",
+     "signed": false,
+     "highlightable": true
+    },
+    {
+     "key": "debt_to_assets",
+     "label": "资产负债率",
+     "value": 34.01,
+     "unit": "%",
+     "signed": false,
+     "highlightable": false
+    },
+    {
+     "key": "current_ratio",
+     "label": "流动比率",
+     "value": 1.66,
+     "unit": "倍",
+     "signed": false,
+     "highlightable": false
+    },
+    {
+     "key": "eps",
+     "label": "每股收益",
+     "value": 1.8,
+     "unit": "元",
+     "signed": false,
+     "highlightable": true
+    }
+   ],
+   "flags": [
+    {
+     "code": "cyclical",
+     "note": "周期资源行业，盈利随产品价格波动"
+    }
+   ],
+   "watch_variable": "产品价格周期与盈利弹性"
+  },
+  "draft": {
+   "highlight": "归母净利同比+232.75%，ROE 36.8%，锌价驱动",
+   "risk": "周期资源行业，盈利随锌价波动；毛利率20.1%偏薄",
+   "comment": "周期资源冶炼千里马，重点盯住锌价周期与盈利弹性"
+  }
+ },
+ {
+  "facts": {
+   "code": "301717",
+   "name": "超纯应材",
+   "industry": "科技/制造",
+   "company_type": "千里马",
+   "rating": "皇冠明珠",
+   "advice": "重仓买入",
+   "position": "10-20%",
+   "composite": 8.8,
+   "growth": 10,
+   "stability": 10,
+   "return_score": 6,
+   "metrics": [
+    {
+     "key": "or_yoy",
+     "label": "营收同比",
+     "value": 48.41,
+     "unit": "%",
+     "signed": true,
+     "highlightable": true
+    },
+    {
+     "key": "netprofit_yoy",
+     "label": "归母净利同比",
+     "value": 85.46,
+     "unit": "%",
+     "signed": true,
+     "highlightable": true
+    },
+    {
+     "key": "grossprofit_margin",
+     "label": "毛利率",
+     "value": 57.53,
+     "unit": "%",
+     "signed": false,
+     "highlightable": true
+    },
+    {
+     "key": "roe",
+     "label": "ROE",
+     "value": 12.51,
+     "unit": "%",
+     "signed": false,
+     "highlightable": true
+    },
+    {
+     "key": "debt_to_assets",
+     "label": "资产负债率",
+     "value": 22.01,
+     "unit": "%",
+     "signed": false,
+     "highlightable": false
+    },
+    {
+     "key": "current_ratio",
+     "label": "流动比率",
+     "value": 3.46,
+     "unit": "倍",
+     "signed": false,
+     "highlightable": false
+    },
+    {
+     "key": "eps",
+     "label": "每股收益",
+     "value": 1.49,
+     "unit": "元",
+     "signed": false,
+     "highlightable": true
+    }
+   ],
+   "flags": [
+    {
+     "code": "weak_dimension",
+     "note": "资金回报评分6分为短板"
+    }
+   ],
+   "watch_variable": "增速能否延续"
+  },
+  "draft": {
+   "highlight": "归母净利同比+85.5%，营收同比+48.4%，增速领先",
+   "risk": "资金回报评分6分为短板，ROE 12.5%偏低",
+   "comment": "科技制造材料千里马，重点盯住增速能否延续与回报改善"
+  }
+ },
+ {
+  "facts": {
+   "code": "000612",
+   "name": "焦作万方",
+   "industry": "周期资源",
+   "company_type": "现金牛",
+   "rating": "皇冠明珠",
+   "advice": "重仓买入",
+   "position": "10-20%",
+   "composite": 8.7,
+   "growth": 8,
+   "stability": 10,
+   "return_score": 8,
+   "metrics": [
+    {
+     "key": "or_yoy",
+     "label": "营收同比",
+     "value": 25.38,
+     "unit": "%",
+     "signed": true,
+     "highlightable": true
+    },
+    {
+     "key": "netprofit_yoy",
+     "label": "归母净利同比",
+     "value": 129.58,
+     "unit": "%",
+     "signed": true,
+     "highlightable": true
+    },
+    {
+     "key": "grossprofit_margin",
+     "label": "毛利率",
+     "value": 37.81,
+     "unit": "%",
+     "signed": false,
+     "highlightable": true
+    },
+    {
+     "key": "roe",
+     "label": "ROE",
+     "value": 16.1,
+     "unit": "%",
+     "signed": false,
+     "highlightable": true
+    },
+    {
+     "key": "debt_to_assets",
+     "label": "资产负债率",
+     "value": 10.4,
+     "unit": "%",
+     "signed": false,
+     "highlightable": false
+    },
+    {
+     "key": "current_ratio",
+     "label": "流动比率",
+     "value": 4.08,
+     "unit": "倍",
+     "signed": false,
+     "highlightable": false
+    },
+    {
+     "key": "eps",
+     "label": "每股收益",
+     "value": 1.03,
+     "unit": "元",
+     "signed": false,
+     "highlightable": true
+    }
+   ],
+   "flags": [
+    {
+     "code": "cyclical",
+     "note": "周期资源行业，盈利随产品价格波动"
+    }
+   ],
+   "watch_variable": "产品价格周期与盈利弹性"
+  },
+  "draft": {
+   "highlight": "归母净利同比+129.6%，毛利率37.8%，铝价景气兑现",
+   "risk": "周期资源行业，盈利随铝价波动；负债率10.4%提供缓冲",
+   "comment": "周期资源现金牛，重点盯住铝价周期与分红兑现"
+  }
+ },
+ {
+  "facts": {
+   "code": "605117",
+   "name": "德业股份",
+   "industry": "科技/制造",
+   "company_type": "千里马",
+   "rating": "皇冠明珠",
+   "advice": "重仓买入",
+   "position": "10-20%",
+   "composite": 8.7,
+   "growth": 9,
+   "stability": 6,
+   "return_score": 10,
+   "metrics": [
+    {
+     "key": "or_yoy",
+     "label": "营收同比",
+     "value": 92.23,
+     "unit": "%",
+     "signed": true,
+     "highlightable": true
+    },
+    {
+     "key": "netprofit_yoy",
+     "label": "归母净利同比",
+     "value": 78.53,
+     "unit": "%",
+     "signed": true,
+     "highlightable": true
+    },
+    {
+     "key": "grossprofit_margin",
+     "label": "毛利率",
+     "value": 37.65,
+     "unit": "%",
+     "signed": false,
+     "highlightable": true
+    },
+    {
+     "key": "roe",
+     "label": "ROE",
+     "value": 24.93,
+     "unit": "%",
+     "signed": false,
+     "highlightable": true
+    },
+    {
+     "key": "debt_to_assets",
+     "label": "资产负债率",
+     "value": 53.86,
+     "unit": "%",
+     "signed": false,
+     "highlightable": false
+    },
+    {
+     "key": "current_ratio",
+     "label": "流动比率",
+     "value": 1.47,
+     "unit": "倍",
+     "signed": false,
+     "highlightable": false
+    },
+    {
+     "key": "eps",
+     "label": "每股收益",
+     "value": 2.14,
+     "unit": "元",
+     "signed": false,
+     "highlightable": true
+    }
+   ],
+   "flags": [
+    {
+     "code": "weak_dimension",
+     "note": "稳健性评分6分为短板"
+    }
+   ],
+   "watch_variable": "增速能否延续"
+  },
+  "draft": {
+   "highlight": "营收同比+92.2%，ROE 24.9%，储能逆变器放量",
+   "risk": "稳健性评分6分为短板，负债率53.9%偏高且流动比率1.47倍",
+   "comment": "科技制造储能千里马，重点盯住海外需求与增速能否延续"
+  }
+ },
+ {
+  "facts": {
+   "code": "301308",
+   "name": "江波龙",
+   "industry": "科技/制造",
+   "company_type": "千里马",
+   "rating": "皇冠明珠",
+   "advice": "重仓买入",
+   "position": "10-20%",
+   "composite": 8.6,
+   "growth": 8,
+   "stability": 8,
+   "return_score": 10,
+   "metrics": [
+    {
+     "key": "or_yoy",
+     "label": "营收同比",
+     "value": 136.26,
+     "unit": "%",
+     "signed": true,
+     "highlightable": true
+    },
+    {
+     "key": "netprofit_yoy",
+     "label": "归母净利同比",
+     "value": 71528.66,
+     "unit": "%",
+     "signed": true,
+     "highlightable": true
+    },
+    {
+     "key": "grossprofit_margin",
+     "label": "毛利率",
+     "value": 58.9,
+     "unit": "%",
+     "signed": false,
+     "highlightable": true
+    },
+    {
+     "key": "roe",
+     "label": "ROE",
+     "value": 80.02,
+     "unit": "%",
+     "signed": false,
+     "highlightable": true
+    },
+    {
+     "key": "debt_to_assets",
+     "label": "资产负债率",
+     "value": 56.13,
+     "unit": "%",
+     "signed": false,
+     "highlightable": false
+    },
+    {
+     "key": "current_ratio",
+     "label": "流动比率",
+     "value": 2.72,
+     "unit": "倍",
+     "signed": false,
+     "highlightable": false
+    },
+    {
+     "key": "eps",
+     "label": "每股收益",
+     "value": 25.2,
+     "unit": "元",
+     "signed": false,
+     "highlightable": true
+    }
+   ],
+   "flags": [
+    {
+     "code": "low_base",
+     "note": "归母净利同比+71528.7%含低基数效应，不可线性外推"
+    },
+    {
+     "code": "extreme_roe",
+     "note": "ROE 80.0%处于极端高位，持续性存疑"
+    }
+   ],
+   "watch_variable": "增速能否延续"
+  },
+  "draft": {
+   "highlight": "营收同比+136.3%，毛利率58.9%，存储涨价周期兑现",
+   "risk": "净利同比+71528.7%属低基数效应，ROE 80.0%难以持续",
+   "comment": "科技制造存储千里马，重点盯住存储价格拐点与增速能否延续"
+  }
+ },
+ {
+  "facts": {
+   "code": "301536",
+   "name": "星宸科技",
+   "industry": "科技/制造",
+   "company_type": "千里马",
+   "rating": "皇冠明珠",
+   "advice": "重仓买入",
+   "position": "10-20%",
+   "composite": 8.6,
+   "growth": 8,
+   "stability": 8,
+   "return_score": 10,
+   "metrics": [
+    {
+     "key": "or_yoy",
+     "label": "营收同比",
+     "value": 89.43,
+     "unit": "%",
+     "signed": true,
+     "highlightable": true
+    },
+    {
+     "key": "netprofit_yoy",
+     "label": "归母净利同比",
+     "value": 619.5,
+     "unit": "%",
+     "signed": true,
+     "highlightable": true
+    },
+    {
+     "key": "grossprofit_margin",
+     "label": "毛利率",
+     "value": 55.36,
+     "unit": "%",
+     "signed": false,
+     "highlightable": true
+    },
+    {
+     "key": "roe",
+     "label": "ROE",
+     "value": 24.24,
+     "unit": "%",
+     "signed": false,
+     "highlightable": true
+    },
+    {
+     "key": "debt_to_assets",
+     "label": "资产负债率",
+     "value": 44.09,
+     "unit": "%",
+     "signed": false,
+     "highlightable": false
+    },
+    {
+     "key": "current_ratio",
+     "label": "流动比率",
+     "value": 2.06,
+     "unit": "倍",
+     "signed": false,
+     "highlightable": false
+    },
+    {
+     "key": "eps",
+     "label": "每股收益",
+     "value": 2.05,
+     "unit": "元",
+     "signed": false,
+     "highlightable": true
+    }
+   ],
+   "flags": [
+    {
+     "code": "low_base",
+     "note": "归母净利同比+619.5%含低基数效应，不可线性外推"
+    }
+   ],
+   "watch_variable": "增速能否延续"
+  },
+  "draft": {
+   "highlight": "营收同比+89.4%，毛利率55.4%，芯片设计放量",
+   "risk": "净利同比+619.5%含低基数效应，不可线性外推",
+   "comment": "科技制造芯片千里马，重点盯住增速能否延续"
+  }
+ },
+ {
+  "facts": {
+   "code": "688525",
+   "name": "佰维存储",
+   "industry": "科技/制造",
+   "company_type": "千里马",
+   "rating": "皇冠明珠",
+   "advice": "重仓买入",
+   "position": "10-20%",
+   "composite": 8.6,
+   "growth": 8,
+   "stability": 8,
+   "return_score": 10,
+   "metrics": [
+    {
+     "key": "or_yoy",
+     "label": "营收同比",
+     "value": 298.1,
+     "unit": "%",
+     "signed": true,
+     "highlightable": true
+    },
+    {
+     "key": "netprofit_yoy",
+     "label": "归母净利同比",
+     "value": 3273.48,
+     "unit": "%",
+     "signed": true,
+     "highlightable": true
+    },
+    {
+     "key": "grossprofit_margin",
+     "label": "毛利率",
+     "value": 54.81,
+     "unit": "%",
+     "signed": false,
+     "highlightable": true
+    },
+    {
+     "key": "roe",
+     "label": "ROE",
+     "value": 79.0,
+     "unit": "%",
+     "signed": false,
+     "highlightable": true
+    },
+    {
+     "key": "debt_to_assets",
+     "label": "资产负债率",
+     "value": 61.64,
+     "unit": "%",
+     "signed": false,
+     "highlightable": false
+    },
+    {
+     "key": "current_ratio",
+     "label": "流动比率",
+     "value": 2.54,
+     "unit": "倍",
+     "signed": false,
+     "highlightable": false
+    },
+    {
+     "key": "eps",
+     "label": "每股收益",
+     "value": 15.28,
+     "unit": "元",
+     "signed": false,
+     "highlightable": true
+    }
+   ],
+   "flags": [
+    {
+     "code": "low_base",
+     "note": "归母净利同比+3273.5%含低基数效应，不可线性外推"
+    },
+    {
+     "code": "high_leverage",
+     "note": "资产负债率61.6%偏高"
+    },
+    {
+     "code": "extreme_roe",
+     "note": "ROE 79.0%处于极端高位，持续性存疑"
+    }
+   ],
+   "watch_variable": "增速能否延续"
+  },
+  "draft": {
+   "highlight": "营收同比+298.1%，毛利率54.8%，存储景气放量",
+   "risk": "净利同比+3273.5%属低基数效应，负债率61.6%偏高",
+   "comment": "科技制造存储千里马，重点盯住价格拐点与杠杆水平"
+  }
+ },
+ {
+  "facts": {
+   "code": "688578",
+   "name": "艾力斯",
+   "industry": "大消费",
+   "company_type": "千里马",
+   "rating": "皇冠明珠",
+   "advice": "重仓买入",
+   "position": "10-20%",
+   "composite": 8.6,
+   "growth": 8,
+   "stability": 10,
+   "return_score": 8,
+   "metrics": [
+    {
+     "key": "or_yoy",
+     "label": "营收同比",
+     "value": 39.85,
+     "unit": "%",
+     "signed": true,
+     "highlightable": true
+    },
+    {
+     "key": "netprofit_yoy",
+     "label": "归母净利同比",
+     "value": 46.57,
+     "unit": "%",
+     "signed": true,
+     "highlightable": true
+    },
+    {
+     "key": "grossprofit_margin",
+     "label": "毛利率",
+     "value": 94.85,
+     "unit": "%",
+     "signed": false,
+     "highlightable": true
+    },
+    {
+     "key": "roe",
+     "label": "ROE",
+     "value": 19.82,
+     "unit": "%",
+     "signed": false,
+     "highlightable": true
+    },
+    {
+     "key": "debt_to_assets",
+     "label": "资产负债率",
+     "value": 10.38,
+     "unit": "%",
+     "signed": false,
+     "highlightable": false
+    },
+    {
+     "key": "current_ratio",
+     "label": "流动比率",
+     "value": 5.37,
+     "unit": "倍",
+     "signed": false,
+     "highlightable": false
+    },
+    {
+     "key": "eps",
+     "label": "每股收益",
+     "value": 3.42,
+     "unit": "元",
+     "signed": false,
+     "highlightable": true
+    }
+   ],
+   "flags": [],
+   "watch_variable": "增速能否延续"
+  },
+  "draft": {
+   "highlight": "归母净利同比+46.6%，毛利率94.85%，创新药高盈利",
+   "risk": "当前财务指标未发现重大风险信号",
+   "comment": "大消费创新药千里马，重点盯住新药放量与增速能否延续"
+  }
+ },
+ {
+  "facts": {
+   "code": "300308",
+   "name": "中际旭创",
+   "industry": "科技/制造",
+   "company_type": "千里马",
+   "rating": "皇冠明珠",
+   "advice": "重仓买入",
+   "position": "10-20%",
+   "composite": 8.5,
+   "growth": 7,
+   "stability": 10,
+   "return_score": 10,
+   "metrics": [
+    {
+     "key": "or_yoy",
+     "label": "营收同比",
+     "value": 182.49,
+     "unit": "%",
+     "signed": true,
+     "highlightable": true
+    },
+    {
+     "key": "netprofit_yoy",
+     "label": "归母净利同比",
+     "value": 241.7,
+     "unit": "%",
+     "signed": true,
+     "highlightable": true
+    },
+    {
+     "key": "grossprofit_margin",
+     "label": "毛利率",
+     "value": 46.25,
+     "unit": "%",
+     "signed": false,
+     "highlightable": true
+    },
+    {
+     "key": "roe",
+     "label": "ROE",
+     "value": 39.21,
+     "unit": "%",
+     "signed": false,
+     "highlightable": true
+    },
+    {
+     "key": "debt_to_assets",
+     "label": "资产负债率",
+     "value": 36.08,
+     "unit": "%",
+     "signed": false,
+     "highlightable": false
+    },
+    {
+     "key": "current_ratio",
+     "label": "流动比率",
+     "value": 2.56,
+     "unit": "倍",
+     "signed": false,
+     "highlightable": false
+    },
+    {
+     "key": "eps",
+     "label": "每股收益",
+     "value": 12.31,
+     "unit": "元",
+     "signed": false,
+     "highlightable": true
+    }
+   ],
+   "flags": [],
+   "watch_variable": "增速能否延续"
+  },
+  "draft": {
+   "highlight": "归母净利同比+241.7%，ROE 39.2%，光模块放量",
+   "risk": "当前财务指标未发现重大风险信号",
+   "comment": "科技制造光模块千里马，重点盯住算力需求与增速能否延续"
+  }
+ },
+ {
+  "facts": {
+   "code": "300502",
+   "name": "新易盛",
+   "industry": "科技/制造",
+   "company_type": "千里马",
+   "rating": "皇冠明珠",
+   "advice": "重仓买入",
+   "position": "10-20%",
+   "composite": 8.5,
+   "growth": 7,
+   "stability": 10,
+   "return_score": 10,
+   "metrics": [
+    {
+     "key": "or_yoy",
+     "label": "营收同比",
+     "value": 100.34,
+     "unit": "%",
+     "signed": true,
+     "highlightable": true
+    },
+    {
+     "key": "netprofit_yoy",
+     "label": "归母净利同比",
+     "value": 90.98,
+     "unit": "%",
+     "signed": true,
+     "highlightable": true
+    },
+    {
+     "key": "grossprofit_margin",
+     "label": "毛利率",
+     "value": 48.44,
+     "unit": "%",
+     "signed": false,
+     "highlightable": true
+    },
+    {
+     "key": "roe",
+     "label": "ROE",
+     "value": 35.67,
+     "unit": "%",
+     "signed": false,
+     "highlightable": true
+    },
+    {
+     "key": "debt_to_assets",
+     "label": "资产负债率",
+     "value": 33.24,
+     "unit": "%",
+     "signed": false,
+     "highlightable": false
+    },
+    {
+     "key": "current_ratio",
+     "label": "流动比率",
+     "value": 2.6,
+     "unit": "倍",
+     "signed": false,
+     "highlightable": false
+    },
+    {
+     "key": "eps",
+     "label": "每股收益",
+     "value": 5.41,
+     "unit": "元",
+     "signed": false,
+     "highlightable": true
+    }
+   ],
+   "flags": [],
+   "watch_variable": "增速能否延续"
+  },
+  "draft": {
+   "highlight": "营收同比+100.3%，ROE 35.7%，光模块高景气",
+   "risk": "当前财务指标未发现重大风险信号",
+   "comment": "科技制造光模块千里马，重点盯住增速能否延续"
+  }
+ }
+]

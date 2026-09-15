@@ -1,7 +1,7 @@
-"""三维评分纯函数 + 综合分 + 一票否决：成长性/稳健性/资金回报，基于 StockFeatures 真实字段按 dev-guide §8.3 阈值评分。
+"""三维评分纯函数 + 综合分 + 一票否决：成长性/稳健性/资金回报，基于 StockFeatures 真实字段按 brd.md 三维评分表阈值评分。
 每维度按五档（1-2/3-4/5-6/7-8/9-10）取档位中点，多维度平均后四舍五入得 1-10 整数分。
-综合分按 §8.4/§8.5 行业权重加权求和，保留 1 位小数。
-一票否决按 §8.2 规则，返回触发的否决项列表（空列表表示通过）。
+综合分按 brd.md 行业对照表权重加权求和，保留 1 位小数。
+一票否决按 brd.md 否决表规则，返回触发的否决项列表（空列表表示通过）。
 """
 
 from __future__ import annotations
@@ -179,14 +179,14 @@ def score_return(f: StockFeatures) -> int:
 
 @dataclass(frozen=True)
 class VetoTrigger:
-    """一票否决触发记录（审计可追溯，dev-guide §8.2）。"""
+    """一票否决触发记录（审计可追溯）。"""
 
     rule: str
     reason: str
 
 
 def check_veto(f: StockFeatures) -> list[VetoTrigger]:
-    """一票否决检查（§8.2）。返回触发的否决项列表，空列表表示通过。
+    """一票否决检查（brd.md 否决表）。返回触发的否决项列表，空列表表示通过。
 
     已实现：
     - 造假嫌疑（货币资金异常）：货币资金 > 1 亿 且 占总资产 > 30%
@@ -230,7 +230,7 @@ def score_composite(
 ) -> float:
     """综合分 = 成长分×行业成长权重 + 稳健分×行业稳健权重 + 回报分×行业回报权重。
 
-    dev-guide §8.4 行业权重区间取中点；未知行业默认三等分。
+    brd.md 行业对照表权重区间取中点；未知行业默认三等分。
     返回保留 1 位小数。
     """
     gw, sw, rw = _INDUSTRY_WEIGHTS.get(industry, _DEFAULT_WEIGHTS)
@@ -246,7 +246,7 @@ _RATING_LABELS: list[tuple[float, str]] = [
 
 
 def score_rating(composite: float) -> str:
-    """综合分 → 四级评级（§8.6）。
+    """综合分 → 四级评级（brd.md 评级表）。
 
     边界值归属：8.5→皇冠明珠 / 7.0→优秀白马 / 5.5→鸡肋·观察 / 以下→垃圾。
     """

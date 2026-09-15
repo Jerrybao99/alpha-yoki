@@ -1,4 +1,4 @@
-"""全量 A 股评分评级脚本（ROADMAP Step 2-4）。
+"""全量 A 股评分评级脚本。
 
 读取 ``data/fin/full_collect/`` 最新日期 csv，逐行调用 scores.py 纯函数计算
 三维评分/综合分/评级，追加五列后落盘 ``data/fin/full_scores/YYMMDD.csv``，
@@ -14,13 +14,17 @@ from __future__ import annotations
 import argparse
 import csv
 import datetime as _dt
-import re
 from pathlib import Path
-from typing import Any
 
 from src.config import get_settings
-from src.data.contract import ALL_OUTPUT_COLUMNS, PERCENT_FIELDS, StockFeatures
-from src.data.output import FIELD_CN, FIELD_UNIT, format_value
+from src.data.contract import ALL_OUTPUT_COLUMNS, StockFeatures
+from src.data.output import FIELD_CN, format_value
+from src.data.readers import (
+    find_latest_csv as _find_latest,
+)
+from src.data.readers import (
+    load_features_csv as _load_features,
+)
 from src.scoring.scores import (
     check_veto,
     score_composite,
@@ -31,87 +35,6 @@ from src.scoring.scores import (
 )
 
 SCORING_HEADERS = ("成长性", "稳健性", "资金回报", "综合分", "评级")
-
-_CN_TO_FIELD: dict[str, str] = {cn: en for en, cn in FIELD_CN.items()}
-
-
-def _find_latest(csv_dir: Path) -> Path | None:
-    """返回目录下最新 YYMMDD.csv（不含短横线后缀的连接文件）。"""
-    if not csv_dir.exists():
-        return None
-    candidates = [p for p in csv_dir.glob("*.csv") if re.fullmatch(r"\d{6}", p.stem)]
-    return max(candidates) if candidates else None
-
-
-_NON_NUMERIC_FIELDS = frozenset(
-    {
-        "ts_code",
-        "symbol",
-        "name",
-        "industry",
-        "ann_date",
-        "f_ann_date",
-        "end_date",
-        "report_type",
-        "comp_type",
-        "end_type",
-        "update_flag",
-    }
-)
-
-
-def _parse_value(text: str, field: str) -> float | str | None:
-    """将 format_value 格式化后的 CSV 文本还原为原始 float/str/None。"""
-    if not text:
-        return None
-    if field in _NON_NUMERIC_FIELDS:
-        return text
-    if field in PERCENT_FIELDS:
-        return float(text.rstrip("%"))
-    if "亿" in text:
-        cleaned = re.sub(r"[亿万元/股次倍]", "", text)
-        return float(cleaned) * 1e8
-    if "万" in text:
-        cleaned = re.sub(r"[万元/股次倍]", "", text)
-        return float(cleaned) * 1e4
-    unit = FIELD_UNIT.get(field, "")
-    if unit in ("元/股", "倍", "次"):
-        return float(text.rstrip("元/股倍次"))
-    if unit == "比率":
-        return float(text)
-    if unit == "元":
-        stripped = text.rstrip("元")
-        try:
-            return float(stripped)
-        except ValueError:
-            return text
-    if unit == "股":
-        stripped = text.rstrip("股")
-        try:
-            return float(stripped)
-        except ValueError:
-            return text
-    try:
-        return float(text)
-    except ValueError:
-        return text
-
-
-def _load_features(csv_path: Path) -> list[StockFeatures]:
-    """从 full_collect CSV 反序列化为 StockFeatures 列表（中文列头→英文字段名）。"""
-    content = csv_path.read_text(encoding="utf-8-sig").lstrip("\ufeff")
-    reader = csv.DictReader(content.splitlines())
-    cn_cols = reader.fieldnames or []
-    features: list[StockFeatures] = []
-    for row in reader:
-        kwargs: dict[str, Any] = {}
-        for cn in cn_cols:
-            en = _CN_TO_FIELD.get(cn, cn)
-            kwargs[en] = _parse_value(row.get(cn, ""), en)
-        if "ts_code" not in kwargs:
-            kwargs["ts_code"] = kwargs.get("symbol", "")
-        features.append(StockFeatures(**kwargs))
-    return features
 
 
 def run_scores(

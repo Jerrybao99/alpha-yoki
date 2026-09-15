@@ -26,10 +26,10 @@ UNAVAILABLE = "unavailable"  # Tushare 无此字段且无近似，首版不采�
 
 @dataclass(frozen=True)
 class RequirementAlign:
-    """§8.1 需求字段 → Tushare 真实字段的对齐记录。
+    """需求字段 → Tushare 真实字段的对齐记录。
 
     Attributes:
-        requirement: brd.md §7.8 需求字段中文名。
+        requirement: 特征工程需求字段中文名（原始 55 项）。
         endpoint: 来源接口别名（与 TUSHARE_INTERFACES key 一致），或 COMPUTED / UNAVAILABLE。
         tushare_field: 对应 Tushare 真实字段名（元组表示拆为多列）。
         chinese_name: 真实字段的中文翻译（供 CSV 字段对应表使用）。
@@ -45,7 +45,7 @@ class RequirementAlign:
     note: str = ""
 
 
-# ===== brd.md §7.8 需求字段（55）→ Tushare 真实字段对齐表 =====
+# ===== 特征工程需求字段（55）→ Tushare 真实字段对齐表 =====
 REQUIREMENT_ALIGNMENT: list[RequirementAlign] = [
     RequirementAlign("股票代码", STOCK_BASIC, "symbol", "股票代码", "exact"),
     RequirementAlign("股票名称", STOCK_BASIC, "name", "股票名称", "exact"),
@@ -251,7 +251,7 @@ REQUIREMENT_ALIGNMENT: list[RequirementAlign] = [
 ]
 
 
-# ===== 补充字段（一票否决 §8.2 / 三维评分 §8.3 辅助，非 55 需求字段）=====
+# ===== 补充字段（一票否决 / 三维评分辅助，非 55 需求字段）=====
 @dataclass(frozen=True)
 class SupplementaryField:
     """补充字段描述（服务一票否决与三维评分）。"""
@@ -976,7 +976,7 @@ class StockFeatures(BaseModel):
 
 
 def requirement_coverage() -> dict[str, int]:
-    """统计 §8.1 需求字段的对齐覆盖情况，供文档/报告使用。"""
+    """统计需求字段的对齐覆盖情况，供文档/报告使用。"""
     counts: dict[str, int] = {}
     for a in REQUIREMENT_ALIGNMENT:
         counts[a.match] = counts.get(a.match, 0) + 1

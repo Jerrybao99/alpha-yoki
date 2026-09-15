@@ -1,10 +1,12 @@
 [project]
 name = "alpha-jerry"
-version = "0.1.0"
-description = "A 股基本面分析 AI Native 工具集（多 Agent 编排 + RAG + 本地优先）"
+version = "0.4.0"
+description = "A 股基本面分析本地命令行工具：Tushare 采集 → 一票否决 → 三维评分 → 行业加权评级 → LLM 锐评（本地优先）"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "httpx[socks]>=0.28.1",
+    "keyring>=25.7.0",
     "lxml>=6.1.1",
     "openai>=2.49.0",
     "pandas>=3.0.3",
@@ -12,6 +14,9 @@ dependencies = [
     "python-dotenv>=1.2.2",
     "tushare>=1.4.29",
 ]
+
+[project.scripts]
+alpha-jerry = "src.cli:main"
 
 [dependency-groups]
 dev = [

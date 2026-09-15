@@ -194,7 +194,7 @@ class CollectionPipeline:
         return features, False
 
     def run_batch(self, period: str | None = None) -> CollectionResult:
-        """批量采集全市场财务数据（ROADMAP Step 1-5）。
+        """批量采集全市场财务数据。
 
         用 ``fetch_financials_batch`` 一次调完 4 个 VIP 接口（O(1) 而非 O(n)），
         end_date 锁定 income 报告期，其余接口不覆盖。回填 stock_basic 字段与
@@ -239,7 +239,7 @@ class CollectionPipeline:
         return result
 
     def to_rows(self, result: CollectionResult) -> list[dict[str, Any]]:
-        """把成功特征标准化为输出行（§8.1 字段顺序 + 百分比格式化）。"""
+        """把成功特征标准化为输出行（OUTPUT_COLUMNS 字段顺序 + 百分比格式化）。"""
         return [to_output_row(f) for f in result.successes]
 
     def write_failures(
@@ -249,7 +249,7 @@ class CollectionPipeline:
         *,
         out_dir: Path | None = None,
     ) -> Path:
-        """失败清单落盘（审计可追溯，FR-DATA-05）。"""
+        """失败清单落盘（审计可追溯）。"""
         date = date or _dt.date.today()
         base = out_dir or self.settings.data_path("fin")
         out = base / f"{date.strftime('%y%m%d')}-失败.csv"
