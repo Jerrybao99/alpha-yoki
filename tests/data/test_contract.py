@@ -104,14 +104,13 @@ def test_output_columns_are_tushare_real_names() -> None:
 
 def test_output_columns_match_model_fields() -> None:
     """StockFeatures 显式声明的输出字段必须全部出现在输出列中；
-    symbol 仅用于内部标识不在输出列中；extra=allow 允许额外列。"""
+    symbol 仅用于内部标识不在输出列中；补充列只进 ALL_OUTPUT_COLUMNS。"""
     declared = set(StockFeatures.model_fields) - {"symbol"}
-    assert declared <= set(OUTPUT_COLUMNS), (
-        f"StockFeatures 声明了但未在 OUTPUT_COLUMNS 中: {declared - set(OUTPUT_COLUMNS)}"
-    )
     assert declared <= set(ALL_OUTPUT_COLUMNS), (
         f"StockFeatures 声明了但未在 ALL_OUTPUT_COLUMNS 中: {declared - set(ALL_OUTPUT_COLUMNS)}"
     )
+    core = declared - set(SUPPLEMENTARY_COLUMNS)
+    assert core <= set(OUTPUT_COLUMNS), f"核心声明字段未在 OUTPUT_COLUMNS 中: {core - set(OUTPUT_COLUMNS)}"
 
 
 def test_supplementary_columns_no_overlap() -> None:
@@ -119,6 +118,21 @@ def test_supplementary_columns_no_overlap() -> None:
     assert set(SUPPLEMENTARY_COLUMNS).isdisjoint(set(OUTPUT_COLUMNS))
     all_cols = list(ALL_OUTPUT_COLUMNS)
     assert len(all_cols) == len(set(all_cols))
+
+
+def test_holder_num_in_contract() -> None:
+    """股东户数进补充列、中文列头、单位与模型字段。"""
+    from src.data.contract import FIELD_CN, FIELD_UNIT
+
+    assert "holder_num" in SUPPLEMENTARY_COLUMNS
+    assert "holder_num" in ALL_OUTPUT_COLUMNS
+    assert "holder_num" not in OUTPUT_COLUMNS
+    assert FIELD_CN["holder_num"] == "股东户数"
+    assert FIELD_UNIT["holder_num"] == "户"
+    feat = StockFeatures(ts_code="600000.SH")
+    assert feat.holder_num is None
+    feat = StockFeatures(ts_code="600000.SH", holder_num=25135)
+    assert feat.holder_num == 25135
 
 
 def test_all_output_columns_match() -> None:

@@ -88,3 +88,46 @@ def test_models_command_lists_endpoints_and_models(
     assert "glm-5.3" in output
     assert "上下文: 1M" in output
     assert "最大输出: 128K" in output
+
+
+def test_parser_registers_all_subcommands() -> None:
+    parser = cli.build_parser()
+    for command in ("status", "collect", "scores", "screen", "holdings", "report", "models", "wechat"):
+        extra = []
+        if command == "holdings":
+            extra = ["list"]
+        elif command == "wechat":
+            extra = ["status"]
+        args = parser.parse_args([command, *extra])
+        assert args.command == command
+
+
+def test_main_json_emits_single_envelope(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    import json
+
+    monkeypatch.setattr("src.config.get_settings", lambda: settings_for(tmp_path))
+    monkeypatch.setattr(cli.sys.stdout, "isatty", lambda: False)
+    code = cli.main(["--json", "status", "--check"])
+    out = capsys.readouterr().out.strip()
+    assert code == cli.EXIT_DATA
+    payload = json.loads(out)
+    assert set(payload) == {"ok", "command", "data", "error"}
+    assert payload["command"] == "status"
+    assert out.count("{") >= 1
+
+
+def test_main_non_tty_has_no_banner(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.setattr("src.config.get_settings", lambda: settings_for(tmp_path))
+    monkeypatch.setattr(cli.sys.stdout, "isatty", lambda: False)
+    cli.main(["status"])
+    output = capsys.readouterr().out
+    assert "🐰" not in output
+    assert "alpha-jerry v" not in output

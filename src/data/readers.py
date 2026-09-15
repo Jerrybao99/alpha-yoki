@@ -39,7 +39,7 @@ def find_latest_csv(csv_dir: Path) -> Path | None:
 def parse_formatted_value(text: str, field: str) -> float | str | None:
     """将 format_value 生成的文本还原为 float、str 或 None。"""
     if not text:
-        return None
+        return "" if field in _NON_NUMERIC_FIELDS else None
     if field in _NON_NUMERIC_FIELDS:
         return text
     if field in PERCENT_FIELDS:
@@ -65,6 +65,12 @@ def parse_formatted_value(text: str, field: str) -> float | str | None:
         stripped = text.rstrip("股")
         try:
             return float(stripped)
+        except ValueError:
+            return text
+    if unit == "户":
+        stripped = text.rstrip("户")
+        try:
+            return int(float(stripped))
         except ValueError:
             return text
     try:

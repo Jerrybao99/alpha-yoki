@@ -27,9 +27,8 @@ from src.reports.facts import build_review_facts
 from src.reports.reporting import (
     Top20Result,
     clean_ts_code,
-    load_scoring_rows,
+    load_score_rows_prefer_raw,
     make_features,
-    parse_back,
 )
 
 TOP_N = 20
@@ -49,10 +48,9 @@ class Candidate:
 
 
 def select_top(csv_path: Path, limit: int = TOP_N) -> list[Candidate]:
-    """读取评分 CSV，按综合分降序取前 limit 只可构造特征的股票。"""
+    """读取评分产物（raw 优先），按综合分降序取前 limit 只可构造特征的股票。"""
     candidates: list[Candidate] = []
-    for raw in load_scoring_rows(csv_path):
-        parsed = parse_back(raw)
+    for parsed in load_score_rows_prefer_raw(csv_path):
         composite = parsed.get("综合分")
         if composite is None:
             continue

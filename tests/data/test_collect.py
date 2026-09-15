@@ -445,3 +445,77 @@ def test_pipeline_batch_calls_sw_enrichment(tmp_path: Path) -> None:
         pipe.close()
     assert len(sw_calls) == 1
     assert sw_calls[0] == 1
+
+
+def test_pipeline_batch_merges_holder_num(tmp_path: Path) -> None:
+    """run_batch 在财务结果上合并股东户数，取最新 end_date。"""
+
+    class _HolderBatchFetcher(BaseFetcher):
+        def fetch_stock_list(self):
+            return [StockInfo(ts_code="600000.SH", symbol="600000", name="A")]
+
+        def fetch_financials(self, ts_code, period=None):
+            return _feat(ts_code)
+
+        def fetch_financials_batch(self, period):
+            return {"600000.SH": _feat("600000.SH")}
+
+        def _call_paginated(self, interface_key, page_size, **params):
+            assert interface_key == "stk_holdernumber"
+            assert params["enddate"] == "20241231"
+            assert page_size <= 3000
+            return [
+                {"ts_code": "600000.SH", "end_date": "20240930", "holder_num": 100},
+                {"ts_code": "600000.SH", "end_date": "20241231", "holder_num": 25135},
+            ]
+
+    pipe = CollectionPipeline(_HolderBatchFetcher(), settings=_settings(tmp_path), executor=_SeqExecutor())
+    try:
+        result = pipe.run_batch(period="20241231")
+    finally:
+        pipe.close()
+    assert result.successes[0].holder_num == 25135
+
+
+def test_pipeline_batch_holder_failure_does_not_abort(tmp_path: Path) -> None:
+    """股东户数接口失败不拖垮财务批次。"""
+
+    class _BoomHolderFetcher(BaseFetcher):
+        def fetch_stock_list(self):
+            return [StockInfo(ts_code="600000.SH", symbol="600000", name="A")]
+
+        def fetch_financials(self, ts_code, period=None):
+            return _feat(ts_code)
+
+        def fetch_financials_batch(self, period):
+            return {"600000.SH": _feat("600000.SH")}
+
+        def _call_paginated(self, interface_key, page_size, **params):
+            raise RuntimeError("holder boom")
+
+    pipe = CollectionPipeline(_BoomHolderFetcher(), settings=_settings(tmp_path), executor=_SeqExecutor())
+    try:
+        result = pipe.run_batch(period="20241231")
+    finally:
+        pipe.close()
+    assert result.success_count == 1
+    assert result.successes[0].holder_num is None
+
+
+def test_pipeline_run_fills_holder_num(tmp_path: Path) -> None:
+    """逐股路径回填 holder_num。"""
+
+    class _HolderFetcher(_FakeFetcher):
+        def _call(self, interface_key, fields=None, **params):
+            return [{"ts_code": "600000.SH", "end_date": "20241231", "holder_num": 888}]
+
+    fetcher = _HolderFetcher()
+    fetcher.features = {"600000.SH": _feat("600000.SH")}
+    pipe = CollectionPipeline(
+        fetcher,
+        settings=_settings(tmp_path),
+        cache=Cache(tmp_path / "c"),
+        executor=_SeqExecutor(),
+    )
+    result = pipe.run(period="20241231")
+    assert result.successes[0].holder_num == 888

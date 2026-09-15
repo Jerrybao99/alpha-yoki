@@ -28,6 +28,7 @@ from src.data.output import (
     write_features_csv,
 )
 from src.data.provider import TushareFetcher, TushareTokenError
+from src.data.store import raw_path, write_raw_csv
 
 
 def _read_existing_ts_codes(csv_path: Path) -> set[str]:
@@ -188,6 +189,12 @@ def _run_batch(
         pct = written * 100 // total if total else 0
         print(f"  写盘进度：{written}/{total} ({pct}%)")
 
+    write_raw_csv(
+        [feat.model_dump() for feat in successes],
+        raw_path(out_dir, stamp),
+        ALL_OUTPUT_COLUMNS,
+    )
+
     # 数据来源 CSV
     write_data_source_csv(src_path)
 
@@ -240,6 +247,11 @@ def _run_per_stock(
     else:
         write_features_csv(result.successes, feat_path)
 
+    write_raw_csv(
+        [feat.model_dump() for feat in result.successes],
+        raw_path(out_dir, stamp),
+        ALL_OUTPUT_COLUMNS,
+    )
     write_data_source_csv(src_path)
 
     if result.failures:

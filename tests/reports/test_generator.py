@@ -68,6 +68,42 @@ def test_select_top_orders_by_composite_and_skips_unscored(tmp_path: Path) -> No
     assert top[0].composite == 8.0
 
 
+def test_select_top_prefers_raw_over_human(tmp_path: Path) -> None:
+    """同日 raw 存在时按 raw 综合分排序，忽略人读 CSV。"""
+    from src.data.store import raw_path, write_raw_csv
+
+    csv_path = _scoring_csv(tmp_path, _BANK, _MOUTAI)
+    write_raw_csv(
+        [
+            {
+                "ts_code": "600000.SH",
+                "name": "浦发银行",
+                "industry": "证券金融",
+                "综合分": 6.0,
+                "成长性": 6,
+                "稳健性": 8,
+                "资金回报": 8,
+                "评级": "⭐ 优秀白马",
+            },
+            {
+                "ts_code": "600519.SH",
+                "name": "贵州茅台",
+                "industry": "大消费",
+                "综合分": 9.0,
+                "成长性": 9,
+                "稳健性": 8,
+                "资金回报": 8,
+                "评级": "👑 皇冠明珠",
+            },
+        ],
+        raw_path(csv_path.parent, csv_path.stem),
+        ("ts_code", "name", "industry", "综合分", "成长性", "稳健性", "资金回报", "评级"),
+    )
+    top = select_top(csv_path)
+    assert top[0].features.name == "贵州茅台"
+    assert top[0].composite == 9.0
+
+
 def test_build_top20_one_call_per_stock_fills_three_columns(tmp_path: Path) -> None:
     client = _FakeClient()
     result = build_top20(

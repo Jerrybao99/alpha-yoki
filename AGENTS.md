@@ -7,7 +7,7 @@
 
 - `README.md` — 项目说明与快速开始 | `CHANGELOG.md` — 变更日志（SemVer）
 - `docs/brd.md` — 业务需求基线 + 否决/评分/评级/建议 RIGID 规则表
-- `ROADMAP.md` — 3 大需求路线图（CLI 接驳与数据升级 / 侏儒兔 banner 与微信中转 / 多模型锐评子系统）
+- `ROADMAP.md` — 3 大需求路线图（CLI 接驳与数据升级 / 侏儒兔 banner 与微信 iLink 直连 / 多模型锐评子系统）
 
 ## 项目概述
 
@@ -18,7 +18,7 @@
 1. **本地优先与纯文件存储**：数据本地存储不上云，`data/` 不入库；全量双落盘（人读 CSV + 机读 raw CSV），无外部数据库。
 2. **规则可审计**：否决/评分/评级为纯函数 + 全阈值边界单测；业务规则改代码不修 `docs/brd.md`。
 3. **步骤解耦与无损传递**：步骤间只传内存对象或读 raw CSV，彻底废除 `format_value → _parse_value` 精度损耗式往返。
-4. **CLI 契约化，不自研 Agent**：本项目只做内核 + LLM 子系统 + `src/tools/` 工具封装；交互 UI、定时监控与微信收发交给 OpenClaw。
+4. **CLI 契约化 + 微信直连 iLink，不自研通用 Agent**：本项目只做内核 + LLM 子系统 + `src/tools/` 工具封装 + `src/wechat/` iLink 收发；不自研套壳多智能体。
 5. **LLM 输出不可信**：结构化 JSON → 白名单校验（字数/禁词/数字一致性）→ 重试 → 跨模型切换 → 规则兜底 → 缓存 → 追踪。
 6. **配置集约**：路径/超时/密钥/模型参数全走 `Settings`，严禁硬编码；`.env` 不入库，新增配置同步 `.env.example`。
 7. **数据源单一真源**：Tushare VIP 接口优先，不传 `fields` 取全量；以 `expected_latest_period()` 支持披露日增量更新。
@@ -43,14 +43,15 @@ alpha-jerry
 │   ├── scoring/             # 评分层：scores（纯函数，阈值全单测）
 │   ├── reports/             # 报告层：evaluation / reporting（纯函数）
 │   ├── llm/                 # 锐评子系统：client / review / fallback / cache / trace
-│   ├── tools/               # 工具层：market / holdings / status（CLI 契约）
+│   ├── tools/               # 工具层：market / holdings / status / wechat（CLI 契约）
+│   ├── wechat/              # iLink 直连：ilink / session / router / bot / notify
 │   ├── cli.py               # CLI 入口（argparse，统一 UTF-8 与退出码 0/2/3/4）
-│   └── banner.py            # 侏儒兔 er banner（ANSI / 🐰 / ASCII 三档降级）
+│   └── banner.py            # 侏儒兔 banner（ANSI / 🐰 / ASCII 三档降级）
 ├── scripts/                 # 批处理薄包装：full_collect / full_scores / full_report / sw_industry
 ├── tests/ & integrated_tests/ # 单元测试（镜像 src）与集成测试（mock + network）
-├── manifests/               # 部署清单（OpenClaw Skill 契约样例）
+├── manifests/               # 部署清单（可选后续项）
 ├── assets/icon/             # 品牌资产：巧克力色侏儒兔源图 png / ico / icns
-└── data/                    # 运行期本地数据（不入库）：fin / cache / hold / monitor / ref
+└── data/                    # 运行期本地数据（不入库）：fin / cache / hold / monitor / ref / wechat
 ```
 
 ### 关键文件

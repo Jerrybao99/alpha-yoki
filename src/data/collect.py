@@ -16,6 +16,7 @@ from typing import Any
 
 from src.config import Settings, get_settings
 from src.data.contract import StockFeatures, StockInfo
+from src.data.holders import attach_holder_one, attach_holders_batch
 from src.data.output import to_output_row
 from src.data.provider import BaseFetcher
 
@@ -171,6 +172,7 @@ class CollectionPipeline:
         features = self.fetcher.fetch_financials(ts_code, period)
         if features is None:
             return None, False
+        attach_holder_one(self.fetcher, features, ts_code, period)  # type: ignore[arg-type]
         self.cache.set(ts_code, period, features)
         return features, False
 
@@ -199,6 +201,8 @@ class CollectionPipeline:
             features_map = fetcher.fetch_financials_batch(stable_period)
         except NotImplementedError as exc:
             raise RuntimeError("当前 Fetcher 不支持批量采集，请用 CollectionPipeline.run() 逐股模式") from exc
+
+        attach_holders_batch(self.fetcher, features_map, stable_period, self.settings.vip_page_size)  # type: ignore[arg-type]
 
         result = CollectionResult(total=len(stocks))
         for s in stocks:

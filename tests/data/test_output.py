@@ -8,10 +8,12 @@ from pathlib import Path
 from src.data.contract import ALL_OUTPUT_COLUMNS, PERCENT_FIELDS, StockFeatures
 from src.data.output import (
     FIELD_CN,
+    FIELD_TO_INTERFACE,
     format_value,
     write_data_source_csv,
     write_features_csv,
 )
+from src.data.readers import parse_formatted_value
 
 
 def _feat(ts_code: str, **kw) -> StockFeatures:
@@ -91,6 +93,23 @@ def test_format_value_no_unit_field() -> None:
 def test_format_value_non_numeric() -> None:
     assert format_value("ts_code", "600000.SH") == "600000.SH"
     assert format_value("name", "浦发银行") == "浦发银行"
+
+
+def test_format_value_holder_num_households() -> None:
+    """股东户数按整数 + 户输出，不走亿/万缩放。"""
+    assert format_value("holder_num", 25135) == "25135户"
+    assert format_value("holder_num", 25135.0) == "25135户"
+    assert format_value("holder_num", None) == ""
+
+
+def test_parse_formatted_value_holder_num() -> None:
+    """人读「户」可还原为数值。"""
+    assert parse_formatted_value("25135户", "holder_num") == 25135
+    assert parse_formatted_value("", "holder_num") is None
+
+
+def test_holder_num_interface_trace() -> None:
+    assert FIELD_TO_INTERFACE["holder_num"] == "stk_holdernumber"
 
 
 # ===== write_features_csv =====

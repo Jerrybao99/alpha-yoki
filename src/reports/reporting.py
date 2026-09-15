@@ -16,6 +16,7 @@ from src.data.readers import (
 from src.data.readers import (
     parse_formatted_value as _parse_value,
 )
+from src.data.store import load_raw, sibling_raw
 
 SCORING_KEYS = ("成长性", "稳健性", "资金回报", "综合分", "评级")
 
@@ -49,6 +50,14 @@ def load_scoring_rows(csv_path: Path) -> list[dict[str, Any]]:
     content = csv_path.read_text(encoding="utf-8-sig").lstrip("\ufeff")
     reader = csv.DictReader(content.splitlines())
     return [dict(row) for row in reader]
+
+
+def load_score_rows_prefer_raw(human_path: Path) -> list[dict[str, Any]]:
+    """有 raw 则读机读评分；否则回退人读 CSV 并反序列化。"""
+    raw = sibling_raw(human_path)
+    if raw.exists():
+        return load_raw(raw)
+    return [parse_back(row) for row in load_scoring_rows(human_path)]
 
 
 def parse_back(raw_row: dict[str, Any]) -> dict[str, Any]:

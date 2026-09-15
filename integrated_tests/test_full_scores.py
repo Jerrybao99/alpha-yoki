@@ -125,6 +125,21 @@ def test_run_scores_rating_boundary() -> None:
     assert "垃圾" in results[1]["评级"]
 
 
+def test_raw_scores_match_memory_values(tmp_path: Path) -> None:
+    """评分 raw 与内存综合分/金额一致，不经人读往返。"""
+    from src.data.store import load_raw, write_raw_csv
+
+    features = [_feat("600000.SH", revenue=1.5e10)]
+    results, _ = run_scores(features)
+    columns = list(ALL_OUTPUT_COLUMNS) + list(SCORING_HEADERS)
+    raw = tmp_path / "260724-raw.csv"
+    write_raw_csv(results, raw, columns)
+    loaded = load_raw(raw)
+    assert loaded[0]["综合分"] == results[0]["综合分"]
+    assert loaded[0]["revenue"] == results[0]["revenue"]
+    assert loaded[0]["成长性"] == results[0]["成长性"]
+
+
 def test_write_scoring_csv_output(tmp_path: Path) -> None:
     """产物 CSV 含原始列 + SCORING_HEADERS。"""
     features = [_feat("600000.SH")]
@@ -175,8 +190,9 @@ def test_real_full_scores() -> None:
 
     ``uv run pytest -m network integrated_tests/test_full_scores.py::test_real_full_scores``
     """
-    from scripts.full_scores import _find_latest, _load_features
+    from scripts.full_scores import _find_latest
     from src.config import get_settings
+    from src.data.store import load_features_prefer_raw
 
     settings = get_settings()
     if not settings.tushare_token.strip():
@@ -187,7 +203,7 @@ def test_real_full_scores() -> None:
     if csv_path is None:
         pytest.skip("无 full_collect CSV，请先采集")
 
-    features = _load_features(csv_path)
+    features = load_features_prefer_raw(csv_path)
     assert len(features) >= 5000, f"不足 5000 股：{len(features)}"
 
     results, vetoes = run_scores(features)

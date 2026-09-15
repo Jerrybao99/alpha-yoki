@@ -764,7 +764,7 @@ for _c in (
         _SEEN.add(_c)
         OUTPUT_COLUMNS += (_c,)
 
-SUPPLEMENTARY_COLUMNS: tuple[str, ...] = ()
+SUPPLEMENTARY_COLUMNS: tuple[str, ...] = ("holder_num",)
 ALL_OUTPUT_COLUMNS: tuple[str, ...] = (*OUTPUT_COLUMNS, *SUPPLEMENTARY_COLUMNS)
 
 # 百分比字段集合（含 fina_indicator 中所有 % 单位字段）
@@ -844,9 +844,9 @@ PERCENT_FIELDS: frozenset[str] = frozenset(
     }
 )
 
-# 补充输出列去重
+# 补充输出列：股东户数（stk_holdernumber），与核心财务列无重复
 _core_set = set(OUTPUT_COLUMNS)
-SUPPLEMENTARY_COLUMNS = ()
+SUPPLEMENTARY_COLUMNS = tuple(c for c in ("holder_num",) if c not in _core_set)
 ALL_OUTPUT_COLUMNS = (*OUTPUT_COLUMNS, *SUPPLEMENTARY_COLUMNS)
 
 
@@ -924,6 +924,9 @@ class StockFeatures(BaseModel):
     netprofit_margin: float | None = None
     ocf_to_shortdebt: float | None = None
     inv_turn: float | None = None
+
+    # ===== stk_holdernumber =====
+    holder_num: int | None = None
 
     @classmethod
     def output_columns(cls) -> list[str]:
@@ -1453,12 +1456,13 @@ FIELD_CN: dict[str, str] = {
     "q_netprofit_yoy": "归属母公司股东的净利润同比增长率(单季度)",
     "q_netprofit_qoq": "归属母公司股东的净利润环比增长率(单季度)",
     "equity_yoy": "净资产同比增长率",
+    "holder_num": "股东户数",
 }
 
 # ========================================================================
 # FIELD_UNIT — 全量字段 → 单位
 # 单位语义：'元'=金额、'元/股'=每股、'%'=百分比、'倍'=比率(>1)、'次'=周转率、
-#           '天'=周转天数、'股'=股本、'比率'=一般比率、'—'=文本/日期类。
+#           '天'=周转天数、'股'=股本、'户'=股东户数、'比率'=一般比率、'—'=文本/日期类。
 # ========================================================================
 
 # 通用字符串/日期字段统一为 '—'
@@ -1973,4 +1977,5 @@ FIELD_UNIT: dict[str, str] = {
     "q_opincome": "元",
     "q_investincome": "元",
     "q_dtprofit": "元",
+    "holder_num": "户",
 }

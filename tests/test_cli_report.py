@@ -7,7 +7,7 @@ from types import SimpleNamespace
 
 import pytest
 
-import src.cli as cli
+import src.tools.report as cli
 from src.llm.credentials import CredentialError
 from src.reports.reporting import Top20Result
 from tests.test_cli import settings_for

@@ -41,6 +41,9 @@ def test_settings_defaults() -> None:
     assert s.review_max_tokens == 600
     assert s.review_temperature == 0.3
     assert s.review_cache_enabled is True
+    assert s.wechat_base_url == "https://ilinkai.weixin.qq.com"
+    assert s.wechat_digest_times == "09:00,17:00"
+    assert s.wechat_trust_env is False
 
 
 def test_data_path_creates_subdir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -55,7 +58,7 @@ def test_data_path_creates_subdir(tmp_path: Path, monkeypatch: pytest.MonkeyPatc
 
 def test_data_subdirs_mapping_complete() -> None:
     """data 子目录映射与 AGENTS.md 项目目录约定一致。"""
-    assert set(DATA_SUBDIRS) == {"fin", "ref", "cache", "hold", "monitor", "test"}
+    assert set(DATA_SUBDIRS) == {"fin", "ref", "cache", "hold", "monitor", "test", "wechat"}
 
 
 def test_main_entry_importable() -> None:

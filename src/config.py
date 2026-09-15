@@ -16,6 +16,7 @@ DATA_SUBDIRS = {
     "hold": "持股",
     "monitor": "监控",
     "test": "测试产物",
+    "wechat": "微信会话",
 }
 
 
@@ -57,6 +58,16 @@ class Settings(BaseSettings):
     batch_size: int = 500  # 批量采集流式写盘行数（每 N 行 flush 一次）
     vip_page_size: int = 5000  # VIP 接口分页每页行数
     perf_mode: str = "mid"  # 性能模式：low（低配）/ mid（中配）/ high（高配），影响 concurrency/batch_size
+
+    # ===== 微信 iLink =====
+    wechat_base_url: str = "https://ilinkai.weixin.qq.com"
+    wechat_channel_version: str = "2.4.8"
+    wechat_bot_agent: str = "alpha-jerry/1.0.0"
+    wechat_poll_timeout_ms: int = 35000
+    wechat_allowed_users: str = ""  # 空=仅扫码授权者；逗号分隔 ilink_user_id
+    wechat_digest_times: str = "09:00,17:00"
+    wechat_max_message_chars: int = 1800
+    wechat_trust_env: bool = False
 
     @property
     def data_root(self) -> Path:

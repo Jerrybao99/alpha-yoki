@@ -236,6 +236,23 @@ def test_csv_resume_no_file(tmp_path: Path) -> None:
     assert _read_existing_ts_codes(tmp_path / "nonexist.csv") == set()
 
 
+@pytest.mark.network
+def test_holder_num_sample_matches_tushare() -> None:
+    """股东户数批量与单股抽样一致，且非空覆盖 > 0。"""
+    from src.data.holders import fetch_holder_number, fetch_holder_numbers
+
+    settings = get_settings()
+    if not settings.tushare_token.strip():
+        pytest.skip("未配置 TUSHARE_TOKEN")
+    fetcher = TushareFetcher(settings)
+    period = expected_latest_period(_dt.date.today())
+    holders = fetch_holder_numbers(fetcher, period, page_size=3000)
+    assert holders, f"报告期 {period} 未拉到股东户数"
+    sample_code = next(iter(holders))
+    direct = fetch_holder_number(fetcher, sample_code, period)
+    assert direct == holders[sample_code]
+
+
 # ===== network 测试（CI 跳过）=====
 
 
@@ -265,6 +282,8 @@ def test_real_batch_collects_all_stocks() -> None:
     assert feat.ts_code
     assert feat.end_date is not None
     assert feat.revenue is not None
+    filled = sum(1 for item in result.successes if item.holder_num is not None)
+    assert filled > 0, "全量采集未沉淀任何股东户数"
 
     # 输出 CSV 到 data/test/（固定文件名，每次运行覆盖同名）
     out_dir = settings.data_root / "test" / "full_collect"

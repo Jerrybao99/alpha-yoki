@@ -19,12 +19,8 @@ from pathlib import Path
 from src.config import get_settings
 from src.data.contract import ALL_OUTPUT_COLUMNS, StockFeatures
 from src.data.output import FIELD_CN, format_value
-from src.data.readers import (
-    find_latest_csv as _find_latest,
-)
-from src.data.readers import (
-    load_features_csv as _load_features,
-)
+from src.data.readers import find_latest_csv as _find_latest
+from src.data.store import load_features_prefer_raw, raw_path, write_raw_csv
 from src.scoring.scores import (
     check_veto,
     score_composite,
@@ -126,7 +122,7 @@ def main() -> None:
             raise SystemExit("找不到采集数据，请先运行 uv run python scripts/full_collect.py")
 
     print(f"读取采集数据：{csv_path}")
-    features = _load_features(csv_path)
+    features = load_features_prefer_raw(csv_path)
     print(f"共 {len(features)} 条记录")
 
     results, vetoes = run_scores(features)
@@ -136,6 +132,7 @@ def main() -> None:
 
     out_path = out_dir / f"{stamp}.csv"
     _write_scoring_csv(out_path, results, ALL_OUTPUT_COLUMNS)
+    write_raw_csv(results, raw_path(out_dir, stamp), list(ALL_OUTPUT_COLUMNS) + list(SCORING_HEADERS))
     print(f"评分结果：{out_path}")
 
     if vetoes:

@@ -552,6 +552,8 @@ for _f in (
 ):
     FIELD_TO_INTERFACE.setdefault(_f, "income")
 
+FIELD_TO_INTERFACE["holder_num"] = "stk_holdernumber"
+
 
 def _unit_of(field: str) -> tuple[str, str]:
     """返回 (单位, 来源)；unit 来自 FIELD_UNIT，来源固定为「推断」。"""
@@ -569,6 +571,7 @@ def format_value(field: str, value: Any) -> str:
     - ``比率`` → 两位小数，无后缀
     - ``元`` → 亿/万 数量级 + 元
     - ``股`` → 亿/万 数量级
+    - ``户`` → 整数 + 户
     - 无单位/未知 → 亿/万 数量级
     """
     if value is None:
@@ -585,6 +588,8 @@ def format_value(field: str, value: Any) -> str:
             return f"{v:.2f}{unit}"
         if unit == "比率":
             return f"{v:.2f}"
+        if unit == "户":
+            return f"{int(v)}户"
 
         _w = abs(v) / 1e4
         if abs(v) >= 1e8 or _w >= 9999.995:
