@@ -8,6 +8,7 @@
 
 ### Added
 
+- `USER_GUIDE.md`：面向无编程经验用户的 macOS / Windows 分步使用手册
 - `models use`：终端切换并记住 DeepSeek / GLM 及具体型号，不必先跑 `report`
 - `scripts/uv_sync.py`：按探测耗时选择官方 PyPI 或国内镜像后再 `uv sync`
 - `collect --resume`：断点续采，跳过当日已有股票并合并写回
