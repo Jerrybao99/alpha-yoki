@@ -9,6 +9,7 @@
 
 - [1. 开始之前](#1-开始之前)
 - [2. 安装](#2-安装)
+- [2.5 无 GitHub 路线](#25-无-github-路线)
 - [3. 配置密钥](#3-配置密钥)
 - [4. 第一次完整跑通](#4-第一次完整跑通)
 - [5. 日常使用](#5-日常使用)
@@ -42,8 +43,9 @@ flowchart LR
 - 一个 [Tushare](https://tushare.pro) 账号，积分达到 5000（采集用的 VIP 接口硬性要求）
 - 一个大模型 API Key：[DeepSeek](https://platform.deepseek.com) 或 [智谱 GLM](https://open.bigmodel.cn)，二选一即可
 - 第一次完整跑通约 1 小时，其中大部分是等待下载和采集
+- 打不开 GitHub、也没有 VPN 时：项目文件夹需由别人拷给你，安装步骤改走 [2.5](#25-无-github-路线)
 
-Tushare 积分的获取方式见官方 [积分获取办法](https://tushare.pro/document/1?doc_id=13)。大模型 API 按用量计费，先充少量金额即可。
+Tushare 积分的获取方式见官方 [积分获取办法](https://tushare.pro/document/1?doc_id=13)。大模型 API 按用量计费，先充少量金额即可。Tushare、DeepSeek、智谱、微信都是国内站点，配好环境后不需要翻墙。
 
 ### 1.3 认识终端
 
@@ -64,12 +66,14 @@ Tushare 积分的获取方式见官方 [积分获取办法](https://tushare.pro/
 
 ### 1.4 几个名词
 
-- 项目目录：解压或克隆出来的 `alpha-yoki` 文件夹，所有命令都必须在这个目录里执行
+- 项目目录：解压、克隆或别人拷给你的 `alpha-yoki` 文件夹，所有命令都必须在这个目录里执行
 - Token / API Key：一串类似密码的字符，用来证明「你是你」，不要发给别人
 - `.env` 文件：项目目录里的纯文本配置文件，密钥填在这里；文件名以点开头，在 Finder / 资源管理器里默认隐藏
 - 退出码：每条命令结束时留下的数字，`0` 成功、`2` 配置有问题、`3` 上游服务（Tushare / 大模型）出错、`4` 数据缺失或过期
 
 ## 2. 安装
+
+能打开 GitHub 时按 2.1 到 2.4 做。打不开 `github.com`、也没有 VPN 时，**不要**执行 2.1 和 2.2，直接看 [2.5](#25-无-github-路线)。
 
 ### 2.1 安装 uv
 
@@ -150,7 +154,7 @@ uv sync
 uv sync --default-index https://pypi.tuna.tsinghua.edu.cn/simple
 ```
 
-电脑上已经装有 Python 3 的话，README 里的 `scripts/uv_sync.py` 会自动测速并选最快的源：macOS 用 `python3 scripts/uv_sync.py`，Windows 用 `py -3 scripts/uv_sync.py`。没装 Python 的电脑不必用这个脚本，`uv sync` 就够了。
+电脑上已经装有 Python 3 的话，README 里的 `scripts/uv_sync.py` 会自动测速并选最快的源：macOS 用 `python3 scripts/uv_sync.py`，Windows 用 `py -3 scripts/uv_sync.py`。没装 Python 的电脑不必用这个脚本，`uv sync` 就够了。这一步若卡在下载 Python 或访问 GitHub，停下来改走 [2.5](#25-无-github-路线)。
 
 ### 2.4 验证安装
 
@@ -165,6 +169,119 @@ uv run alpha-yoki
 ```
 
 到这里安装完成。`uv run alpha-yoki` 就是这个工具的命令前缀，后面每条命令都以它开头。
+
+### 2.5 无 GitHub 路线
+
+打不开 [github.com](https://github.com)、也没有 VPN 时走本节。后面第 3 到第 6 章用到的 [Tushare](https://tushare.pro)、[DeepSeek](https://platform.deepseek.com)、[智谱](https://open.bigmodel.cn)、微信都是国内站点，不需要翻墙。
+
+本节完全不访问 GitHub，顺序是：拿到项目文件夹 → 装官方 Python 3.12 → 用清华 PyPI 装 uv → 用本机 Python 装依赖。
+
+**第一步：拿到项目文件夹**
+
+本仓库的官方地址只在 GitHub，没有国内镜像。请已经有完整代码的人，用微信、网盘或 U 盘发给你整个 `alpha-yoki` 文件夹（或 zip）。只发 `USER_GUIDE.md` 一个文件不够。
+
+解压后进入该目录。假设放在「下载」里：
+
+macOS：
+
+```bash
+cd ~/Downloads/alpha-yoki
+ls
+```
+
+Windows：
+
+```powershell
+cd $HOME\Downloads\alpha-yoki
+ls
+```
+
+必须能看到 `README.md`、`pyproject.toml`、`src`、`scripts`。缺任何一个都不是完整项目。
+
+**第二步：安装 Python 3.12**
+
+不要从 python.org 或 GitHub 下载。打开清华镜像目录 [3.12.10](https://mirrors.tuna.tsinghua.edu.cn/python/3.12.10/)（打不开就换 [华为云同一目录](https://mirrors.huaweicloud.com/python/3.12.10/)）。
+
+| 系统 | 下载哪个文件 | 怎么安装 |
+| :-- | :-- | :-- |
+| macOS | `python-3.12.10-macos11.pkg` | 双击打开，一直点「继续」直到完成 |
+| Windows（常见） | `python-3.12.10-amd64.exe` | 打开后先勾选 Add python.exe to PATH，再点 Install Now |
+| Windows（ARM） | `python-3.12.10-arm64.exe` | 同上，先勾选 Add python.exe to PATH |
+
+装完后**关闭终端，重新打开一个**，再 `cd` 回项目目录，验证版本：
+
+macOS：
+
+```bash
+python3 --version
+```
+
+Windows：
+
+```powershell
+py -3.12 --version
+```
+
+应看到 `Python 3.12.10`。提示找不到命令，回到安装程序确认 Windows 已勾选 PATH，或把 pkg / exe 再装一遍。
+
+**第三步：用清华源安装 uv**
+
+macOS：
+
+```bash
+python3 -m pip install -i https://pypi.tuna.tsinghua.edu.cn/simple uv
+```
+
+Windows：
+
+```powershell
+py -3.12 -m pip install -i https://pypi.tuna.tsinghua.edu.cn/simple uv
+```
+
+验证（两端相同）：
+
+```bash
+uv --version
+```
+
+看到类似 `uv 0.10.4` 即成功。提示找不到 `uv` 时，后面所有命令把开头的 `uv` 换成下面的写法，效果相同：
+
+| 系统 | 把 `uv` 换成 |
+| :-- | :-- |
+| macOS | `python3 -m uv` |
+| Windows | `py -3.12 -m uv` |
+
+例如 Windows 验证安装写成 `py -3.12 -m uv run alpha-yoki`。
+
+**第四步：安装项目依赖**
+
+必须加上 `--no-python-downloads`，否则 uv 会去 GitHub 再下一份 Python。
+
+两端相同（找不到 `uv` 时按上表替换开头）：
+
+```bash
+uv sync --python 3.12 --no-python-downloads --default-index https://pypi.tuna.tsinghua.edu.cn/simple
+```
+
+结束时应看到类似 `Installed 60 packages`，项目目录里多出 `.venv`。清华源失败时，把地址换成 `https://mirrors.aliyun.com/pypi/simple` 再执行一次。
+
+然后去做 [2.4](#24-验证安装)。从第 3 章起，步骤与能打开 GitHub 的用户完全相同。以后若再执行 `uv sync`，也要带上 `--python 3.12 --no-python-downloads --default-index https://pypi.tuna.tsinghua.edu.cn/simple`。
+
+备选：不想先装 Python 时，可用中国科学技术大学的 GitHub Release 镜像装 uv。必须先指定下载地址，否则安装脚本仍会访问 GitHub。该镜像只同步最新一个版本，缺文件会跳回 GitHub；失败就回到上面的第二步。说明见 [USTC GitHub Release](https://mirrors.ustc.edu.cn/help/github-release.html)。
+
+macOS（两行都在同一个终端窗口执行）：
+
+```bash
+export UV_DOWNLOAD_URL=https://mirrors.ustc.edu.cn/github-release/astral-sh/uv/LatestRelease/
+curl -sL https://mirrors.ustc.edu.cn/github-release/astral-sh/uv/LatestRelease/uv-installer.sh | sh
+```
+
+Windows（两行都在同一个 PowerShell 窗口执行）：
+
+```powershell
+$env:UV_DOWNLOAD_URL="https://mirrors.ustc.edu.cn/github-release/astral-sh/uv/LatestRelease/"
+powershell -ExecutionPolicy ByPass -c "irm https://mirrors.ustc.edu.cn/github-release/astral-sh/uv/LatestRelease/uv-installer.ps1 | iex"
+```
 
 ## 3. 配置密钥
 
@@ -577,13 +694,15 @@ uv run alpha-yoki --json wechat push --text "你好"
 
 ### 8.1 安装阶段
 
-`uv: command not found` 或 `无法将“uv”项识别为 cmdlet`：uv 没装成功，或安装后没有重开终端。先重开终端再试，仍不行就重新执行 2.1 的安装命令，看有没有报错。
+`uv: command not found` 或 `无法将“uv”项识别为 cmdlet`：uv 没装成功，或安装后没有重开终端。先重开终端再试。能打开 GitHub 时重跑 2.1；打不开 GitHub 时按 [2.5](#25-无-github-路线) 用 `python3 -m uv` 或 `py -3.12 -m uv` 代替 `uv`。
 
-Windows 提示「在此系统上禁止运行脚本」：2.1 的官方命令自带 `-ExecutionPolicy ByPass`，请完整复制那一整行；仍不行就改用 `winget install --id=astral-sh.uv -e`。
+Windows 提示「在此系统上禁止运行脚本」：2.1 的官方命令自带 `-ExecutionPolicy ByPass`，请完整复制那一整行；仍不行就改用 `winget install --id=astral-sh.uv -e`，或按 2.5 用 `pip` 安装 uv。
 
-macOS 弹出「需要安装命令行开发者工具」的对话框：是因为运行了 `python3 scripts/uv_sync.py`。点「取消」，改用 `uv sync` 即可。
+macOS 弹出「需要安装命令行开发者工具」的对话框：是因为运行了 `python3 scripts/uv_sync.py`。点「取消」，改用 `uv sync` 或 2.5 的 `uv sync --python 3.12 --no-python-downloads`。
 
-`uv sync` 很慢或超时：用 2.3 的清华镜像命令。如果卡在下载 Python 本身，可以为 uv 配置 Python 下载镜像，见 uv 文档中的 `UV_PYTHON_INSTALL_MIRROR`。
+`uv sync` 很慢、超时，或卡在下载 Python：能打开 GitHub 时用 2.3 的清华镜像。打不开 GitHub 时不要等，改走 [2.5](#25-无-github-路线)，用本机已装的 Python 3.12 并加上 `--no-python-downloads`。
+
+打开 `github.com` 失败、`astral.sh` 失败、或 `git clone` 一直转圈：这是网络拦了 GitHub，不是项目坏了。按 [2.5](#25-无-github-路线) 做，不要用来路不明的「GitHub 加速站」。
 
 ### 8.2 配置阶段
 
@@ -635,7 +754,7 @@ Excel 打开 CSV 乱码：人读 CSV 自带 BOM，Excel 可以直接双击打开
 
 ### 9.1 更新项目
 
-用 ZIP 方式安装的：重新下载并解压新版本，把旧文件夹里的 `.env` 文件和 `data/` 文件夹复制进新文件夹，然后在新文件夹里执行 `uv sync`。用 git 的：
+用 ZIP 方式安装的：重新下载并解压新版本，把旧文件夹里的 `.env` 文件和 `data/` 文件夹复制进新文件夹，然后在新文件夹里执行 `uv sync`。打不开 GitHub 时，请对方再发一份新 zip，同样先拷 `.env` 和 `data/`，再按 [2.5 第四步](#25-无-github-路线) 带镜像参数执行 `uv sync`。用 git 且能访问 GitHub 的：
 
 ```bash
 git pull
@@ -650,7 +769,7 @@ uv sync
 uv self update
 ```
 
-用 Homebrew 或 winget 安装的，分别用 `brew upgrade uv`、`winget upgrade --id=astral-sh.uv -e`。
+用 Homebrew 或 winget 安装的，分别用 `brew upgrade uv`、`winget upgrade --id=astral-sh.uv -e`。按 2.5 用 pip 安装的，macOS 执行 `python3 -m pip install -i https://pypi.tuna.tsinghua.edu.cn/simple --upgrade uv`，Windows 执行 `py -3.12 -m pip install -i https://pypi.tuna.tsinghua.edu.cn/simple --upgrade uv`。
 
 ### 9.3 卸载
 
