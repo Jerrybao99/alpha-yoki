@@ -2,7 +2,7 @@
 
 ![alpha-yoki](assets/icon/alpha-yoki-logo.png)
 
-本地 CLI：Tushare 采集 → 规则评分 → DeepSeek / GLM 锐评，输出荐股 Top50（13 列）。产物只写本机 `data/`。没有编程经验请按 [USER_GUIDE.md](USER_GUIDE.md) 从安装 uv 一步步跑通。
+本地 CLI：Tushare 采集 → 规则评分 → DeepSeek / GLM 锐评，输出荐股 Top50（13 列）。产物只写本机 `data/`。没有编程经验请按 [user-guide.md](docs/user-guide.md) 从安装 uv 一步步跑通。
 
 ## 第一次跑通
 

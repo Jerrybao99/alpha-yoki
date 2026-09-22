@@ -8,7 +8,7 @@
 
 ### Added
 
-- `USER_GUIDE.md`：面向无编程经验用户的 macOS / Windows 分步使用手册
+- `docs/user-guide.md`：面向无编程经验用户的 macOS / Windows 分步使用手册
 - `models use`：终端切换并记住 DeepSeek / GLM 及具体型号，不必先跑 `report`
 - `scripts/uv_sync.py`：按探测耗时选择官方 PyPI 或国内镜像后再 `uv sync`
 - `collect --resume`：断点续采，跳过当日已有股票并合并写回
@@ -17,6 +17,7 @@
 
 - 荐股名单由 Top20 调整为 Top50；`report`、微信「报告 / 摘要」与并列 Markdown 均取前 50 并落盘
 - README 改为第一次跑通路径，微信降为可选入口
+- `USER_GUIDE.md` 移至 `docs/user-guide.md`，README 链接同步更新
 
 ## [1.0.0] - 2026-09-15
 
